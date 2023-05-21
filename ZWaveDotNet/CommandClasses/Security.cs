@@ -3,6 +3,8 @@ using System.Security.Cryptography;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
+using ZWaveDotNet.SerialAPI.Messages.Enums;
+using ZWaveDotNet.SerialAPI.Messages;
 
 namespace ZWaveDotNet.CommandClasses
 {
@@ -31,17 +33,19 @@ namespace ZWaveDotNet.CommandClasses
 
         public async Task CommandsSupportedGet(CancellationToken cancellationToken = default)
         {
+            //TODO - Send Securely
             await SendCommand(Command.CommandsSuppoprtedGet, cancellationToken);
         }
 
-        public async Task SchemeGet(CancellationToken cancellationToken = default)
+        internal async Task SchemeGet(CancellationToken cancellationToken = default)
         {
             await SendCommand(Command.SchemeGet, cancellationToken);
         }
 
-        public async Task KeySet(CancellationToken cancellationToken = default)
+        internal async Task KeySet(CancellationToken cancellationToken = default)
         {
-            await SendCommand(Command.NetworkKeySet, cancellationToken, controller.NetworkKeyS0);
+            CommandMessage data = new CommandMessage(nodeId, endpoint, commandClass, (byte)Command.NetworkKeySet, controller.NetworkKeyS0);
+            await Transmit(data.Payload);
         }
 
         public static bool IsEncapsulated(ReportMessage msg)
@@ -95,7 +99,8 @@ namespace ZWaveDotNet.CommandClasses
                     //TODO - Create command class report and event this
                     break;
                 case Command.SchemeReport:
-                    //We don't care - this is just a formality
+                    //TODO - Verify this is recently included
+                    await KeySet();
                     break;
                 case Command.NetworkKeyVerify:
                     Log.Information("Success - Key Verified");

@@ -14,10 +14,18 @@ namespace ZWaveDotNet.Entities
         protected readonly Controller controller;
         protected Dictionary<CommandClass, CommandClassBase> commandClasses = new Dictionary<CommandClass, CommandClassBase>();
 
-        public Node(ushort id, Controller controller)
+        public Node(ushort id, Controller controller, CommandClass[]? commandClasses = null)
         {
             ID = id;
             this.controller = controller;
+            if (commandClasses != null)
+            {
+                foreach (CommandClass cc in commandClasses)
+                {
+                    if (!this.commandClasses.ContainsKey(cc))
+                        this.commandClasses.Add(cc, CommandClassBase.Create(cc, controller, ID, 0));
+                }
+            }
         }
 
         private async Task DeleteReturnRoute(CancellationToken cancellationToken)
@@ -88,6 +96,11 @@ namespace ZWaveDotNet.Entities
         public ReadOnlyDictionary<CommandClass, CommandClassBase> CommandClasses
         {
             get { return new ReadOnlyDictionary<CommandClass, CommandClassBase>(commandClasses); }
+        }
+
+        public override string ToString()
+        {
+            return $"Node: {ID}, CommandClasses: {string.Join(',', commandClasses.Keys)}";
         }
     }
 }

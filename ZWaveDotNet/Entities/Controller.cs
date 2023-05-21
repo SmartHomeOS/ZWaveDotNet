@@ -1,10 +1,13 @@
 ﻿using Serilog;
 using System.Collections;
 using System.Security.Cryptography;
+using ZWaveDotNet.CommandClasses;
 using ZWaveDotNet.Entities.Enums;
+using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
 using ZWaveDotNet.SerialAPI.Enums;
 using ZWaveDotNet.SerialAPI.Messages;
+using ZWaveDotNet.SerialAPI.Messages.Enums;
 using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.Entities
@@ -91,21 +94,29 @@ namespace ZWaveDotNet.Entities
             return (NodeProtocolInfo)await flow.SendAcknowledgedResponse(Function.GetNodeProtocolInfo, cancellationToken, (byte)nodeId);
         }
 
-        public Task StartInclusion()
+        public Task StartInclusion(bool fullPower = true, bool networkWide = true)
         {
-            return StartInclusion(new byte[4], new byte[4]);
+            return StartInclusion(new byte[4], new byte[4], fullPower, networkWide);
         }
 
-        public async Task StartInclusion(byte[] NWIHomeID, byte[] AuthHomeID)
+        public async Task StartInclusion(byte[] NWIHomeID, byte[] AuthHomeID, bool fullPower = true, bool networkWide = true)
         {
             //TODO - Smart Start if NWI and Auth set
-            AddRemoveNodeMode mode = AddRemoveNodeMode.UseNormalPower | AddRemoveNodeMode.UseNetworkWide | AddRemoveNodeMode.AnyNode;
+            AddRemoveNodeMode mode = AddRemoveNodeMode.AnyNode;
+            if (fullPower)
+                mode |= AddRemoveNodeMode.UseNormalPower;
+            if (networkWide)
+                mode |= AddRemoveNodeMode.UseNetworkWide;
             await flow.SendAcknowledged(Function.AddNodeToNetwork, (byte)mode, 0x1, NWIHomeID[0], NWIHomeID[1], NWIHomeID[2], NWIHomeID[3], AuthHomeID[0], AuthHomeID[1], AuthHomeID[2], AuthHomeID[3]);
         }
 
-        public async Task StartSmartStartInclusion()
+        public async Task StartSmartStartInclusion(bool fullPower = true, bool networkWide = true)
         {
-            AddRemoveNodeMode mode = AddRemoveNodeMode.UseNormalPower | AddRemoveNodeMode.UseNetworkWide | AddRemoveNodeMode.StartSmartStart;
+            AddRemoveNodeMode mode = AddRemoveNodeMode.StartSmartStart;
+            if (fullPower)
+                mode |= AddRemoveNodeMode.UseNormalPower;
+            if (networkWide)
+                mode |= AddRemoveNodeMode.UseNetworkWide;
             await flow.SendAcknowledged(Function.AddNodeToNetwork, (byte)mode, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0);
         }
 
@@ -114,9 +125,13 @@ namespace ZWaveDotNet.Entities
             await flow.SendAcknowledged(Function.AddNodeToNetwork, (byte)AddRemoveNodeMode.StopNetworkIncludeExclude, 0x1);
         }
 
-        public async Task StartExclusion()
+        public async Task StartExclusion(bool fullPower = true, bool networkWide = true)
         {
-            AddRemoveNodeMode mode = AddRemoveNodeMode.UseNormalPower | AddRemoveNodeMode.UseNetworkWide | AddRemoveNodeMode.AnyNode;
+            AddRemoveNodeMode mode = AddRemoveNodeMode.AnyNode;
+            if (fullPower)
+                mode |= AddRemoveNodeMode.UseNormalPower;
+            if (networkWide)
+                mode |= AddRemoveNodeMode.UseNetworkWide;
             await flow.SendAcknowledged(Function.RemoveNodeFromNetwork, (byte)mode, 0x1);
         }
 
@@ -174,7 +189,30 @@ namespace ZWaveDotNet.Entities
                 }
                 else if (msg is InclusionStatus inc)
                 {
-                    //TODO - Event this
+                    if (inc.Function == Function.AddNodeToNetwork)
+                    {
+                        if (inc.CommandClasses.Length > 0) //We found a node
+                        {
+                            Node node = new Node(inc.NodeID, this, inc.CommandClasses);
+                            Nodes.TryAdd(inc.NodeID, node);
+                        }
+                        if (inc.Status == InclusionExclusionStatus.InclusionProtocolComplete || inc.Status == InclusionExclusionStatus.OperationComplete)
+                        {
+                            if (inc.NodeID > 0 && Nodes.TryGetValue(inc.NodeID, out Node? node))
+                            {
+                                //TODO - Event this
+                                Log.Information("Added " + node.ToString());
+                                if (node.CommandClasses.ContainsKey(CommandClass.Security))
+                                    await ((Security)node.CommandClasses[CommandClass.Security]).SchemeGet();
+                            }
+                        }
+                    }
+                    else if (inc.Function == Function.RemoveNodeFromNetwork && inc.NodeID > 0)
+                    {
+                        //TODO - Event This
+                        if (Nodes.Remove(inc.NodeID))
+                            Log.Information($"Successfully exluded node {inc.NodeID}");
+                    }
                     Log.Information(inc.ToString());
                 }
                 //Log.Information(msg.ToString());

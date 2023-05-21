@@ -21,7 +21,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
             Status = (InclusionExclusionStatus)payload.Span[1];
             NodeID = payload.Span[2];
             byte len = payload.Span[3];
-            if (payload.Length > 7 + len)
+            if (payload.Length >= 7)
             {
                 BasicType = (BasicType)payload.Span[4];
                 GenericType = (GenericType)payload.Span[5];
