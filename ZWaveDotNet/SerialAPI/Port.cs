@@ -1,6 +1,7 @@
 ﻿using Serilog;
 using System.IO.Ports;
 using System.Threading.Channels;
+using ZWaveDotNet.SerialAPI.Enums;
 
 namespace ZWaveDotNet.SerialAPI
 {
@@ -8,16 +9,16 @@ namespace ZWaveDotNet.SerialAPI
     {
         private SerialPort port;
         private readonly Channel<Frame> tx = Channel.CreateUnbounded<Frame>();
-        private readonly Channel<Frame> rx = Channel.CreateUnbounded<Frame>();
+        private List<Channel<Frame>> rXChannels = new List<Channel<Frame>>();
 
         public Port(string path) 
         {
             port = new SerialPort(path, 115200, Parity.None, 8, StopBits.One);
-            port.Open();
+            /*port.Open();
             Reset();
 
             Task.Factory.StartNew(WriteTask);
-            Task.Factory.StartNew(ReadTask);
+            Task.Factory.StartNew(ReadTask);*/
         }
 
         public ValueTask QueueTX(Frame frame)
@@ -32,9 +33,18 @@ namespace ZWaveDotNet.SerialAPI
             port.DiscardOutBuffer();
         }
 
-        public ValueTask<Frame> ReadFrameAsync(CancellationToken token = default)
+        public Channel<Frame> CreateReader()
         {
-            return rx.Reader.ReadAsync(token);
+            Channel<Frame> reader = Channel.CreateUnbounded<Frame>();
+            lock (rXChannels)
+                rXChannels.Add(reader);
+            return reader;
+        }
+
+        public bool DisposeReader(Channel<Frame> reader)
+        {
+            lock (rXChannels)
+                return rXChannels.Remove(reader);
         }
 
         private async Task WriteTask()
@@ -64,17 +74,19 @@ namespace ZWaveDotNet.SerialAPI
                     frame = await Frame.Read(port.BaseStream);
                     if (frame == null)
                     {
+                        port.DiscardInBuffer();
                         await QueueTX(Frame.NAK);
-                        Log.Information("Read Invalid Data");
+                        Log.Information("Invalid Frame");
                     }
                     else
                     {
                         Log.Information("Read " + frame.ToString());
                         if (frame.Type == FrameType.SOF)
                             await QueueTX(Frame.ACK);
-                        await rx.Writer.WriteAsync(frame);
+                        lock (rXChannels)
+                            rXChannels.ForEach(channel => channel.Writer.TryWrite(frame));
                     }
-                } while (frame != null);
+                } while (port.IsOpen);
             }
             catch (IOException io)
             {

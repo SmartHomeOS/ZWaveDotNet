@@ -1,4 +1,5 @@
-﻿using ZWaveDotNet.SerialAPI.Messages.Enums;
+﻿using ZWaveDotNet.SerialAPI.Enums;
+using ZWaveDotNet.SerialAPI.Messages.Enums;
 
 namespace ZWaveDotNet.SerialAPI.Messages
 {
@@ -13,7 +14,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
         public readonly Memory<byte> Data;
         public readonly sbyte RSSI;
 
-        public ApplicationCommand(Memory<byte> payload, Function function) : base(payload, function)
+        public ApplicationCommand(Memory<byte> payload, Function function) : base(function)
         {
             byte len;
             if (payload.Length < 4)

@@ -1,9 +1,11 @@
-﻿namespace ZWaveDotNet.SerialAPI.Messages
+﻿using ZWaveDotNet.SerialAPI.Enums;
+
+namespace ZWaveDotNet.SerialAPI.Messages
 {
     public abstract class Message
     {
         public readonly Function Function;
-        protected Message(Memory<byte> payload, Function function)
+        protected Message(Function function)
         {
             this.Function = function;
         }

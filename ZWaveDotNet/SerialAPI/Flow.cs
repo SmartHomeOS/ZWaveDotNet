@@ -1,19 +1,18 @@
-﻿using Serilog;
-using System.Threading.Channels;
+﻿using System.Threading.Channels;
+using ZWaveDotNet.SerialAPI.Enums;
 using ZWaveDotNet.SerialAPI.Messages;
 
 namespace ZWaveDotNet.SerialAPI
 {
     public class Flow
     {
-        Port port;
-        Channel<Frame> Unsolicited;
+        private Port port;
+        private Channel<Frame> unsolicited;
 
         public Flow(string portName)
         {
             this.port = new Port(portName);
-            Unsolicited = CreateReader();
-            Task.Factory.StartNew(MultiplexReader);
+            unsolicited = port.CreateReader();
         }
 
         public Task SendUnacknowledged(Function function, params byte[] payload)
@@ -47,19 +46,19 @@ namespace ZWaveDotNet.SerialAPI
 
         public async Task SendAcknowledged(Frame frame)
         {
-            var reader = CreateReader();
+            var reader = port.CreateReader();
             try
             {
                 await SendAcknowledgedIntl(reader, frame);
             }
             finally
             {
-                DisposeReader(reader);
+                port.DisposeReader(reader);
             }
         }
         private async Task SendAcknowledgedIntl(Channel<Frame> reader, Frame frame)
         {
-            CancellationTokenSource cts = new CancellationTokenSource(1500);
+            CancellationTokenSource cts = new CancellationTokenSource(1600);
             do
             {
                 await port.QueueTX(frame);
@@ -82,15 +81,15 @@ namespace ZWaveDotNet.SerialAPI
         public async Task<Frame> SendAcknowledgedResponse(Frame frame)
         {
             CancellationTokenSource cts = new CancellationTokenSource(1500);
-            var reader = CreateReader();
-            await SendAcknowledgedIntl(reader, frame);
+            var reader = port.CreateReader();
             try
             {
-               return await SendAcknowledgedResponseIntl(cts.Token, frame, reader);
+                await SendAcknowledgedIntl(reader, frame);
+                return await SendAcknowledgedResponseIntl(cts.Token, frame, reader);
             }
             finally 
-            { 
-                DisposeReader(reader); 
+            {
+                port.DisposeReader(reader); 
             }
         }
 
@@ -108,7 +107,7 @@ namespace ZWaveDotNet.SerialAPI
         public async Task<Message> SendAcknowledgedResponseCallback(DataMessage message, CancellationToken token = default)
         {
             Frame frame = new Frame(FrameType.SOF, DataFrameType.Request, message.Function, message.GetPayload());
-            var reader = CreateReader();
+            var reader = port.CreateReader();
             try
             {
                 await SendAcknowledgedIntl(reader, frame);
@@ -129,50 +128,23 @@ namespace ZWaveDotNet.SerialAPI
             }
             finally
             {
-                DisposeReader(reader);
+                port.DisposeReader(reader);
             }
         }
 
         public async Task<Message> GetUnsolicited()
         {
-            return GetMessage(await Unsolicited.Reader.ReadAsync());
+            return GetMessage(await unsolicited.Reader.ReadAsync());
         }
 
         private async Task<bool> SuccessfulAck(Channel<Frame> reader, CancellationToken token)
         {
-            Frame f = await reader.Reader.ReadAsync(token);
-            return f.Type == FrameType.ACK;
-        }
-
-        private List<Channel<Frame>> channels = new List<Channel<Frame>>();
-        private Channel<Frame> CreateReader()
-        {
-            Channel<Frame> reader = Channel.CreateUnbounded<Frame>();
-            lock (channels)
-                channels.Add(reader);
-            return reader;
-        }
-
-        private void DisposeReader(Channel<Frame> reader)
-        {
-            lock (channels)
-                channels.Remove(reader);
-        }
-
-        private async Task MultiplexReader()
-        {
-            while (true)
+            Frame f;
+            do
             {
-                try
-                {
-                    Frame frame = await port.ReadFrameAsync();
-                    lock (channels)
-                        channels.ForEach(channel => channel.Writer.TryWrite(frame));
-                }catch(Exception ex)
-                {
-                    Log.Error(ex, "Ooops");
-                }
-            }
+                f = await reader.Reader.ReadAsync(token);
+            } while (f.Type == FrameType.SOF);
+            return f.Type == FrameType.ACK;
         }
 
         private Message GetMessage(Frame frame)

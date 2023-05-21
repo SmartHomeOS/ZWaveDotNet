@@ -1,4 +1,6 @@
-﻿namespace ZWaveDotNet.SerialAPI
+﻿using ZWaveDotNet.SerialAPI.Enums;
+
+namespace ZWaveDotNet.SerialAPI
 {
     public class Frame
     {
@@ -47,8 +49,15 @@
                 if (await stream.ReadAsync(buff.Slice(1, 1)) == 0)
                     throw new EndOfStreamException();
                 byte len = buff.Span[1];
-                if (await stream.ReadAsync(buff.Slice(2, len)) == 0)
-                    throw new EndOfStreamException();
+                int total = 0;
+                do
+                {
+                    int read = await stream.ReadAsync(buff.Slice(2 + total, len));
+                    if (read == 0)
+                        throw new EndOfStreamException();
+                    total += read;
+                }
+                while (total < len);
                 if (!ValidateChecksum(buff))
                     return null;
                 return new Frame(frame, (DataFrameType)buff.Span[2], (Function)buff.Span[3], buff.Slice(4, len - 3));
@@ -100,7 +109,7 @@
         {
             if (Type != FrameType.SOF)
                 return Type.ToString();
-            return $"{CommandID.ToString()}: {BitConverter.ToString(Payload.ToArray())}";
+            return $"{CommandID}: {BitConverter.ToString(Payload.ToArray())}";
         }
     }
 }

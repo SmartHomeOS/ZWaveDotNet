@@ -1,4 +1,5 @@
-﻿using ZWaveDotNet.CommandClasses;
+﻿using ZWaveDotNet.Enums;
+using ZWaveDotNet.SerialAPI.Enums;
 
 namespace ZWaveDotNet.SerialAPI.Messages
 {
@@ -26,7 +27,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
         public readonly CommandClass[] SupportedCommandClasses;
         public readonly bool SupportsLR;
 
-        public APIStarted(Memory<byte> payload) : base(payload, Function.SerialAPIStarted)
+        public APIStarted(Memory<byte> payload) : base(Function.SerialAPIStarted)
         {
             Reason = (WakeupReason)payload.Span[0];
             WatchdogStarted = payload.Span[1] == 0x1;
@@ -34,9 +35,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
             GenericType = (GenericType)payload.Span[3];
             SpecificType = SpecificTypeMapping.Get(GenericType, payload.Span[4]);
             byte len = payload.Span[5];
-            SupportedCommandClasses = new CommandClass[len];
-            for (byte i = 0; i < len; i++)
-                SupportedCommandClasses[i] = (CommandClass)payload.Span[6 + i];
+            SupportedCommandClasses = PayloadConverter.GetCommandClasses(payload.Slice(6, len)).ToArray();
             SupportsLR = ((payload.Span[6 + len] & 0x1) == 0x1);
         }
 

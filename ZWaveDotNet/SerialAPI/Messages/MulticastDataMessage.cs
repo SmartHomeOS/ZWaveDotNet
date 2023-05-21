@@ -1,4 +1,5 @@
-﻿using ZWaveDotNet.SerialAPI.Messages.Enums;
+﻿using ZWaveDotNet.SerialAPI.Enums;
+using ZWaveDotNet.SerialAPI.Messages.Enums;
 
 namespace ZWaveDotNet.SerialAPI.Messages
 {
@@ -9,9 +10,9 @@ namespace ZWaveDotNet.SerialAPI.Messages
         public readonly TransmitOptions Options;
         public readonly byte SessionID;
 
-        private static byte callbackID;
+        private static byte callbackID = 1;
 
-        public MulticastDataMessage(Memory<byte> payload) : base(payload, Function.SendDataMulticast)
+        public MulticastDataMessage(Memory<byte> payload) : base(Function.SendDataMulticast)
         {
             if (payload.Length < 4)
                 throw new InvalidDataException("Empty MulticastDataMessage received");
@@ -31,15 +32,17 @@ namespace ZWaveDotNet.SerialAPI.Messages
             SessionID = payload.Span[3 + dataLen + nodeLen];
         }
 
-        public MulticastDataMessage(ushort[] nodeIds, Memory<byte> data, bool callback) : base(data, Function.SendDataMulticast)
+        public MulticastDataMessage(ushort[] nodeIds, Memory<byte> data, bool callback) : base(Function.SendDataMulticast)
         {
             DestinationNodeIDs = nodeIds;
             Data = data;
             Options = TransmitOptions.RequestAck | TransmitOptions.AutoRouting | TransmitOptions.ExploreNPDUs;
             if (callback)
-                SessionID = ++callbackID;
+                SessionID = callbackID++;
             else
                 SessionID = 0;
+            if (callbackID == 0)
+                callbackID = 1;
         }
 
         public override List<byte> GetPayload()

@@ -1,4 +1,4 @@
-﻿namespace ZWaveDotNet.SerialAPI
+﻿namespace ZWaveDotNet.SerialAPI.Enums
 {
     public enum FrameType : byte
     {

@@ -1,9 +1,11 @@
-﻿namespace ZWaveDotNet.SerialAPI.Messages
+﻿using ZWaveDotNet.SerialAPI.Enums;
+
+namespace ZWaveDotNet.SerialAPI.Messages
 {
     public class Response : Message
     {
         public readonly bool Success;
-        public Response(Memory<byte> payload, Function function) : base(payload, function)
+        public Response(Memory<byte> payload, Function function) : base(function)
         {
             if (payload.Length == 0)
                 throw new InvalidDataException("Empty Response received");

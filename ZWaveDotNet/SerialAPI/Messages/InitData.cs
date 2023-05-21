@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using ZWaveDotNet.SerialAPI.Enums;
 
 namespace ZWaveDotNet.SerialAPI.Messages
 {
@@ -19,7 +20,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
         public readonly byte ChipType;
         public readonly byte ChipVersion;
 
-        public InitData(Memory<byte> payload) : base(payload, Function.GetSerialAPIInitData)
+        public InitData(Memory<byte> payload) : base(Function.GetSerialAPIInitData)
         {
             if (payload.Length < 4)
                 throw new InvalidDataException("Empty InitData received");

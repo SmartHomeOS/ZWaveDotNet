@@ -1,4 +1,5 @@
-﻿using ZWaveDotNet.CommandClasses;
+﻿using ZWaveDotNet.Enums;
+using ZWaveDotNet.SerialAPI.Enums;
 
 namespace ZWaveDotNet.SerialAPI.Messages
 {
@@ -17,12 +18,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
             BasicType = (BasicType)payload.Span[3];
             GenericType = (GenericType)payload.Span[4];
             SpecificType = SpecificTypeMapping.Get(GenericType, payload.Span[5]);
-
-            CommandClasses = new CommandClass[payload.Length - 6];
-            for (byte i = 0; i < CommandClasses.Length; i++)
-            {
-                CommandClasses[i] = (CommandClass)payload.Span[i + 6];
-            }
+            CommandClasses = PayloadConverter.GetCommandClasses(payload.Slice(6)).ToArray();
         }
 
         public override List<byte> GetPayload()

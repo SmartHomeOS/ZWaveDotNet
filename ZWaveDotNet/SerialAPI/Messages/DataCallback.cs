@@ -1,4 +1,5 @@
-﻿using ZWaveDotNet.SerialAPI.Messages.Enums;
+﻿using ZWaveDotNet.SerialAPI.Enums;
+using ZWaveDotNet.SerialAPI.Messages.Enums;
 
 namespace ZWaveDotNet.SerialAPI.Messages
 {
@@ -8,7 +9,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
         public readonly TransmissionStatus Status;
         public readonly Memory<byte> Report;
 
-        public DataCallback(Memory<byte> payload, Function function) : base(payload, function)
+        public DataCallback(Memory<byte> payload, Function function) : base(function)
         {
             if (payload.Length == 0)
                 throw new InvalidDataException("Empty DataCallback received");

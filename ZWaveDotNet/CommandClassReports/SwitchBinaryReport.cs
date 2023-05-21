@@ -1,4 +1,6 @@
-﻿namespace ZWaveDotNet.CommandClasses
+﻿using ZWaveDotNet.SerialAPI;
+
+namespace ZWaveDotNet.CommandClassReports
 {
     public class SwitchBinaryReport
     {
@@ -8,24 +10,21 @@
         public readonly bool? TargetValue;
         public readonly TimeSpan Duration;
 
-        public SwitchBinaryReport(byte[] payload)
+        public SwitchBinaryReport(Memory<byte> payload)
         {
-            if (payload == null)
-                throw new ArgumentNullException(nameof(payload));
-
-            if (payload[0] == UNKNOWN)
+            if (payload.Span[0] == UNKNOWN)
                 CurrentValue = null;
             else
-                CurrentValue = payload[0] != 0x0; //Values 0x1 - 0xFF = On
+                CurrentValue = payload.Span[0] != 0x0; //Values 0x1 - 0xFF = On
 
             //Version 2
             if (payload.Length > 2)
             {
-                if (payload[1] == UNKNOWN)
+                if (payload.Span[1] == UNKNOWN)
                     TargetValue = null;
                 else
-                    TargetValue = payload[1] != 0x0; //Values 0x1 - 0xFF = On
-                //Duration = PayloadConverter.ToTimeSpan(payload[2]);
+                    TargetValue = payload.Span[1] != 0x0; //Values 0x1 - 0xFF = On
+                Duration = PayloadConverter.ToTimeSpan(payload.Span[2]);
             }
             else
             {

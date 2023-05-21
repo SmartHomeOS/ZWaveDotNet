@@ -1,4 +1,6 @@
-﻿namespace ZWaveDotNet.SerialAPI.Messages
+﻿using ZWaveDotNet.SerialAPI.Enums;
+
+namespace ZWaveDotNet.SerialAPI.Messages
 {
     public class ApplicationUpdate : Message
     {
@@ -20,7 +22,7 @@
         public ApplicationUpdateType UpdateType;
         public ushort NodeId;
 
-        public ApplicationUpdate(Memory<byte> payload) : base(payload, Function.ApplicationUpdate)
+        public ApplicationUpdate(Memory<byte> payload) : base(Function.ApplicationUpdate)
         {
             if (payload.Length == 0)
                 throw new InvalidDataException("Empty ApplicationUpdate received");

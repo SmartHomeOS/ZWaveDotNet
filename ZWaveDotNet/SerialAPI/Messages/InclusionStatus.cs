@@ -1,4 +1,5 @@
-﻿using ZWaveDotNet.CommandClasses;
+﻿using ZWaveDotNet.Enums;
+using ZWaveDotNet.SerialAPI.Enums;
 using ZWaveDotNet.SerialAPI.Messages.Enums;
 
 namespace ZWaveDotNet.SerialAPI.Messages
@@ -12,7 +13,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
         public readonly GenericType GenericType;
         public readonly SpecificType SpecificType;
 
-        public InclusionStatus(Memory<byte> payload, Function function) : base(payload, function)
+        public InclusionStatus(Memory<byte> payload, Function function) : base(function)
         {
             if (payload.Length < 4)
                 throw new InvalidDataException("InclusionStatus should be at least 4 bytes");
@@ -24,11 +25,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
                 BasicType = (BasicType)payload.Span[4];
                 GenericType = (GenericType)payload.Span[5];
                 SpecificType = SpecificTypeMapping.Get(GenericType, payload.Span[6]);
-                CommandClasses = new CommandClass[payload.Length - 7];
-                for (byte i = 0; i < CommandClasses.Length; i++)
-                {
-                    CommandClasses[i] = (CommandClass)payload.Span[i + 7];
-                }
+                CommandClasses = PayloadConverter.GetCommandClasses(payload.Slice(7)).ToArray();
             }
             else
             {
