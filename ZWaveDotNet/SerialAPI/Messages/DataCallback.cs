@@ -3,7 +3,7 @@ using ZWaveDotNet.SerialAPI.Messages.Enums;
 
 namespace ZWaveDotNet.SerialAPI.Messages
 {
-    internal class DataCallback : Message
+    public class DataCallback : Message
     {
         public readonly byte SessionID;
         public readonly TransmissionStatus Status;

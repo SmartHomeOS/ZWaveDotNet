@@ -34,12 +34,14 @@ namespace ZWaveDotNet.CommandClasses
             if (msg.Payload.Span[0] != (byte)CommandClass.CRC16 || msg.Payload.Length < 4)
                 throw new ArgumentException("Report is not a TransportService");
 
+            //TODO - Implement
             throw new NotImplementedException("Transport Service is not implemented");
         }
 
-        public override void Handle(ReportMessage message)
+        public override Task Handle(ReportMessage message)
         {
             //No Reports
+            return Task.CompletedTask;
         }
     }
 }

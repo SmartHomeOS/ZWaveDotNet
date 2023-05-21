@@ -5,6 +5,7 @@ using ZWaveDotNet.Entities.Enums;
 using ZWaveDotNet.SerialAPI;
 using ZWaveDotNet.SerialAPI.Enums;
 using ZWaveDotNet.SerialAPI.Messages;
+using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.Entities
 {
@@ -13,6 +14,7 @@ namespace ZWaveDotNet.Entities
         public Dictionary<ushort, Node> Nodes = new Dictionary<ushort, Node>();
 
         private Flow flow;
+        private byte[] networkKeyS0;
         private byte[] authKey;
         private byte[] encryptKey;
 
@@ -25,8 +27,8 @@ namespace ZWaveDotNet.Entities
             flow = new Flow(port);
             using (Aes aes = Aes.Create())
             {
-                aes.KeySize = 128;
                 aes.Key = s0Key;
+                networkKeyS0 = s0Key;
                 authKey = aes.EncryptEcb(Enumerable.Repeat((byte)0x55, 16).ToArray(), PaddingMode.None);
                 encryptKey = aes.EncryptEcb(Enumerable.Repeat((byte)0xAA, 16).ToArray(), PaddingMode.None);
             }
@@ -38,6 +40,7 @@ namespace ZWaveDotNet.Entities
         internal Flow Flow { get { return flow; } }
         internal byte[] AuthenticationKey { get { return authKey; } }
         internal byte[] EncryptionKey { get { return encryptKey; } }
+        internal byte[] NetworkKeyS0 { get { return networkKeyS0; } }
 
         public async Task Reset()
         {
@@ -64,7 +67,7 @@ namespace ZWaveDotNet.Entities
                     if (id != ControllerID)
                     {
                         Nodes.Add(id, new Node(id, this));
-                        await flow.SendAcknowledgedResponse(Function.RequestNodeInfo, (byte)id);
+                        await flow.SendAcknowledgedResponse(Function.RequestNodeInfo, CancellationToken.None, (byte)id);
                     }
                 }
             }
@@ -72,7 +75,7 @@ namespace ZWaveDotNet.Entities
 
         public async Task<Function[]> GetSupportedFunctions(CancellationToken cancellationToken = default)
         {
-            PayloadMessage response = (PayloadMessage)await flow.SendAcknowledgedResponse(Function.GetSerialCapabilities);
+            PayloadMessage response = (PayloadMessage)await flow.SendAcknowledgedResponse(Function.GetSerialCapabilities, cancellationToken);
             var bits = new BitArray(response.Data.Slice(8).ToArray());
             List<Function> functions = new List<Function>();
             for (short i = 0; i < bits.Length; i++)
@@ -81,6 +84,11 @@ namespace ZWaveDotNet.Entities
                     functions.Add((Function)i + 1);
             }
             return functions.ToArray();
+        }
+
+        public async Task<NodeProtocolInfo> GetNodeProtocolInfo(ushort nodeId, CancellationToken cancellationToken = default)
+        {
+            return (NodeProtocolInfo)await flow.SendAcknowledgedResponse(Function.GetNodeProtocolInfo, cancellationToken, (byte)nodeId);
         }
 
         public Task StartInclusion()
@@ -119,7 +127,7 @@ namespace ZWaveDotNet.Entities
 
         public async Task<byte[]> BackupNVM(CancellationToken cancellationToken = default)
         {
-            PayloadMessage open = (PayloadMessage)await flow.SendAcknowledgedResponse(Function.NVMBackupRestore, (byte)NVMOperation.Open);
+            PayloadMessage open = (PayloadMessage)await flow.SendAcknowledgedResponse(Function.NVMBackupRestore, cancellationToken, (byte)NVMOperation.Open);
             if (open.Data.Span[0] != 0)
                 throw new InvalidOperationException($"Failed to open NVM.  Response {open.Data.Span[0]}");
             ushort len = PayloadConverter.ToUInt16(open.Data.Slice(2).Span);
@@ -131,7 +139,7 @@ namespace ZWaveDotNet.Entities
                 {
                     var offset = PayloadConverter.GetBytes(i);
                     byte readLen = (byte)Math.Min(len - i, 255);
-                    PayloadMessage read = (PayloadMessage)await flow.SendAcknowledgedResponse(Function.NVMBackupRestore, (byte)NVMOperation.Read, readLen, offset[0], offset[1]);
+                    PayloadMessage read = (PayloadMessage)await flow.SendAcknowledgedResponse(Function.NVMBackupRestore, cancellationToken, (byte)NVMOperation.Read, readLen, offset[0], offset[1]);
                     if (read.Data.Span[0] != 0 && read.Data.Span[0] != 0xFF)
                         throw new InvalidOperationException($"Failed to open NVM.  Response {open.Data.Span[0]}");
                     Buffer.BlockCopy(read.Data.ToArray(), 4, buffer, i, read.Data.Span[1]);
@@ -140,7 +148,7 @@ namespace ZWaveDotNet.Entities
             }
             finally
             {
-                PayloadMessage close = (PayloadMessage)await flow.SendAcknowledgedResponse(Function.NVMBackupRestore, (byte)NVMOperation.Close);
+                PayloadMessage close = (PayloadMessage)await flow.SendAcknowledgedResponse(Function.NVMBackupRestore, cancellationToken, (byte)NVMOperation.Close);
                 if (close.Data.Span[0] != 0)
                     throw new InvalidOperationException($"Backup Failed. Error {close.Data.Span[0]}");
             }

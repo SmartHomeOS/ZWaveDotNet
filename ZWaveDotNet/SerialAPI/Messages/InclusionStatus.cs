@@ -1,6 +1,7 @@
 ﻿using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI.Enums;
 using ZWaveDotNet.SerialAPI.Messages.Enums;
+using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.SerialAPI.Messages
 {

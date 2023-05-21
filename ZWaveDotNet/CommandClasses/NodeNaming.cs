@@ -68,7 +68,7 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(command, cancellationToken, payload);
         }
 
-        public override void Handle(ReportMessage message)
+        public override async Task Handle(ReportMessage message)
         {
             if (message.Command == (byte)Command.ReportName)
             {

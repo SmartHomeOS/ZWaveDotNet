@@ -48,9 +48,10 @@ namespace ZWaveDotNet.CommandClasses
             return free;
         }
 
-        public override void Handle(ReportMessage message)
+        public override Task Handle(ReportMessage message)
         {
             //TODO
+            return Task.CompletedTask;
         }
     }
 }

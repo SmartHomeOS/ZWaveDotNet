@@ -11,9 +11,10 @@ namespace ZWaveDotNet.CommandClasses
         {
         }
 
-        public override void Handle(ReportMessage message)
+        public override Task Handle(ReportMessage message)
         {
             Log.Information("Unknown Report Received: " + message.ToString());
+            return Task.CompletedTask;
         }
     }
 }

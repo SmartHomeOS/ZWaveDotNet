@@ -1,17 +1,23 @@
 ﻿using ZWaveDotNet.Enums;
 
-namespace ZWaveDotNet.SerialAPI
+namespace ZWaveDotNet.Util
 {
     public static class PayloadConverter
     {
         public static ushort ToUInt16(Span<byte> value)
         {
-            return (ushort)(value[0] << 8 | value[1]);
+            if (BitConverter.IsLittleEndian)
+                return (ushort)(value[0] << 8 | value[1]);
+            else
+                return (ushort)(value[1] << 8 | value[0]);
         }
 
         public static uint ToUint32(Span<byte> bytes)
         {
-            return (uint)(bytes[0] << 24 | bytes[1] << 16 | bytes[2] << 8 | bytes[3]);
+            if (BitConverter.IsLittleEndian)
+                return (uint)(bytes[0] << 24 | bytes[1] << 16 | bytes[2] << 8 | bytes[3]);
+            else
+                return (uint)(bytes[3] << 24 | bytes[2] << 16 | bytes[1] << 8 | bytes[0]);
         }
 
         public static TimeSpan ToTimeSpan(byte payload)
@@ -51,7 +57,11 @@ namespace ZWaveDotNet.SerialAPI
             List<CommandClass> list = new List<CommandClass>(bytes.Length);
             for (byte i = 0; i < bytes.Length; i++)
             {
-                if ((bytes.Span[i] & 0xF0) != 0xF0)
+                if (bytes.Span[i] == (byte)CommandClass.Mark)
+                    break;
+                if (bytes.Span[i] < 0x20)
+                    continue;
+                else if ((bytes.Span[i] & 0xF0) != 0xF0)
                     list.Add((CommandClass)bytes.Span[i]);
                 else
                 {

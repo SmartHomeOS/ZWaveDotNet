@@ -1,6 +1,7 @@
 ﻿using ZWaveDotNet.CommandClasses;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI.Messages;
+using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.SerialAPI
 {
@@ -13,11 +14,20 @@ namespace ZWaveDotNet.SerialAPI
         public CommandMessage(ushort nodeId, CommandClass commandClass, byte command, params byte[] payload)
         {
             DestinationNodeId = nodeId;
-            Payload = new List<byte>(payload.Length + 2)
+            if ((ushort)commandClass > 0xFF)
             {
-                (byte)commandClass,
-                command
-            };
+                Payload = new List<byte>(payload.Length + 3);
+                Payload.AddRange(PayloadConverter.GetBytes((ushort)commandClass));
+                Payload.Add(command);
+            }
+            else
+            {
+                Payload = new List<byte>(payload.Length + 2)
+                {
+                    (byte)commandClass,
+                    command
+                };
+            }
             Payload.AddRange(payload);
         }
 

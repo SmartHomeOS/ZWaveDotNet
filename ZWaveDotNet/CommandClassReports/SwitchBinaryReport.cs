@@ -1,4 +1,4 @@
-﻿using ZWaveDotNet.SerialAPI;
+﻿using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.CommandClassReports
 {

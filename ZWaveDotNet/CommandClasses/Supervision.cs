@@ -55,7 +55,7 @@ namespace ZWaveDotNet.CommandClasses
             return free;
         }
 
-        public override void Handle(ReportMessage message)
+        public override async Task Handle(ReportMessage message)
         {
             SupervisionReport report = new SupervisionReport(message.Payload);
             Log.Information(report.ToString());

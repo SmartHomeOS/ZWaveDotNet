@@ -14,11 +14,11 @@ namespace ZWaveDotNet.SerialAPI
         public Port(string path) 
         {
             port = new SerialPort(path, 115200, Parity.None, 8, StopBits.One);
-            /*port.Open();
+            port.Open();
             Reset();
 
             Task.Factory.StartNew(WriteTask);
-            Task.Factory.StartNew(ReadTask);*/
+            Task.Factory.StartNew(ReadTask);
         }
 
         public ValueTask QueueTX(Frame frame)

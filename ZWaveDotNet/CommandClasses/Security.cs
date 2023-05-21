@@ -1,4 +1,5 @@
-﻿using System.Security.Cryptography;
+﻿using Serilog;
+using System.Security.Cryptography;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
@@ -9,6 +10,7 @@ namespace ZWaveDotNet.CommandClasses
     {
         private readonly byte[] EMPTY_IV = new byte[]{ 0x0, 0x0, 0x0, 0x0 , 0x0, 0x0 , 0x0, 0x0 , 0x0, 0x0 , 0x0, 0x0 , 0x0, 0x0 , 0x0, 0x0 };
         private byte sequence = 1;
+        private byte[] ourNonce = Enumerable.Repeat((byte)0xB5, 8).ToArray();
 
         public enum Command
         {
@@ -27,38 +29,52 @@ namespace ZWaveDotNet.CommandClasses
 
         public Security(ushort nodeId, byte endpoint, Controller controller) : base(nodeId, endpoint, controller, CommandClass.Security) { }
 
+        public async Task CommandsSupportedGet(CancellationToken cancellationToken = default)
+        {
+            await SendCommand(Command.CommandsSuppoprtedGet, cancellationToken);
+        }
+
+        public async Task SchemeGet(CancellationToken cancellationToken = default)
+        {
+            await SendCommand(Command.SchemeGet, cancellationToken);
+        }
+
+        public async Task KeySet(CancellationToken cancellationToken = default)
+        {
+            await SendCommand(Command.NetworkKeySet, cancellationToken, controller.NetworkKeyS0);
+        }
+
         public static bool IsEncapsulated(ReportMessage msg)
         {
             return msg.CommandClass == CommandClass.Security && (msg.Command == (byte)Command.MessageEncap || msg.Command == (byte)Command.MessageEncapNonceGet);
         }
 
-        public void Transmit(List<byte> payload)
+        public async Task Transmit(List<byte> payload)
         {
-            //TODO - Get External NONCE
+            CommandMessage request = new CommandMessage(nodeId, endpoint, commandClass, (byte)Command.NonceGet);
+            ReportMessage report = await controller.Flow.SendReceiveSequence(request.ToMessage(), commandClass, (byte)Command.NonceReport);
 
-            byte[] externalNonce = new byte[8];
+            byte[] externalNonce = report.Payload.Slice(2, 8).ToArray();
             byte[] internalNonce = new byte[8];
             new Random().NextBytes(internalNonce);
             sequence = (byte)Math.Max((sequence++ % 16), 1);
             byte[] encrypted = EncryptDecryptPayload(payload.ToArray(), internalNonce, externalNonce);
             byte[] mac = ComputeMAC(encrypted);
 
-            byte[] header = new byte[20 + payload.Count];
-            header[0] = (byte)CommandClass.Security;
-            header[1] = (byte)Command.MessageEncap;
-            Buffer.BlockCopy(internalNonce, 0, header, 2, 8);
-            header[10] = sequence;
-            Buffer.BlockCopy(encrypted, 0, header, 11, encrypted.Length);
-            header[11 + encrypted.Length] = 0x1; //FIXME: What is nonce identifier?
-            Buffer.BlockCopy(mac, 0, header, 12 + encrypted.Length, 8);
+            byte[] securePayload = new byte[18 + payload.Count];
+            Buffer.BlockCopy(internalNonce, 0, securePayload, 0, 8);
+            securePayload[8] = sequence;
+            Buffer.BlockCopy(encrypted, 0, securePayload, 9, encrypted.Length);
+            securePayload[9 + encrypted.Length] = 0x1; //FIXME: What is nonce identifier?
+            Buffer.BlockCopy(mac, 0, securePayload, 10 + encrypted.Length, 8);
 
-            //TODO - Transmit
+            await SendCommand(Command.MessageEncap, CancellationToken.None, securePayload);
         }
 
         internal ReportMessage? Free(ReportMessage msg)
         {
-            //TODO - Get external nonce
             byte[] externalNonce = new byte[8];
+            Array.Copy(ourNonce, externalNonce, 8);
 
             bool sequenced = ((msg.Payload.Span[10] & 0x10) == 0x10);
             if (sequenced)
@@ -71,9 +87,23 @@ namespace ZWaveDotNet.CommandClasses
             return free;
         }
 
-        public override void Handle(ReportMessage message)
+        public override async Task Handle(ReportMessage message)
         {
-            //TODO
+            switch ((Command)message.Command)
+            {
+                case Command.CommandsSupportedReport:
+                    //TODO - Create command class report and event this
+                    break;
+                case Command.SchemeReport:
+                    //We don't care - this is just a formality
+                    break;
+                case Command.NetworkKeyVerify:
+                    Log.Information("Success - Key Verified");
+                    break;
+                case Command.NonceGet:
+                    await SendCommand(Command.NonceReport, CancellationToken.None, ourNonce);
+                    break;
+            }
         }
 
         private byte[] EncryptDecryptPayload(Memory<byte> plaintext, byte[] internalNonce, byte[] externalNonce)
@@ -86,7 +116,6 @@ namespace ZWaveDotNet.CommandClasses
             byte[] output = new byte[plaintext.Length];
             using (Aes aes = Aes.Create())
             {
-                aes.KeySize = 128;
                 aes.Key = controller.EncryptionKey;
 
                 Memory<byte> buffer = new byte[16];

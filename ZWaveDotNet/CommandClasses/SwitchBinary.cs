@@ -3,6 +3,7 @@ using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
+using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.CommandClasses
 {
@@ -35,7 +36,7 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(Command.Set, cancellationToken, value ? (byte)0xFF : (byte)0x00, time);
         }
 
-        public override void Handle(ReportMessage message)
+        public override async Task Handle(ReportMessage message)
         {
             SwitchBinaryReport report = new SwitchBinaryReport(message.Payload);
             Log.Information(report.ToString());

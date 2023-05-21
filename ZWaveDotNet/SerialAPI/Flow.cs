@@ -1,6 +1,8 @@
 ﻿using System.Threading.Channels;
+using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI.Enums;
 using ZWaveDotNet.SerialAPI.Messages;
+using ZWaveDotNet.SerialAPI.Messages.Enums;
 
 namespace ZWaveDotNet.SerialAPI
 {
@@ -15,20 +17,9 @@ namespace ZWaveDotNet.SerialAPI
             unsolicited = port.CreateReader();
         }
 
-        public Task SendUnacknowledged(Function function, params byte[] payload)
+        public async Task SendUnacknowledged(Function function, params byte[] payload)
         {
             Frame frame = new Frame(FrameType.SOF, DataFrameType.Request, function, payload);
-            return SendUnacknowledged(frame);
-        }
-
-        public Task SendUnacknowledged(Message message)
-        {
-            Frame frame = new Frame(FrameType.SOF, DataFrameType.Request, message.Function, message.GetPayload());
-            return SendUnacknowledged(frame);
-        }
-
-        public async Task SendUnacknowledged(Frame frame)
-        {
             await port.QueueTX(frame);
         }
 
@@ -38,90 +29,82 @@ namespace ZWaveDotNet.SerialAPI
             return SendAcknowledged(frame);
         }
 
-        public Task SendAcknowledged(Message message)
+        public Task SendAcknowledged(Message message, CancellationToken cancellationToken = default)
         {
             Frame frame = new Frame(FrameType.SOF, DataFrameType.Request, message.Function, message.GetPayload());
             return SendAcknowledged(frame);
         }
 
-        public async Task SendAcknowledged(Frame frame)
+        public async Task SendAcknowledged(Frame frame, CancellationToken cancellationToken = default)
         {
             var reader = port.CreateReader();
-            try
-            {
-                await SendAcknowledgedIntl(reader, frame);
+            try {
+                await SendAcknowledgedIntl(reader, frame, cancellationToken);
             }
-            finally
-            {
+            finally {
                 port.DisposeReader(reader);
             }
         }
-        private async Task SendAcknowledgedIntl(Channel<Frame> reader, Frame frame)
-        {
-            CancellationTokenSource cts = new CancellationTokenSource(1600);
-            do
-            {
-                await port.QueueTX(frame);
-            } while (!await SuccessfulAck(reader, cts.Token));
-        }
 
-        public async Task<Message> SendAcknowledgedResponse(Function function, params byte[] payload)
+        public async Task<Message> SendAcknowledgedResponse(Function function, CancellationToken cancellationToken = default, params byte[] payload)
         {
             Frame frame = new Frame(FrameType.SOF, DataFrameType.Request, function, payload);
-            return GetMessage(await SendAcknowledgedResponse(frame));
+            return GetMessage(await SendAcknowledgedResponse(frame, cancellationToken));
         }
 
-        public async Task<Message> SendAcknowledgedResponse(Message message)
+        public async Task<Message> SendAcknowledgedResponse(Message message, CancellationToken cancellationToken = default)
         {
             Frame frame = new Frame(FrameType.SOF, DataFrameType.Request, message.Function, message.GetPayload());
-            Frame response = await SendAcknowledgedResponse(frame);
+            Frame response = await SendAcknowledgedResponse(frame, cancellationToken);
             return GetMessage(response)!;
         }
 
-        public async Task<Frame> SendAcknowledgedResponse(Frame frame)
+        public async Task<Frame> SendAcknowledgedResponse(Frame frame, CancellationToken cancellationToken = default)
         {
-            CancellationTokenSource cts = new CancellationTokenSource(1500);
             var reader = port.CreateReader();
             try
             {
-                await SendAcknowledgedIntl(reader, frame);
-                return await SendAcknowledgedResponseIntl(cts.Token, frame, reader);
+                await SendAcknowledgedIntl(reader, frame, cancellationToken);
+                return await SendAcknowledgedResponseIntl(frame, reader, cancellationToken);
             }
-            finally 
-            {
+            finally  {
                 port.DisposeReader(reader); 
             }
         }
 
-        private async Task<Frame> SendAcknowledgedResponseIntl(CancellationToken token, Frame frame, Channel<Frame> reader)
+        public async Task<DataCallback> SendAcknowledgedResponseCallback(DataMessage message, CancellationToken token = default)
         {
-            while (!token.IsCancellationRequested)
-            {
-                Frame response = await reader.Reader.ReadAsync(token);
-                if (response != null && response.Type == FrameType.SOF && response.DataType == DataFrameType.Response)
-                    return response;
+            Frame frame = new Frame(FrameType.SOF, DataFrameType.Request, message.Function, message.GetPayload());
+            var reader = port.CreateReader();
+            try {
+                return await SendAcknowledgedResponseCallbackIntl(reader, frame, message.SessionID, token);
             }
-            throw new TimeoutException("Response not received");
+            finally {
+                port.DisposeReader(reader);
+            }
         }
 
-        public async Task<Message> SendAcknowledgedResponseCallback(DataMessage message, CancellationToken token = default)
+        public async Task<ReportMessage> SendReceiveSequence(DataMessage message, CommandClass ResponseClass, byte ResponseCommand, CancellationToken cancellationToken = default)
         {
             Frame frame = new Frame(FrameType.SOF, DataFrameType.Request, message.Function, message.GetPayload());
             var reader = port.CreateReader();
             try
             {
-                await SendAcknowledgedIntl(reader, frame);
-                Frame status = await SendAcknowledgedResponseIntl(token, frame, reader);
-                if (!new Response(status.Payload, status.CommandID).Success)
-                    throw new Exception("Failed to transmit command");
-                while (!token.IsCancellationRequested)
+                DataCallback dc = await SendAcknowledgedResponseCallbackIntl(reader, frame, message.SessionID, cancellationToken);
+                if (dc.Status != TransmissionStatus.CompleteOk)
+                    throw new Exception("Transmission Failure " + dc.Status.ToString());
+                while (!cancellationToken.IsCancellationRequested)
                 {
-                    Frame response = await reader.Reader.ReadAsync(token);
-                    if (response != null && response.Type == FrameType.SOF && response.DataType == DataFrameType.Request)
+                    Frame response = await reader.Reader.ReadAsync(cancellationToken);
+                    if (response.DataType == DataFrameType.Request)
                     {
                         Message msg = GetMessage(response)!;
-                        if (msg is DataCallback dc && dc.SessionID == message.SessionID)
-                            return dc;
+                        if (msg is ApplicationCommand ac && ac.SourceNodeID == message.DestinationNodeID)
+                        {
+                            ReportMessage rm = new ReportMessage(ac);
+                            if (rm.CommandClass == ResponseClass && rm.Command == ResponseCommand)
+                                return rm;
+                        }
                     }
                 }
                 throw new TimeoutException("Response not received");
@@ -135,6 +118,46 @@ namespace ZWaveDotNet.SerialAPI
         public async Task<Message> GetUnsolicited()
         {
             return GetMessage(await unsolicited.Reader.ReadAsync());
+        }
+
+        private async Task<DataCallback> SendAcknowledgedResponseCallbackIntl(Channel<Frame> reader, Frame frame, byte sessionId, CancellationToken token = default)
+        {
+            await SendAcknowledgedIntl(reader, frame, token);
+            Frame status = await SendAcknowledgedResponseIntl(frame, reader, token);
+            if (!new Response(status.Payload, status.CommandID).Success)
+                throw new Exception("Failed to transmit command");
+            while (!token.IsCancellationRequested)
+            {
+                Frame response = await reader.Reader.ReadAsync(token);
+                if (response.DataType == DataFrameType.Request)
+                {
+                    Message msg = GetMessage(response)!;
+                    if (msg is DataCallback dc && dc.SessionID == sessionId)
+                        return dc;
+                }
+            }
+            throw new TimeoutException("Callback not received");
+        }
+
+        private async Task SendAcknowledgedIntl(Channel<Frame> reader, Frame frame, CancellationToken cancellationToken)
+        {
+            CancellationTokenSource timeout = new CancellationTokenSource(1600);
+            CancellationToken token = CancellationTokenSource.CreateLinkedTokenSource(timeout.Token, cancellationToken).Token;
+            do
+            {
+                await port.QueueTX(frame);
+            } while (!await SuccessfulAck(reader, token));
+        }
+
+        private async Task<Frame> SendAcknowledgedResponseIntl(Frame frame, Channel<Frame> reader, CancellationToken token)
+        {
+            while (!token.IsCancellationRequested)
+            {
+                Frame response = await reader.Reader.ReadAsync(token);
+                if (response.DataType == DataFrameType.Response)
+                    return response;
+            }
+            throw new TimeoutException("Response not received");
         }
 
         private async Task<bool> SuccessfulAck(Channel<Frame> reader, CancellationToken token)
@@ -158,11 +181,13 @@ namespace ZWaveDotNet.SerialAPI
                         return new ApplicationCommand(frame.Payload, frame.CommandID);
                     case Function.ApplicationUpdate:
                         if (frame.DataType == DataFrameType.Response)
-                            return new Response(frame.Payload, frame.CommandID); //This is new
+                            return new Response(frame.Payload, frame.CommandID);
                         else
                             return ApplicationUpdate.From(frame.Payload);
                     case Function.SerialAPIStarted:
                         return new APIStarted(frame.Payload);
+                    case Function.GetNodeProtocolInfo:
+                        return new NodeProtocolInfo(frame.Payload);
                     case Function.SendData:
                     case Function.SendDataMulticast:
                     case Function.SendDataBridge:
