@@ -17,9 +17,8 @@ namespace ZWaveDotNet.Entities
         public Dictionary<ushort, Node> Nodes = new Dictionary<ushort, Node>();
 
         private Flow flow;
-        private byte[] networkKeyS0;
-        private byte[] authKey;
-        private byte[] encryptKey;
+        internal byte[] tempA;
+        internal byte[] tempE;
 
         public Controller(string port, byte[] s0Key)
         {
@@ -28,12 +27,16 @@ namespace ZWaveDotNet.Entities
             if (s0Key == null || s0Key.Length != 16)
                 throw new ArgumentException(nameof(s0Key));
             flow = new Flow(port);
+            SecurityManager = new SecurityManager();
             using (Aes aes = Aes.Create())
             {
+                aes.Key = Enumerable.Repeat((byte)0x0, 16).ToArray();
+                tempA = aes.EncryptEcb(Enumerable.Repeat((byte)0x55, 16).ToArray(), PaddingMode.None);
+                tempE = aes.EncryptEcb(Enumerable.Repeat((byte)0xAA, 16).ToArray(), PaddingMode.None);
                 aes.Key = s0Key;
-                networkKeyS0 = s0Key;
-                authKey = aes.EncryptEcb(Enumerable.Repeat((byte)0x55, 16).ToArray(), PaddingMode.None);
-                encryptKey = aes.EncryptEcb(Enumerable.Repeat((byte)0xAA, 16).ToArray(), PaddingMode.None);
+                NetworkKeyS0 = s0Key;
+                AuthenticationKey = aes.EncryptEcb(Enumerable.Repeat((byte)0x55, 16).ToArray(), PaddingMode.None);
+                EncryptionKey = aes.EncryptEcb(Enumerable.Repeat((byte)0xAA, 16).ToArray(), PaddingMode.None);
             }
             Task.Factory.StartNew(EventLoop);
         }
@@ -41,9 +44,10 @@ namespace ZWaveDotNet.Entities
         public ushort ControllerID { get; private set; }
         public uint HomeID { get; private set; }
         internal Flow Flow { get { return flow; } }
-        internal byte[] AuthenticationKey { get { return authKey; } }
-        internal byte[] EncryptionKey { get { return encryptKey; } }
-        internal byte[] NetworkKeyS0 { get { return networkKeyS0; } }
+        internal byte[] AuthenticationKey { get; private set; }
+        internal byte[] EncryptionKey { get; private set; }
+        internal byte[] NetworkKeyS0 { get; private set; }
+        internal SecurityManager SecurityManager { get; private set; }
 
         public async Task Reset()
         {
@@ -112,7 +116,7 @@ namespace ZWaveDotNet.Entities
 
         public async Task StartSmartStartInclusion(bool fullPower = true, bool networkWide = true)
         {
-            AddRemoveNodeMode mode = AddRemoveNodeMode.StartSmartStart;
+            AddRemoveNodeMode mode = AddRemoveNodeMode.SmartStartListen;
             if (fullPower)
                 mode |= AddRemoveNodeMode.UseNormalPower;
             if (networkWide)
@@ -189,6 +193,7 @@ namespace ZWaveDotNet.Entities
                 }
                 else if (msg is InclusionStatus inc)
                 {
+                    Log.Information(inc.ToString());
                     if (inc.Function == Function.AddNodeToNetwork)
                     {
                         if (inc.CommandClasses.Length > 0) //We found a node
@@ -196,14 +201,21 @@ namespace ZWaveDotNet.Entities
                             Node node = new Node(inc.NodeID, this, inc.CommandClasses);
                             Nodes.TryAdd(inc.NodeID, node);
                         }
-                        if (inc.Status == InclusionExclusionStatus.InclusionProtocolComplete || inc.Status == InclusionExclusionStatus.OperationComplete)
+                        if (inc.Status == InclusionExclusionStatus.InclusionProtocolComplete)
+                            await StopInclusion();
+                        else if (inc.Status == InclusionExclusionStatus.OperationComplete)
                         {
                             if (inc.NodeID > 0 && Nodes.TryGetValue(inc.NodeID, out Node? node))
                             {
                                 //TODO - Event this
                                 Log.Information("Added " + node.ToString());
+                                await Task.Delay(1000); //We have 10 seconds to request scheme - wait 1 for inclusion to complete
                                 if (node.CommandClasses.ContainsKey(CommandClass.Security))
+                                {
+                                    Log.Information("Starting Secure(0-Legacy) Inclusion");
                                     await ((Security)node.CommandClasses[CommandClass.Security]).SchemeGet();
+                                    await ((Security)node.CommandClasses[CommandClass.Security]).KeySet();
+                                }
                             }
                         }
                     }
@@ -212,8 +224,9 @@ namespace ZWaveDotNet.Entities
                         //TODO - Event This
                         if (Nodes.Remove(inc.NodeID))
                             Log.Information($"Successfully exluded node {inc.NodeID}");
+                        if (inc.Status == InclusionExclusionStatus.OperationComplete)
+                            await StopExclusion();
                     }
-                    Log.Information(inc.ToString());
                 }
                 //Log.Information(msg.ToString());
             }

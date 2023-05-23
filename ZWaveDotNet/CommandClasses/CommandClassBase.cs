@@ -8,46 +8,51 @@ namespace ZWaveDotNet.CommandClasses
 {
     public abstract class CommandClassBase
     {
-        protected ushort nodeId;
+        public bool secure;
+        protected Node node;
         protected Controller controller;
         protected CommandClass commandClass;
         protected byte endpoint;
 
-        protected CommandClassBase(ushort nodeId, byte endpoint, Controller controller, CommandClass commandClass)
+        protected CommandClassBase(Node node, byte endpoint, CommandClass commandClass)
         {
-            this.nodeId = nodeId;
-            this.controller = controller;
+            this.node = node;
+            this.controller = node.Controller;
             this.commandClass = commandClass;
             this.endpoint = endpoint;
         }
 
         public abstract Task Handle(ReportMessage message);
 
-        public static CommandClassBase Create(CommandClass cc, Controller controller, ushort nodeId, byte endpoint)
+        public static CommandClassBase Create(CommandClass cc, Controller controller, Node node, byte endpoint)
         {
             switch (cc)
             {
+                case CommandClass.Security:
+                    return new Security(node, endpoint);
+                case CommandClass.Supervision:
+                    return new Supervision(node);
                 case CommandClass.CRC16:
-                    return new CRC16(nodeId, endpoint, controller);
+                    return new CRC16(node, endpoint);
                 case CommandClass.MultiChannel:
-                    return new MultiChannel(nodeId, endpoint, controller);
+                    return new MultiChannel(node, endpoint);
                 case CommandClass.MultiCommand:
-                    return new MultiCommand(nodeId, endpoint, controller);
+                    return new MultiCommand(node, endpoint);
                 case CommandClass.SwitchBinary:
-                    return new SwitchBinary(nodeId, endpoint, controller);
+                    return new SwitchBinary(node, endpoint);
                 case CommandClass.TransportService:
-                    return new TransportService(nodeId, endpoint, controller);
+                    return new TransportService(node, endpoint);
                 case CommandClass.NodeNaming:
-                    return new NodeNaming(nodeId, endpoint, controller);
+                    return new NodeNaming(node, endpoint);
             }
-            return new UnknownCommandClass(nodeId, endpoint, controller, cc);
+            return new UnknownCommandClass(node, endpoint, cc);
         }
 
         protected async Task SendCommand(Enum command, CancellationToken token, params byte[] payload)
         {
-            CommandMessage data = new CommandMessage(nodeId, (byte)(endpoint & 0x7F), commandClass, Convert.ToByte(command), payload);//Endpoint 0x80 is multicast
+            CommandMessage data = new CommandMessage(node.ID, (byte)(endpoint & 0x7F), commandClass, Convert.ToByte(command), payload);//Endpoint 0x80 is multicast
             DataCallback dc = await controller.Flow.SendAcknowledgedResponseCallback(data.ToMessage());
-            if (dc.Status != TransmissionStatus.CompleteOk)
+            if (dc.Status != TransmissionStatus.CompleteOk && dc.Status != TransmissionStatus.CompleteNoAck && dc.Status != TransmissionStatus.CompleteVerified)
                 throw new Exception("Transmission Failure " + dc.Status.ToString());
         }
     }

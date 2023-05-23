@@ -10,9 +10,13 @@ namespace ZWaveDotNet.Entities
 {
     public class Node
     {
+        public const ushort BROADCAST_ID = 0xFFFF;
+
         public readonly ushort ID;
         protected readonly Controller controller;
         protected Dictionary<CommandClass, CommandClassBase> commandClasses = new Dictionary<CommandClass, CommandClassBase>();
+
+        public Controller Controller { get { return controller; } }
 
         public Node(ushort id, Controller controller, CommandClass[]? commandClasses = null)
         {
@@ -23,7 +27,7 @@ namespace ZWaveDotNet.Entities
                 foreach (CommandClass cc in commandClasses)
                 {
                     if (!this.commandClasses.ContainsKey(cc))
-                        this.commandClasses.Add(cc, CommandClassBase.Create(cc, controller, ID, 0));
+                        this.commandClasses.Add(cc, CommandClassBase.Create(cc, controller, this, 0));
                 }
             }
         }
@@ -46,7 +50,7 @@ namespace ZWaveDotNet.Entities
                 foreach (CommandClass cc in NIF.CommandClasses)
                 {
                     if (!commandClasses.ContainsKey(cc))
-                        commandClasses.Add(cc, CommandClassBase.Create(cc, controller, ID, 0));
+                        commandClasses.Add(cc, CommandClassBase.Create(cc, controller, this, 0));
                 }
             }
         }
@@ -66,6 +70,11 @@ namespace ZWaveDotNet.Entities
                     msg = TransportService.Process(msg);
                     if (msg == null)
                         return; //Not Complete Yet
+                }
+                if (Security.IsEncapsulated(msg))
+                {
+                    Log.Information("Encapsulated Message Received");
+                    msg = Security.Free(msg, controller);
                 }
                 //TODO Security
             }
@@ -89,6 +98,8 @@ namespace ZWaveDotNet.Entities
             {
                 if (commandClasses.ContainsKey(msg.CommandClass))
                     commandClasses[msg.CommandClass].Handle(msg);
+                else
+                    Log.Information("Unhandled Report Message: " + msg.ToString());
             }
             //TODO - Route to EndPoints
         }

@@ -16,7 +16,7 @@ namespace ZWaveDotNet.CommandClasses
             Encap = 0x01
         }
 
-        public CRC16(ushort nodeId, byte endpoint, Controller controller) : base(nodeId, endpoint, controller, CommandClass.CRC16) {  }
+        public CRC16(Node node, byte endpoint) : base(node, endpoint, CommandClass.CRC16) {  }
 
         public static bool IsEncapsulated(ReportMessage msg)
         {

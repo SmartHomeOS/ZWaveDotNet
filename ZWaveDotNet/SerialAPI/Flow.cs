@@ -91,7 +91,7 @@ namespace ZWaveDotNet.SerialAPI
             try
             {
                 DataCallback dc = await SendAcknowledgedResponseCallbackIntl(reader, frame, message.SessionID, cancellationToken);
-                if (dc.Status != TransmissionStatus.CompleteOk)
+                if (dc.Status != TransmissionStatus.CompleteOk && dc.Status != TransmissionStatus.CompleteNoAck && dc.Status != TransmissionStatus.CompleteVerified)
                     throw new Exception("Transmission Failure " + dc.Status.ToString());
                 while (!cancellationToken.IsCancellationRequested)
                 {

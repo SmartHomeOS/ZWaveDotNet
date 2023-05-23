@@ -19,7 +19,7 @@ namespace ZWaveDotNet.CommandClasses
 
         private static byte sessionId;
 
-        public Supervision(ushort nodeId, Controller controller) : base(nodeId, 0, controller, CommandClass.Supervision) {  }
+        public Supervision(Node node) : base(node, 0, CommandClass.Supervision) {  }
 
         public static bool IsEncapsulated(ReportMessage msg)
         {

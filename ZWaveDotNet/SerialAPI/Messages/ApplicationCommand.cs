@@ -6,6 +6,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
     public class ApplicationCommand : Message
     {
         public const sbyte INVALID_RSSI = 0x7D;
+        public const ushort LOCAL_NODE = 0xFF;
 
         public readonly ReceiveStatus Status;
         public readonly ushort SourceNodeID;
@@ -20,10 +21,10 @@ namespace ZWaveDotNet.SerialAPI.Messages
             if (payload.Length < 4)
                 throw new InvalidDataException("Truncated ApplicationCommand received");
             Status = (ReceiveStatus)payload.Span[0];
-            DestinationNodeID = payload.Span[1]; //TODO - Handle 16 bit node ID
             if (function == Function.ApplicationCommand)
             {
-                SourceNodeID = 0;
+                SourceNodeID = payload.Span[1]; //TODO - Handle 16 bit node ID
+                DestinationNodeID = LOCAL_NODE;
                 MulticastMask = new byte[0];
                 len = payload.Span[2];
                 if (payload.Length < (4 + len))
@@ -33,6 +34,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
             }
             else
             {
+                DestinationNodeID = payload.Span[1]; //TODO - Handle 16 bit node ID
                 SourceNodeID = payload.Span[2]; //TODO - Handle 16 bit node ID
                 len = payload.Span[3];
                 if (payload.Length < (5 + len))

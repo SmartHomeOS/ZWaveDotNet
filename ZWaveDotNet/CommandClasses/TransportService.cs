@@ -17,7 +17,7 @@ namespace ZWaveDotNet.CommandClasses
             SubsequentFragment = 0xE0
         }
 
-        public TransportService(ushort nodeId, byte endpoint, Controller controller) : base(nodeId, endpoint, controller, CommandClass.TransportService) {  }
+        public TransportService(Node node, byte endpoint) : base(node, endpoint, CommandClass.TransportService) {  }
 
         public static bool IsEncapsulated(ReportMessage msg)
         {

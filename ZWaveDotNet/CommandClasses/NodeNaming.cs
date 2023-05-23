@@ -19,7 +19,7 @@ namespace ZWaveDotNet.CommandClasses
             ReportLocation = 0x06,
         }
 
-        public NodeNaming(ushort nodeId, byte endpoint, Controller controller) : base(nodeId, endpoint, controller, CommandClass.NodeNaming) { }
+        public NodeNaming(Node node, byte endpoint) : base(node, endpoint, CommandClass.NodeNaming) { }
 
         public async Task GetName(CancellationToken cancellationToken = default)
         {

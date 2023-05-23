@@ -7,7 +7,7 @@ namespace ZWaveDotNet.CommandClasses
 {
     public class UnknownCommandClass : CommandClassBase
     {
-        public UnknownCommandClass(ushort nodeId, byte endpoint, Controller controller, CommandClass commandClass) : base(nodeId, endpoint, controller, commandClass)
+        public UnknownCommandClass(Node node, byte endpoint, CommandClass commandClass) : base(node, endpoint, commandClass)
         {
         }
 

@@ -13,7 +13,7 @@ namespace ZWaveDotNet.CommandClasses
         {
             Encap = 0x01
         }
-        public MultiCommand(ushort nodeId, byte endpoint, Controller controller) : base(nodeId, endpoint, controller, CommandClass.MultiCommand) {  }
+        public MultiCommand(Node node, byte endpoint) : base(node, endpoint, CommandClass.MultiCommand) {  }
 
         public static bool IsEncapsulated(ReportMessage msg)
         {

@@ -18,7 +18,7 @@ namespace ZWaveDotNet.CommandClasses
             AggregatedMembersGet = 0x0E,
             AggregatedMembersReport = 0x0F
         }
-        public MultiChannel(ushort nodeId, byte endpoint, Controller controller) : base(nodeId, endpoint, controller, CommandClass.MultiChannel) {  }
+        public MultiChannel(Node node, byte endpoint) : base(node, endpoint, CommandClass.MultiChannel) {  }
 
         public static bool IsEncapsulated(ReportMessage msg)
         {

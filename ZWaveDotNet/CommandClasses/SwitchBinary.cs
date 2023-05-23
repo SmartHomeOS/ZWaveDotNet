@@ -16,7 +16,7 @@ namespace ZWaveDotNet.CommandClasses
             Report = 0x03
         }
 
-        public SwitchBinary(ushort nodeId, byte endpoint, Controller controller) : base(nodeId, endpoint, controller, CommandClass.SwitchBinary) { }
+        public SwitchBinary(Node node, byte endpoint) : base(node, endpoint, CommandClass.SwitchBinary) { }
 
         public async Task Get(CancellationToken cancellationToken = default)
         {
