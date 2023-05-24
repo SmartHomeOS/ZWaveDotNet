@@ -15,6 +15,7 @@ namespace ZWaveDotNet.Entities
         public readonly ushort ID;
         protected readonly Controller controller;
         protected Dictionary<CommandClass, CommandClassBase> commandClasses = new Dictionary<CommandClass, CommandClassBase>();
+        protected List<EndPoint> endPoints = new List<EndPoint>();
 
         public Controller Controller { get { return controller; } }
 
@@ -42,6 +43,18 @@ namespace ZWaveDotNet.Entities
             await controller.Flow.SendAcknowledged(Function.AssignReturnRoute, (byte)ID, (byte)associatedNodeId );
         }
 
+        public byte EndPointCount()
+        {
+            return (byte)endPoints.Count;
+        }
+
+        public EndPoint? GetEndPoint(byte ID)
+        {
+            if (ID >= endPoints.Count)
+                return null;
+            return endPoints[ID];
+        }
+
         internal void HandleApplicationUpdate(ApplicationUpdate update)
         {
             Log.Information($"Node {ID} Updated: {update}");
@@ -62,7 +75,7 @@ namespace ZWaveDotNet.Entities
 
             //Encapsulation Order (inner to outer) - MultiCommand, Supervision, Multichannel, security, transport, crc16
             if (CRC16.IsEncapsulated(msg))
-                msg = CRC16.Free(msg);
+                CRC16.Unwrap(msg);
             else
             {
                 if (TransportService.IsEncapsulated(msg))
@@ -86,12 +99,12 @@ namespace ZWaveDotNet.Entities
                 }
             }
             if (MultiChannel.IsEncapsulated(msg))
-                msg = MultiChannel.Free(msg);
+                MultiChannel.Unwrap(msg);
             if (Supervision.IsEncapsulated(msg))
-                msg = Supervision.Free(msg);
+                Supervision.Unwrap(msg);
             if (MultiCommand.IsEncapsulated(msg))
             {
-                ReportMessage[] msgs = MultiCommand.Free(msg);
+                ReportMessage[] msgs = MultiCommand.Unwrap(msg);
                 foreach (ReportMessage r in msgs)
                     HandleReport(r);
             }
@@ -108,7 +121,17 @@ namespace ZWaveDotNet.Entities
                 else
                     Log.Information("Unhandled Report Message: " + msg.ToString());
             }
-            //TODO - Route to EndPoints
+            else
+            {
+                EndPoint? ep = GetEndPoint(msg.SourceEndpoint);
+                if (ep != null)
+                {
+                    if (ep.CommandClasses.ContainsKey(msg.CommandClass))
+                        ep.CommandClasses[msg.CommandClass].Handle(msg);
+                    else
+                        Log.Information("Unhandled Report Message: " + msg.ToString());
+                }
+            }
         }
 
         public ReadOnlyDictionary<CommandClass, CommandClassBase> CommandClasses

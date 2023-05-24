@@ -4,9 +4,11 @@
     public enum ReportFlags
     {
         None = 0x0,
-        SupervisedOnce = 0x01,
-        SupervisedWithProgress = 0x02,
-        EnhancedChecksum = 0x04,
-        LegacySecurity = 0x08,
+        Multicast = 0x01,
+        Broadcast = 0x02,
+        SupervisedOnce = 0x04,
+        SupervisedWithProgress = 0x08,
+        EnhancedChecksum = 0x10,
+        LegacySecurity = 0x20,
     }
 }

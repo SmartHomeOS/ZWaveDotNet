@@ -6,9 +6,7 @@ using ZWaveDotNet.SerialAPI;
 
 namespace ZWaveDotNet.CommandClasses
 {
-    /// <summary>
-    /// Version 1 Implemented
-    /// </summary>
+    [CCVersion(CommandClass.Supervision, 1)]
     public class Supervision : CommandClassBase
     {
         public enum SupervisionCommand
@@ -42,17 +40,16 @@ namespace ZWaveDotNet.CommandClasses
             payload.InsertRange(0, header);
         }
 
-        internal static ReportMessage Free(ReportMessage msg)
+        internal static void Unwrap(ReportMessage msg)
         {
             if (msg.Payload.Span[0] != (byte)CommandClass.MultiCommand || msg.Payload.Length < 4)
                 throw new ArgumentException("Report is not a Supervision");
             if (msg.Payload.Span[1] != (byte)SupervisionCommand.Get)
                 throw new ArgumentException("Report is not Encapsulated");
-            ReportMessage free = new ReportMessage(msg.SourceNodeID, msg.Payload.Slice(4));
-            byte header = msg.Payload.Span[2];
-            free.SessionID = (byte)(header & 0x3F);
-            free.Flags |= ((header & 0x80) == 0x80) ? ReportFlags.SupervisedWithProgress : ReportFlags.SupervisedOnce;
-            return free;
+           
+            msg.SessionID = (byte)(msg.Payload.Span[2] & 0x3F);
+            msg.Flags |= ((msg.Payload.Span[2] & 0x80) == 0x80) ? ReportFlags.SupervisedWithProgress : ReportFlags.SupervisedOnce;
+            msg.Update(msg.Payload.Slice(4));
         }
 
         public override async Task Handle(ReportMessage message)

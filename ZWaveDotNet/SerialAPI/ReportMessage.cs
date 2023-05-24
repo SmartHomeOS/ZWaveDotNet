@@ -1,5 +1,6 @@
 ﻿using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI.Messages;
+using ZWaveDotNet.SerialAPI.Messages.Enums;
 using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.SerialAPI
@@ -7,19 +8,41 @@ namespace ZWaveDotNet.SerialAPI
     public class ReportMessage
     {
         public readonly ushort SourceNodeID;
-        public readonly CommandClass CommandClass;
-        public readonly byte Command;
-        public readonly Memory<byte> Payload;
-        
+        public readonly sbyte RSSI;
+
+        public CommandClass CommandClass;
+        public byte Command;
+        public Memory<byte> Payload;
         public byte SourceEndpoint;
         public ReportFlags Flags = ReportFlags.None;
         public byte SessionID;
 
-        public ReportMessage(ApplicationCommand cmd) : this(cmd.SourceNodeID, cmd.Data) { }
+        public ReportMessage(ApplicationCommand cmd) : this(cmd.SourceNodeID, cmd.Data, cmd.RSSI)
+        {
+            if ((cmd.Status & ReceiveStatus.Multicast) == ReceiveStatus.Multicast)
+                Flags |= ReportFlags.Multicast;
+            if ((cmd.Status & ReceiveStatus.Broadcast) == ReceiveStatus.Broadcast)
+                Flags |= ReportFlags.Broadcast;
+        }
 
-        public ReportMessage(ushort sourceNodeId, Memory<byte> data)
+        public ReportMessage(ushort sourceNodeId, Memory<byte> data, sbyte rssi)
         {
             SourceNodeID = sourceNodeId;
+            Update(data);
+        }
+
+        public ReportMessage(ushort sourceNodeId, byte sourceEndpoint, CommandClass commandClass, byte command, Memory<byte> payload, sbyte rssi)
+        {
+            SourceNodeID = sourceNodeId;
+            SourceEndpoint = sourceEndpoint;
+            CommandClass = commandClass;
+            Command = command;
+            Payload = payload;
+            RSSI = rssi;
+        }
+
+        public void Update(Memory<byte> data)
+        {
             if ((data.Span[0] & 0xF0) != 0xF0)
             {
                 CommandClass = (CommandClass)data.Span[0];
@@ -34,18 +57,9 @@ namespace ZWaveDotNet.SerialAPI
             }
         }
 
-        public ReportMessage(ushort sourceNodeId, byte sourceEndpoint, CommandClass commandClass, byte command, Memory<byte> payload)
-        {
-            SourceNodeID = sourceNodeId;
-            SourceEndpoint = sourceEndpoint;
-            CommandClass = commandClass;
-            Command = command;
-            Payload = payload;
-        }
-
         public override string ToString()
         {
-            return $"Node: {SourceNodeID}[{SourceEndpoint}] {CommandClass}-{Command}";
+            return $"Node: {SourceNodeID}[{SourceEndpoint}] {CommandClass}-{Command} ({RSSI} dBm)";
         }
     }
 }

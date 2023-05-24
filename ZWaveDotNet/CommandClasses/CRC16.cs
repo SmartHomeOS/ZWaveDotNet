@@ -4,9 +4,7 @@ using ZWaveDotNet.SerialAPI;
 
 namespace ZWaveDotNet.CommandClasses
 {
-    /// <summary>
-    /// Version 1 Implemented
-    /// </summary>
+    [CCVersion(CommandClass.CRC16, 1)]
     public class CRC16 : CommandClassBase
     {
         private static CRC16_CCITT? crc;
@@ -36,7 +34,7 @@ namespace ZWaveDotNet.CommandClasses
             payload.AddRange(crc.ComputeChecksum(payload));
         }
 
-        internal static ReportMessage Free(ReportMessage msg)
+        internal static void Unwrap(ReportMessage msg)
         {
             if (msg.Payload.Span[0] != (byte)CommandClass.CRC16 || msg.Payload.Length < 4)
                 throw new ArgumentException("Report is not a CRC16");
@@ -48,9 +46,9 @@ namespace ZWaveDotNet.CommandClasses
             var chk = crc.ComputeChecksum(payload);
             if (msg.Payload.Span[msg.Payload.Length - 2] != chk[0] || msg.Payload.Span[msg.Payload.Length - 1] != chk[1])
                 throw new InvalidDataException("Invalid Checksum");
-            ReportMessage free = new ReportMessage(msg.SourceNodeID, payload);
-            free.Flags |= ReportFlags.EnhancedChecksum;
-            return free;
+
+            msg.Update(payload);
+            msg.Flags |= ReportFlags.EnhancedChecksum;
         }
 
         public override Task Handle(ReportMessage message)

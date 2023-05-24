@@ -4,6 +4,7 @@ using ZWaveDotNet.SerialAPI;
 
 namespace ZWaveDotNet.CommandClasses
 {
+    [CCVersion(CommandClass.MultiChannel, 1, 3, false)]
     public class MultiChannel : CommandClassBase
     {
         public enum MultiChannelCommand
@@ -37,15 +38,13 @@ namespace ZWaveDotNet.CommandClasses
             payload.InsertRange(0, header);
         }
 
-        internal static ReportMessage Free(ReportMessage msg)
+        internal static void Unwrap(ReportMessage msg)
         {
-            if (msg.Payload.Span[0] != (byte)CommandClass.MultiChannel || msg.Payload.Length < 4)
+            if (msg.Payload.Length < 4)
                 throw new ArgumentException("Report is not a MultiChannel");
-            if (msg.Payload.Span[1] != (byte)MultiChannelCommand.Encap)
-                throw new ArgumentException("Report is not Encapsulated");
-            ReportMessage free = new ReportMessage(msg.SourceNodeID, msg.Payload.Slice(4));
-            free.SourceEndpoint = msg.Payload.Span[2];
-            return free;
+
+            msg.SourceEndpoint = msg.Payload.Span[2];
+            msg.Update(msg.Payload.Slice(4));
         }
 
         public override Task Handle(ReportMessage message)

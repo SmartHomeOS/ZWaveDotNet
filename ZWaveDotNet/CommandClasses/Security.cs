@@ -7,6 +7,7 @@ using ZWaveDotNet.SerialAPI;
 
 namespace ZWaveDotNet.CommandClasses
 {
+    [CCVersion(CommandClass.Security, 1)]
     public class Security : CommandClassBase
     {
         private static readonly byte[] EMPTY_IV = new byte[]{ 0x0, 0x0, 0x0, 0x0 , 0x0, 0x0 , 0x0, 0x0 , 0x0, 0x0 , 0x0, 0x0 , 0x0, 0x0 , 0x0, 0x0 };
@@ -98,11 +99,9 @@ namespace ZWaveDotNet.CommandClasses
             bool sequenced = ((decryptedPayload.Span[0] & 0x10) == 0x10);
             if (sequenced)
                 throw new PlatformNotSupportedException("Sequenced Security0 Not Supported"); //TODO
-            ReportMessage free = new ReportMessage(msg.SourceNodeID, decryptedPayload.Slice(1));
-            free.SourceEndpoint = msg.SourceEndpoint;
-            free.SessionID = msg.SessionID;
-            free.Flags = msg.Flags | ReportFlags.LegacySecurity;
-            return free;
+            msg.Update(decryptedPayload.Slice(1));
+            msg.Flags |= ReportFlags.LegacySecurity;
+            return msg;
         }
 
         public override async Task Handle(ReportMessage message)
