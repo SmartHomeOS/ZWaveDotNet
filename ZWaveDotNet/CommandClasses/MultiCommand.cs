@@ -9,7 +9,7 @@ namespace ZWaveDotNet.CommandClasses
     /// </summary>
     public class MultiCommand : CommandClassBase
     {
-        public enum Command
+        public enum MultiCommandCommand
         {
             Encap = 0x01
         }
@@ -17,26 +17,27 @@ namespace ZWaveDotNet.CommandClasses
 
         public static bool IsEncapsulated(ReportMessage msg)
         {
-            return msg.CommandClass == CommandClass.MultiCommand && msg.Command == (byte)Command.Encap;
+            return msg.CommandClass == CommandClass.MultiCommand && msg.Command == (byte)MultiCommandCommand.Encap;
         }
 
-        public static void Encapsulate (List<byte> payload, byte destinationEndpoint)
+        public static void Encapsulate (List<byte> payload, List<CommandMessage> commands)
         {
-            byte[] header = new byte[]
+            payload.Clear();
+            payload.Add((byte)CommandClass.MultiCommand);
+            payload.Add((byte)MultiCommandCommand.Encap);
+            payload.Add((byte)commands.Count);
+            foreach (CommandMessage msg in commands)
             {
-                (byte)CommandClass.MultiCommand,
-                (byte)Command.Encap,
-                0x0,
-                destinationEndpoint
-            };
-            payload.InsertRange(0, header);
+                payload.Add((byte)msg.Payload.Count);
+                payload.AddRange(msg.Payload);
+            }
         }
 
         internal static ReportMessage[] Free(ReportMessage msg)
         {
             if (msg.Payload.Span[0] != (byte)CommandClass.MultiCommand || msg.Payload.Length < 4)
                 throw new ArgumentException("Report is not a MultiCommand");
-            if (msg.Payload.Span[1] != (byte)Command.Encap)
+            if (msg.Payload.Span[1] != (byte)MultiCommandCommand.Encap)
                 throw new ArgumentException("Report is not Encapsulated");
             ReportMessage[] list = new ReportMessage[msg.Payload.Span[2]];
             Memory<byte> payload = msg.Payload.Slice(3);

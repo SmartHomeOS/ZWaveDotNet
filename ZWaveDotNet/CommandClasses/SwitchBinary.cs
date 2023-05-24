@@ -9,7 +9,7 @@ namespace ZWaveDotNet.CommandClasses
 {
     public class SwitchBinary : CommandClassBase
     {
-        public enum Command
+        public enum SwitchBinaryCommand
         {
             Set = 0x01,
             Get = 0x02,
@@ -20,12 +20,12 @@ namespace ZWaveDotNet.CommandClasses
 
         public async Task Get(CancellationToken cancellationToken = default)
         {
-            await SendCommand(Command.Get, cancellationToken);
+            await SendCommand(SwitchBinaryCommand.Get, cancellationToken);
         }
 
         public async Task Set(bool value, CancellationToken cancellationToken = default)
         {
-            await SendCommand(Command.Set, cancellationToken, value ? (byte)0xFF : (byte)0x00);
+            await SendCommand(SwitchBinaryCommand.Set, cancellationToken, value ? (byte)0xFF : (byte)0x00);
         }
 
         public async Task Set(bool value, TimeSpan duration, CancellationToken cancellationToken = default)
@@ -33,7 +33,7 @@ namespace ZWaveDotNet.CommandClasses
             byte time = 0;
             if (duration.TotalSeconds >= 1)
                 time = PayloadConverter.GetByte(duration);
-            await SendCommand(Command.Set, cancellationToken, value ? (byte)0xFF : (byte)0x00, time);
+            await SendCommand(SwitchBinaryCommand.Set, cancellationToken, value ? (byte)0xFF : (byte)0x00, time);
         }
 
         public override async Task Handle(ReportMessage message)

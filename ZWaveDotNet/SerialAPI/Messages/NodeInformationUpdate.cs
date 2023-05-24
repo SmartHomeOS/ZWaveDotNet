@@ -15,7 +15,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
         {
             if (payload.Length < 6)
                 throw new InvalidDataException("NodeInformation should be at least 6 bytes");
-            byte len = payload.Span[2];
+            //byte len = payload.Span[2];
             BasicType = (BasicType)payload.Span[3];
             GenericType = (GenericType)payload.Span[4];
             SpecificType = SpecificTypeMapping.Get(GenericType, payload.Span[5]);

@@ -11,7 +11,7 @@ namespace ZWaveDotNet.CommandClasses
     {
         private static CRC16_CCITT? crc;
 
-        public enum Command
+        public enum CRC16Command
         {
             Encap = 0x01
         }
@@ -20,7 +20,7 @@ namespace ZWaveDotNet.CommandClasses
 
         public static bool IsEncapsulated(ReportMessage msg)
         {
-            return msg.CommandClass == CommandClass.CRC16 && msg.Command == (byte)Command.Encap;
+            return msg.CommandClass == CommandClass.CRC16 && msg.Command == (byte)CRC16Command.Encap;
         }
 
         public static void Encapsulate (List<byte> payload)
@@ -28,7 +28,7 @@ namespace ZWaveDotNet.CommandClasses
             byte[] header = new byte[]
             {
                 (byte)CommandClass.CRC16,
-                (byte)Command.Encap,
+                (byte)CRC16Command.Encap,
             };
             payload.InsertRange(0, header);
             if (crc == null)
@@ -40,7 +40,7 @@ namespace ZWaveDotNet.CommandClasses
         {
             if (msg.Payload.Span[0] != (byte)CommandClass.CRC16 || msg.Payload.Length < 4)
                 throw new ArgumentException("Report is not a CRC16");
-            if (msg.Payload.Span[1] != (byte)Command.Encap)
+            if (msg.Payload.Span[1] != (byte)CRC16Command.Encap)
                 throw new ArgumentException("Report is not Encapsulated");
             Memory<byte> payload = msg.Payload.Slice(2, msg.Payload.Length - 4);
             if (crc == null)

@@ -2,7 +2,6 @@
 using ZWaveDotNet.CommandClasses;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
-using ZWaveDotNet.Util;
 
 Log.Logger = new LoggerConfiguration().WriteTo.Console().CreateLogger();
 //Randomly Generated Test Key

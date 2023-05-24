@@ -32,12 +32,12 @@ namespace ZWaveDotNet.Entities
             }
         }
 
-        private async Task DeleteReturnRoute(CancellationToken cancellationToken)
+        public async Task DeleteReturnRoute(CancellationToken cancellationToken)
         {
             await controller.Flow.SendAcknowledged(Function.DeleteReturnRoute, (byte)ID );
         }
 
-        private async Task AssignReturnRoute(ushort associatedNodeId, CancellationToken cancellationToken)
+        public async Task AssignReturnRoute(ushort associatedNodeId, CancellationToken cancellationToken)
         {
             await controller.Flow.SendAcknowledged(Function.AssignReturnRoute, (byte)ID, (byte)associatedNodeId );
         }
@@ -75,8 +75,15 @@ namespace ZWaveDotNet.Entities
                 {
                     Log.Information("Encapsulated Message Received");
                     msg = Security.Free(msg, controller);
+                    if (msg == null)
+                        return;
                 }
-                //TODO Security
+                if (Security2.IsEncapsulated(msg))
+                {
+                    msg = Security2.Free(msg, controller);
+                    if (msg == null)
+                        return;
+                }
             }
             if (MultiChannel.IsEncapsulated(msg))
                 msg = MultiChannel.Free(msg);

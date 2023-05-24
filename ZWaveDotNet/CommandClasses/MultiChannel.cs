@@ -6,7 +6,7 @@ namespace ZWaveDotNet.CommandClasses
 {
     public class MultiChannel : CommandClassBase
     {
-        public enum Command
+        public enum MultiChannelCommand
         {
             EndPointGet = 0x07,
             EndPointReport = 0x08,
@@ -22,7 +22,7 @@ namespace ZWaveDotNet.CommandClasses
 
         public static bool IsEncapsulated(ReportMessage msg)
         {
-            return msg.CommandClass == CommandClass.MultiChannel && msg.Command == (byte)Command.Encap;
+            return msg.CommandClass == CommandClass.MultiChannel && msg.Command == (byte)MultiChannelCommand.Encap;
         }
 
         public static void Encapsulate (List<byte> payload, byte destinationEndpoint)
@@ -30,7 +30,7 @@ namespace ZWaveDotNet.CommandClasses
             byte[] header = new byte[]
             {
                 (byte)CommandClass.MultiChannel,
-                (byte)Command.Encap,
+                (byte)MultiChannelCommand.Encap,
                 0x0,
                 destinationEndpoint
             };
@@ -41,7 +41,7 @@ namespace ZWaveDotNet.CommandClasses
         {
             if (msg.Payload.Span[0] != (byte)CommandClass.MultiChannel || msg.Payload.Length < 4)
                 throw new ArgumentException("Report is not a MultiChannel");
-            if (msg.Payload.Span[1] != (byte)Command.Encap)
+            if (msg.Payload.Span[1] != (byte)MultiChannelCommand.Encap)
                 throw new ArgumentException("Report is not Encapsulated");
             ReportMessage free = new ReportMessage(msg.SourceNodeID, msg.Payload.Slice(4));
             free.SourceEndpoint = msg.Payload.Span[2];

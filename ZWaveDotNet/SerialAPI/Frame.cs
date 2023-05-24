@@ -34,15 +34,19 @@ namespace ZWaveDotNet.SerialAPI
         public static async Task<Frame?> Read(Stream stream)
         {
             Memory<byte> buff = new byte[512];
-            if (await stream.ReadAsync(buff.Slice(0, 1)) == 0)
-                throw new EndOfStreamException();
-            FrameType frame = (FrameType)buff.Span[0];
-            if (frame == FrameType.ACK)
-                return ACK;
-            else if (frame == FrameType.NAK)
-                return NAK;
-            else if (frame == FrameType.CAN)
-                return CAN;
+            FrameType frame;
+            do
+            {
+                if (await stream.ReadAsync(buff.Slice(0, 1)) == 0)
+                    throw new EndOfStreamException();
+                frame = (FrameType)buff.Span[0];
+                if (frame == FrameType.ACK)
+                    return ACK;
+                else if (frame == FrameType.NAK)
+                    return NAK;
+                else if (frame == FrameType.CAN)
+                    return CAN;
+            } while (frame != FrameType.SOF);
 
             if (frame == FrameType.SOF)
             {

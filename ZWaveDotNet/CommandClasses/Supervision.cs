@@ -11,7 +11,7 @@ namespace ZWaveDotNet.CommandClasses
     /// </summary>
     public class Supervision : CommandClassBase
     {
-        public enum Command
+        public enum SupervisionCommand
         {
             Get = 0x01,
             Report = 0x02
@@ -23,7 +23,7 @@ namespace ZWaveDotNet.CommandClasses
 
         public static bool IsEncapsulated(ReportMessage msg)
         {
-            return msg.CommandClass == CommandClass.Supervision && msg.Command == (byte)Command.Get;
+            return msg.CommandClass == CommandClass.Supervision && msg.Command == (byte)SupervisionCommand.Get;
         }
 
         public static void Encapsulate (List<byte> payload, bool withProgress)
@@ -35,7 +35,7 @@ namespace ZWaveDotNet.CommandClasses
             byte[] header = new byte[]
             {
                 (byte)CommandClass.Supervision,
-                (byte)Command.Get,
+                (byte)SupervisionCommand.Get,
                 flags,
                 (byte)payload.Count
             };
@@ -46,7 +46,7 @@ namespace ZWaveDotNet.CommandClasses
         {
             if (msg.Payload.Span[0] != (byte)CommandClass.MultiCommand || msg.Payload.Length < 4)
                 throw new ArgumentException("Report is not a Supervision");
-            if (msg.Payload.Span[1] != (byte)Command.Get)
+            if (msg.Payload.Span[1] != (byte)SupervisionCommand.Get)
                 throw new ArgumentException("Report is not Encapsulated");
             ReportMessage free = new ReportMessage(msg.SourceNodeID, msg.Payload.Slice(4));
             byte header = msg.Payload.Span[2];

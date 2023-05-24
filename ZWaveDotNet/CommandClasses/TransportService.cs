@@ -8,7 +8,7 @@ namespace ZWaveDotNet.CommandClasses
     {
         private static CRC16_CCITT? crc;
 
-        public enum Command
+        public enum TransportServiceCommand
         {
             FirstFragment = 0xC0,
             FragmentComplete = 0xE8,
@@ -31,7 +31,7 @@ namespace ZWaveDotNet.CommandClasses
 
         internal static ReportMessage? Process(ReportMessage msg)
         {
-            if (msg.Payload.Span[0] != (byte)CommandClass.CRC16 || msg.Payload.Length < 4)
+            if (msg.Payload.Span[0] != (byte)CommandClass.TransportService)
                 throw new ArgumentException("Report is not a TransportService");
 
             //TODO - Implement

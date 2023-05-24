@@ -11,7 +11,7 @@ namespace ZWaveDotNet.CommandClasses
     {
         private static readonly byte[] EMPTY_IV = new byte[]{ 0x0, 0x0, 0x0, 0x0 , 0x0, 0x0 , 0x0, 0x0 , 0x0, 0x0 , 0x0, 0x0 , 0x0, 0x0 , 0x0, 0x0 };
 
-        public enum Command
+        public enum SecurityCommand
         {
             CommandsSupportedGet =	0x02,
             CommandsSupportedReport = 0x03,
@@ -31,33 +31,33 @@ namespace ZWaveDotNet.CommandClasses
         public async Task CommandsSupportedGet(CancellationToken cancellationToken = default)
         {
             Log.Debug("Getting Supported Commands");
-            CommandMessage data = new CommandMessage(node.ID, endpoint, commandClass, (byte)Command.CommandsSupportedGet);
+            CommandMessage data = new CommandMessage(node.ID, endpoint, commandClass, (byte)SecurityCommand.CommandsSupportedGet);
             await Transmit(data.Payload);
         }
 
         internal async Task SchemeGet(CancellationToken cancellationToken = default)
         {
             Log.Debug("Requesting Scheme");
-            await SendCommand(Command.SchemeGet, cancellationToken, (byte)0x0);
+            await SendCommand(SecurityCommand.SchemeGet, cancellationToken, (byte)0x0);
         }
 
         internal async Task KeySet(CancellationToken cancellationToken = default)
         {
             Log.Information($"Setting Network Key on {node.ID}");
-            CommandMessage data = new CommandMessage(node.ID, endpoint, commandClass, (byte)Command.NetworkKeySet, controller.NetworkKeyS0);
+            CommandMessage data = new CommandMessage(node.ID, endpoint, commandClass, (byte)SecurityCommand.NetworkKeySet, false, controller.NetworkKeyS0);
             await Transmit(data.Payload, true);
         }
 
         public static bool IsEncapsulated(ReportMessage msg)
         {
-            return msg.CommandClass == CommandClass.Security && (msg.Command == (byte)Command.MessageEncap || msg.Command == (byte)Command.MessageEncapNonceGet);
+            return msg.CommandClass == CommandClass.Security && (msg.Command == (byte)SecurityCommand.MessageEncap || msg.Command == (byte)SecurityCommand.MessageEncapNonceGet);
         }
 
         public async Task Transmit(List<byte> payload, bool temp = false)
         {
             Log.Information("Fetching Nonce");
-            CommandMessage request = new CommandMessage(node.ID, endpoint, commandClass, (byte)Command.NonceGet);
-            ReportMessage report = await controller.Flow.SendReceiveSequence(request.ToMessage(), commandClass, (byte)Command.NonceReport);
+            CommandMessage request = new CommandMessage(node.ID, endpoint, commandClass, (byte)SecurityCommand.NonceGet);
+            ReportMessage report = await controller.Flow.SendReceiveSequence(request.ToMessage(), commandClass, (byte)SecurityCommand.NonceReport);
 
             Log.Information("Creating Payload for " + node.ID.ToString());
             byte[] receiversNonce = report.Payload.ToArray();
@@ -65,7 +65,7 @@ namespace ZWaveDotNet.CommandClasses
             new Random().NextBytes(sendersNonce);
             payload.Insert(0, (byte)0x0); //Sequenced = False
             byte[] encrypted = EncryptDecryptPayload(payload.ToArray(), sendersNonce, receiversNonce, temp ? controller.tempE : controller.EncryptionKey);
-            byte[] mac = ComputeMAC(controller.ControllerID, node.ID, (byte)Command.MessageEncap, sendersNonce, receiversNonce, encrypted, temp ? controller.tempA : controller.AuthenticationKey);
+            byte[] mac = ComputeMAC(controller.ControllerID, node.ID, (byte)SecurityCommand.MessageEncap, sendersNonce, receiversNonce, encrypted, temp ? controller.tempA : controller.AuthenticationKey);
 
             byte[] securePayload = new byte[17 + encrypted.Length];
             Array.Copy(sendersNonce, 0, securePayload, 0, 8);
@@ -74,7 +74,7 @@ namespace ZWaveDotNet.CommandClasses
             Array.Copy(mac, 0, securePayload, 9 + encrypted.Length, 8);
 
             Log.Information("Sending Message");
-            await SendCommand(Command.MessageEncap, CancellationToken.None, securePayload);
+            await SendCommand(SecurityCommand.MessageEncap, CancellationToken.None, securePayload);
         }
 
         internal static ReportMessage? Free(ReportMessage msg, Controller controller)
@@ -107,24 +107,24 @@ namespace ZWaveDotNet.CommandClasses
 
         public override async Task Handle(ReportMessage message)
         {
-            switch ((Command)message.Command)
+            switch ((SecurityCommand)message.Command)
             {
-                case Command.CommandsSupportedReport:
+                case SecurityCommand.CommandsSupportedReport:
                     //TODO - Event this
                     Log.Information("Received Supported Secure Commands");
                     SupportedCommands supported = new SupportedCommands(message.Payload);
                     Log.Information(supported.ToString());
                     break;
-                case Command.SchemeReport:
+                case SecurityCommand.SchemeReport:
                     //We don't care
                     break;
-                case Command.NetworkKeyVerify:
+                case SecurityCommand.NetworkKeyVerify:
                     Log.Information("Success - Key Verified");
                     //TODO - node.inclusionStatus = s0;
                     break;
-                case Command.NonceGet:
+                case SecurityCommand.NonceGet:
                     Log.Debug("Nonce Request Received");
-                    await SendCommand(Command.NonceReport, CancellationToken.None, node.Controller.SecurityManager.CreateNonce(node.ID));
+                    await SendCommand(SecurityCommand.NonceReport, CancellationToken.None, node.Controller.SecurityManager.CreateNonce(node.ID));
                     break;
             }
         }

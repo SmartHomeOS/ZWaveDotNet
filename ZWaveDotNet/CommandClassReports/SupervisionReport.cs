@@ -7,8 +7,8 @@ namespace ZWaveDotNet.CommandClassReports
     {
         public bool MoreReports;
         public byte SessionID;
-        SupervisionStatus Status;
-        TimeSpan Duration;
+        public SupervisionStatus Status;
+        public TimeSpan Duration;
 
         public SupervisionReport(Memory<byte> payload)
         {

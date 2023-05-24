@@ -30,6 +30,8 @@ namespace ZWaveDotNet.CommandClasses
             {
                 case CommandClass.Security:
                     return new Security(node, endpoint);
+                case CommandClass.Security2:
+                    return new Security2(node, endpoint);
                 case CommandClass.Supervision:
                     return new Supervision(node);
                 case CommandClass.CRC16:
@@ -50,7 +52,12 @@ namespace ZWaveDotNet.CommandClasses
 
         protected async Task SendCommand(Enum command, CancellationToken token, params byte[] payload)
         {
-            CommandMessage data = new CommandMessage(node.ID, (byte)(endpoint & 0x7F), commandClass, Convert.ToByte(command), payload);//Endpoint 0x80 is multicast
+            await SendCommand(command, token, false, payload);
+        }
+
+        protected async Task SendCommand(Enum command, CancellationToken token, bool supervised = false, params byte[] payload)
+        {
+            CommandMessage data = new CommandMessage(node.ID, (byte)(endpoint & 0x7F), commandClass, Convert.ToByte(command), supervised, payload);//Endpoint 0x80 is multicast
             DataCallback dc = await controller.Flow.SendAcknowledgedResponseCallback(data.ToMessage());
             if (dc.Status != TransmissionStatus.CompleteOk && dc.Status != TransmissionStatus.CompleteNoAck && dc.Status != TransmissionStatus.CompleteVerified)
                 throw new Exception("Transmission Failure " + dc.Status.ToString());
