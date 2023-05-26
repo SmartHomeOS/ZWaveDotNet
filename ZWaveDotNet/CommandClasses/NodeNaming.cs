@@ -7,6 +7,7 @@ using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.CommandClasses
 {
+    [CCVersion(CommandClass.NodeNaming, 1, 1, false)]
     public class NodeNaming : CommandClassBase
     {
         enum Command : byte
@@ -43,7 +44,7 @@ namespace ZWaveDotNet.CommandClasses
 
         private async Task Set(string txt, Command command, CancellationToken cancellationToken)
         {
-            Memory<byte> payload = PayloadConverter.EncodeString(txt, 16);
+            Memory<byte> payload = PayloadConverter.GetBytes(txt, 16);
             await SendCommand(command, cancellationToken, payload.ToArray());
         }
 

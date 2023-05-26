@@ -4,6 +4,7 @@ using ZWaveDotNet.SerialAPI;
 
 namespace ZWaveDotNet.CommandClasses
 {
+    [CCVersion(CommandClass.TransportService, 1, 1, false)]
     public class TransportService : CommandClassBase
     {
         private static CRC16_CCITT? crc;

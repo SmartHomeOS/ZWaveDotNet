@@ -7,6 +7,7 @@ using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.CommandClasses
 {
+    [CCVersion(CommandClass.SwitchBinary, 1, 1, false)]
     public class SwitchBinary : CommandClassBase
     {
         public enum SwitchBinaryCommand

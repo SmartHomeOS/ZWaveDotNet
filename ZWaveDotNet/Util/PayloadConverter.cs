@@ -5,6 +5,11 @@ namespace ZWaveDotNet.Util
 {
     public static class PayloadConverter
     {
+        public static short ToInt16(Span<byte> value)
+        {
+            return (short)ToUInt16(value);
+        }
+
         public static ushort ToUInt16(Span<byte> value)
         {
             if (BitConverter.IsLittleEndian)
@@ -13,7 +18,12 @@ namespace ZWaveDotNet.Util
                 return (ushort)(value[1] << 8 | value[0]);
         }
 
-        public static uint ToUint32(Span<byte> bytes)
+        public static int ToInt32(Span<byte> value)
+        {
+            return (int)ToUInt32(value);
+        }
+
+        public static uint ToUInt32(Span<byte> bytes)
         {
             if (BitConverter.IsLittleEndian)
                 return (uint)(bytes[0] << 24 | bytes[1] << 16 | bytes[2] << 8 | bytes[3]);
@@ -29,6 +39,18 @@ namespace ZWaveDotNet.Util
                 return new TimeSpan(0, 0, payload);
             else
                 return new TimeSpan(0, payload - 0x80, 0);
+        }
+
+        public static string ToEncodedString(Memory<byte> bytes, int maxLen)
+        {
+            if (bytes.Length <= 1)
+                return string.Empty;
+            if ((bytes.Span[0] & 0x3) == 0x0)
+                return Encoding.ASCII.GetString(bytes.Slice(1, Math.Min(bytes.Length - 1, maxLen)).Span);
+            else if ((bytes.Span[0] & 0x3) == 0x1)
+                return Encoding.UTF8.GetString(bytes.Slice(1, Math.Min(bytes.Length - 1, maxLen)).Span);
+            else
+                return Encoding.Unicode.GetString(bytes.Slice(1, Math.Min(bytes.Length - 1, maxLen)).Span);
         }
 
         public static byte[] GetBytes(ushort value)
@@ -53,19 +75,7 @@ namespace ZWaveDotNet.Util
             return 0;
         }
 
-        public static string GetEncodedString(Memory<byte> bytes, int maxLen)
-        {
-            if (bytes.Length <= 1)
-                return string.Empty;
-            if ((bytes.Span[0] & 0x3) == 0x0)
-                return Encoding.ASCII.GetString(bytes.Slice(1, Math.Min(bytes.Length - 1, maxLen)).Span);
-            else if ((bytes.Span[0] & 0x3) == 0x1)
-                return Encoding.UTF8.GetString(bytes.Slice(1, Math.Min(bytes.Length - 1, maxLen)).Span);
-            else
-                return Encoding.Unicode.GetString(bytes.Slice(1, Math.Min(bytes.Length - 1, maxLen)).Span);
-        }
-
-        public static Memory<byte> EncodeString(string text, int limit)
+        public static Memory<byte> GetBytes(string text, int limit)
         {
             byte encoding = 0;
             foreach (char c in text)
@@ -92,7 +102,7 @@ namespace ZWaveDotNet.Util
             {
                 if (bytes.Span[i] == (byte)CommandClass.Mark)
                     break;
-                if (bytes.Span[i] < 0x20)
+                if (bytes.Span[i] < (byte)CommandClass.Basic)
                     continue;
                 else if ((bytes.Span[i] & 0xF0) != 0xF0)
                     list.Add((CommandClass)bytes.Span[i]);

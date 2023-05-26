@@ -61,7 +61,7 @@ namespace ZWaveDotNet.Entities
             PayloadMessage? networkIds = await flow.SendAcknowledgedResponse(Function.MemoryGetId) as PayloadMessage;
             if (networkIds != null && networkIds.Data.Length > 4)
             {
-                HomeID = PayloadConverter.ToUint32(networkIds.Data.Span);
+                HomeID = PayloadConverter.ToUInt32(networkIds.Data.Span);
                 ControllerID = networkIds.Data.Span[4]; //TODO - 16 bit
             }
 

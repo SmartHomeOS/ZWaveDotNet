@@ -8,6 +8,7 @@
             ret.Span.Fill(val);
             return ret;
         }
+
         public static Memory<byte> LeftShift1(Memory<byte> array)
         {
             Memory<byte> ret = new byte[array.Length];
