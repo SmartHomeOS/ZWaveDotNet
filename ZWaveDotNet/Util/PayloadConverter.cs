@@ -1,4 +1,5 @@
-﻿using ZWaveDotNet.Enums;
+﻿using System.Text;
+using ZWaveDotNet.Enums;
 
 namespace ZWaveDotNet.Util
 {
@@ -50,6 +51,38 @@ namespace ZWaveDotNet.Util
                     return 0xFF;
             }
             return 0;
+        }
+
+        public static string GetEncodedString(Memory<byte> bytes, int maxLen)
+        {
+            if (bytes.Length <= 1)
+                return string.Empty;
+            if ((bytes.Span[0] & 0x3) == 0x0)
+                return Encoding.ASCII.GetString(bytes.Slice(1, Math.Min(bytes.Length - 1, maxLen)).Span);
+            else if ((bytes.Span[0] & 0x3) == 0x1)
+                return Encoding.UTF8.GetString(bytes.Slice(1, Math.Min(bytes.Length - 1, maxLen)).Span);
+            else
+                return Encoding.Unicode.GetString(bytes.Slice(1, Math.Min(bytes.Length - 1, maxLen)).Span);
+        }
+
+        public static Memory<byte> EncodeString(string text, int limit)
+        {
+            byte encoding = 0;
+            foreach (char c in text)
+            {
+                if (c > 0x7F)
+                { 
+                    encoding = 1;
+                    break;
+                }
+            }
+            Memory<byte> payload = new byte[limit + 1];
+            payload.Span[0] = encoding;
+            if (encoding == 0)
+                limit = Encoding.ASCII.GetBytes(text, payload.Slice(1).Span);
+            else
+                limit = Encoding.UTF8.GetBytes(text, payload.Slice(1).Span);
+            return payload.Slice(0, limit + 1);
         }
 
         public static List<CommandClass> GetCommandClasses(Memory<byte> bytes)

@@ -10,7 +10,7 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.Security, 1)]
     public class Security : CommandClassBase
     {
-        private static readonly byte[] EMPTY_IV = new byte[]{ 0x0, 0x0, 0x0, 0x0 , 0x0, 0x0 , 0x0, 0x0 , 0x0, 0x0 , 0x0, 0x0 , 0x0, 0x0 , 0x0, 0x0 };
+        private static readonly byte[] EMPTY_IV = new byte[]{ 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
 
         public enum SecurityCommand
         {
@@ -74,7 +74,6 @@ namespace ZWaveDotNet.CommandClasses
             securePayload[8 + encrypted.Length] = receiversNonce[0];
             Array.Copy(mac, 0, securePayload, 9 + encrypted.Length, 8);
 
-            Log.Information("Sending Message");
             await SendCommand(SecurityCommand.MessageEncap, CancellationToken.None, securePayload);
         }
 
@@ -122,7 +121,6 @@ namespace ZWaveDotNet.CommandClasses
                     //TODO - node.inclusionStatus = s0;
                     break;
                 case SecurityCommand.NonceGet:
-                    Log.Debug("Nonce Request Received");
                     await SendCommand(SecurityCommand.NonceReport, CancellationToken.None, node.Controller.SecurityManager.CreateNonce(node.ID));
                     break;
             }

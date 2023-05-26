@@ -1,4 +1,4 @@
-﻿using System.Text;
+﻿using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.CommandClassReports
 {
@@ -10,11 +10,7 @@ namespace ZWaveDotNet.CommandClassReports
         {
             if (payload.Length < 1)
                 throw new FormatException($"The response was not in the expected format. {GetType().Name}: Payload: {BitConverter.ToString(payload.ToArray())}");
-
-            if ((payload.Span[0] & 0x3) < 0x2)
-                Location = Encoding.UTF8.GetString(payload.Slice(1, Math.Min(payload.Length - 1, 16)).Span);
-            else
-                Location = Encoding.Unicode.GetString(payload.Slice(1, Math.Min(payload.Length - 1, 16)).Span);
+            Location = PayloadConverter.GetEncodedString(payload, 16);
         }
 
         public override string ToString()

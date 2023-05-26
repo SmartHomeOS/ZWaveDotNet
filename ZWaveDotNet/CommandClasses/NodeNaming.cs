@@ -1,9 +1,9 @@
 ﻿using Serilog;
-using System.Text;
 using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
+using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.CommandClasses
 {
@@ -43,29 +43,8 @@ namespace ZWaveDotNet.CommandClasses
 
         private async Task Set(string txt, Command command, CancellationToken cancellationToken)
         {
-            byte encoding = 0;
-            foreach (char c in txt)
-            {
-                if (c > 127)
-                {
-                    if (c <= 255)
-                        encoding = 1;
-                    else if (c > 255)
-                    {
-                        encoding = 2;
-                        break;
-                    }
-                }
-            }
-            byte[] payload;
-            if (encoding == 0)
-                payload = Encoding.ASCII.GetBytes(txt);
-            else if (encoding == 1)
-                payload = Encoding.UTF8.GetBytes(txt);
-            else
-                payload = Encoding.Unicode.GetBytes(txt);
-            payload = payload.Take(16).Prepend(encoding).ToArray();
-            await SendCommand(command, cancellationToken, payload);
+            Memory<byte> payload = PayloadConverter.EncodeString(txt, 16);
+            await SendCommand(command, cancellationToken, payload.ToArray());
         }
 
         public override async Task Handle(ReportMessage message)

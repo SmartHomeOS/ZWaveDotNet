@@ -1,8 +1,6 @@
-﻿using Serilog;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using ZWaveDotNet.CommandClasses;
 using ZWaveDotNet.Enums;
-using ZWaveDotNet.SerialAPI;
 
 namespace ZWaveDotNet.Entities
 {
