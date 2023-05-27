@@ -9,6 +9,13 @@
             return ret;
         }
 
+        public static Memory<byte> PadZeros(Memory<byte> val, int count)
+        {
+            Memory<byte> ret = new byte[val.Length + count];
+            val.CopyTo(ret);
+            return ret;
+        }
+
         public static Memory<byte> LeftShift1(Memory<byte> array)
         {
             Memory<byte> ret = new byte[array.Length];

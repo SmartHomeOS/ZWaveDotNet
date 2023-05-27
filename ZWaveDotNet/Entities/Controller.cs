@@ -2,8 +2,11 @@
 using System.Collections;
 using System.Security.Cryptography;
 using ZWaveDotNet.CommandClasses;
+using ZWaveDotNet.CommandClasses.Enums;
+using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.Entities.Enums;
 using ZWaveDotNet.Enums;
+using ZWaveDotNet.Security;
 using ZWaveDotNet.SerialAPI;
 using ZWaveDotNet.SerialAPI.Enums;
 using ZWaveDotNet.SerialAPI.Messages;
@@ -20,33 +23,26 @@ namespace ZWaveDotNet.Entities
         internal byte[] tempA;
         internal byte[] tempE;
 
-        public Controller(string port, byte[] s0Key)
+        public Controller(string port, byte[] s0Key, byte[] s2unauth)
         {
             if (string.IsNullOrEmpty(port))
                 throw new ArgumentNullException(nameof(port));
+            //TODO - Remove This
+            s0Key = s2unauth;
             if (s0Key == null || s0Key.Length != 16)
                 throw new ArgumentException(nameof(s0Key));
+            NetworkKeyS0 = s0Key;
+            NetworkKeyS2UnAuth = s2unauth;
             flow = new Flow(port);
-            SecurityManager = new SecurityManager();
-            using (Aes aes = Aes.Create())
-            {
-                aes.Key = Enumerable.Repeat((byte)0x0, 16).ToArray();
-                tempA = aes.EncryptEcb(Enumerable.Repeat((byte)0x55, 16).ToArray(), PaddingMode.None);
-                tempE = aes.EncryptEcb(Enumerable.Repeat((byte)0xAA, 16).ToArray(), PaddingMode.None);
-                aes.Key = s0Key;
-                NetworkKeyS0 = s0Key;
-                AuthenticationKey = aes.EncryptEcb(Enumerable.Repeat((byte)0x55, 16).ToArray(), PaddingMode.None);
-                EncryptionKey = aes.EncryptEcb(Enumerable.Repeat((byte)0xAA, 16).ToArray(), PaddingMode.None);
-            }
-            Task.Factory.StartNew(EventLoop);
         }
 
         public ushort ControllerID { get; private set; }
-        public uint HomeID { get; private set; }
+        public Memory<byte> HomeID { get; private set; }
         internal Flow Flow { get { return flow; } }
         internal byte[] AuthenticationKey { get; private set; }
         internal byte[] EncryptionKey { get; private set; }
         internal byte[] NetworkKeyS0 { get; private set; }
+        internal byte[] NetworkKeyS2UnAuth { get; private set; }
         internal SecurityManager SecurityManager { get; private set; }
 
         public async Task Reset()
@@ -55,13 +51,25 @@ namespace ZWaveDotNet.Entities
             await Task.Delay(1500);
         }
 
-        public async ValueTask Init()
+        public async ValueTask Start()
         {
+            SecurityManager = new SecurityManager(await GetRandom(32));
+            using (Aes aes = Aes.Create())
+            {
+                aes.Key = Enumerable.Repeat((byte)0x0, 16).ToArray();
+                tempA = aes.EncryptEcb(Enumerable.Repeat((byte)0x55, 16).ToArray(), PaddingMode.None);
+                tempE = aes.EncryptEcb(Enumerable.Repeat((byte)0xAA, 16).ToArray(), PaddingMode.None);
+                aes.Key = NetworkKeyS0;
+                AuthenticationKey = aes.EncryptEcb(Enumerable.Repeat((byte)0x55, 16).ToArray(), PaddingMode.None);
+                EncryptionKey = aes.EncryptEcb(Enumerable.Repeat((byte)0xAA, 16).ToArray(), PaddingMode.None);
+            }
+            await Task.Factory.StartNew(EventLoop);
+
             //Encap Configuration
             PayloadMessage? networkIds = await flow.SendAcknowledgedResponse(Function.MemoryGetId) as PayloadMessage;
             if (networkIds != null && networkIds.Data.Length > 4)
             {
-                HomeID = PayloadConverter.ToUInt32(networkIds.Data.Span);
+                HomeID = networkIds.Data.Slice(0, 4);
                 ControllerID = networkIds.Data.Span[4]; //TODO - 16 bit
             }
 
@@ -96,6 +104,23 @@ namespace ZWaveDotNet.Entities
         public async Task<NodeProtocolInfo> GetNodeProtocolInfo(ushort nodeId, CancellationToken cancellationToken = default)
         {
             return (NodeProtocolInfo)await flow.SendAcknowledgedResponse(Function.GetNodeProtocolInfo, cancellationToken, (byte)nodeId);
+        }
+
+        public async Task<Memory<byte>> GetRandom(byte length, CancellationToken cancellationToken = default)
+        {
+            PayloadMessage? random = null;
+            try
+            {
+                random = await flow.SendAcknowledgedResponse(Function.GetRandom, cancellationToken, length) as PayloadMessage;
+            }
+            catch (Exception) { };
+            if (random == null || random.Data.Span[0] != 0x1)
+            {
+                Memory<byte> planB = new byte[length];
+                new Random().NextBytes(planB.Span);
+                return planB;
+            }
+            return random!.Data.Slice(2);
         }
 
         public Task StartInclusion(bool fullPower = true, bool networkWide = true)
@@ -206,30 +231,46 @@ namespace ZWaveDotNet.Entities
                         else if (inc.Status == InclusionExclusionStatus.OperationComplete)
                         {
                             if (inc.NodeID > 0 && Nodes.TryGetValue(inc.NodeID, out Node? node))
-                            {
-                                //TODO - Event this
-                                Log.Information("Added " + node.ToString());
-                                await Task.Delay(1000); //We have 10 seconds to request scheme - wait 1 for inclusion to complete
-                                if (node.CommandClasses.ContainsKey(CommandClass.Security))
-                                {
-                                    Log.Information("Starting Secure(0-Legacy) Inclusion");
-                                    await ((Security)node.CommandClasses[CommandClass.Security]).SchemeGet();
-                                    await ((Security)node.CommandClasses[CommandClass.Security]).KeySet();
-                                }
+                            { 
+                                Log.Information("Added " + node.ToString()); //TODO - Event this
+                                if (node.CommandClasses.ContainsKey(CommandClass.Security2))
+                                    await BootstrapS2(node);
+                                else if (node.CommandClasses.ContainsKey(CommandClass.Security))
+                                    await BootstrapS0(node);
                             }
                         }
                     }
                     else if (inc.Function == Function.RemoveNodeFromNetwork && inc.NodeID > 0)
                     {
-                        //TODO - Event This
                         if (Nodes.Remove(inc.NodeID))
-                            Log.Information($"Successfully exluded node {inc.NodeID}");
+                            Log.Information($"Successfully exluded node {inc.NodeID}"); //TODO - Event This
                         if (inc.Status == InclusionExclusionStatus.OperationComplete)
                             await StopExclusion();
                     }
                 }
                 //Log.Information(msg.ToString());
             }
+        }
+
+        private async Task BootstrapS0(Node node)
+        {
+            Log.Information("Starting Secure(0-Legacy) Inclusion");
+            await((Security0)node.CommandClasses[CommandClass.Security]).SchemeGet();
+            await((Security0)node.CommandClasses[CommandClass.Security]).KeySet();
+        }
+
+        private async Task BootstrapS2(Node node)
+        {
+            ///No Encryption
+            Security2 sec2 = ((Security2)node.CommandClasses[CommandClass.Security2]);
+            Log.Information("Starting Secure S2 Inclusion");
+            KeyExchangeReport kep = await sec2.KexGet();
+            kep.RequestedKeys = SecurityKey.S2Unauthenticated;
+            Memory<byte> pub = await sec2.KexSet(kep);
+            byte[] sharedSecret = SecurityManager.CreateSharedSecret(pub);
+            var ckdf = Security2.CKDFExpand(Security2.CKDFTempExtract(sharedSecret, SecurityManager.PublicKey, pub), true);
+            SecurityManager.StoreKey(node.ID, SecurityManager.KeyType.ECDH_TEMP, ckdf.KeyCCM, ckdf.PString);
+            await sec2.SendPublicKey();
         }
     }
 }

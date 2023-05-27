@@ -84,10 +84,10 @@ namespace ZWaveDotNet.Entities
                     if (msg == null)
                         return; //Not Complete Yet
                 }
-                if (Security.IsEncapsulated(msg))
+                if (Security0.IsEncapsulated(msg))
                 {
                     Log.Information("Encapsulated Message Received");
-                    msg = Security.Free(msg, controller);
+                    msg = Security0.Free(msg, controller);
                     if (msg == null)
                         return;
                 }

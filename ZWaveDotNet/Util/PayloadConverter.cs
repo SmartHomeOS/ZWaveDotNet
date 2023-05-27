@@ -61,6 +61,14 @@ namespace ZWaveDotNet.Util
                 return BitConverter.GetBytes(value);
         }
 
+        public static byte[] GetBytes(uint value)
+        {
+            if (BitConverter.IsLittleEndian)
+                return BitConverter.GetBytes(value).Reverse().ToArray();
+            else
+                return BitConverter.GetBytes(value);
+        }
+
         public static byte GetByte(TimeSpan value)
         {
             if (value.TotalSeconds >= 1)
