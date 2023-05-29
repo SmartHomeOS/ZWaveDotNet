@@ -1,36 +1,11 @@
-﻿using System.Text;
+﻿using System.Buffers.Binary;
+using System.Text;
 using ZWaveDotNet.Enums;
 
 namespace ZWaveDotNet.Util
 {
     public static class PayloadConverter
     {
-        public static short ToInt16(Span<byte> value)
-        {
-            return (short)ToUInt16(value);
-        }
-
-        public static ushort ToUInt16(Span<byte> value)
-        {
-            if (BitConverter.IsLittleEndian)
-                return (ushort)(value[0] << 8 | value[1]);
-            else
-                return (ushort)(value[1] << 8 | value[0]);
-        }
-
-        public static int ToInt32(Span<byte> value)
-        {
-            return (int)ToUInt32(value);
-        }
-
-        public static uint ToUInt32(Span<byte> bytes)
-        {
-            if (BitConverter.IsLittleEndian)
-                return (uint)(bytes[0] << 24 | bytes[1] << 16 | bytes[2] << 8 | bytes[3]);
-            else
-                return (uint)(bytes[3] << 24 | bytes[2] << 16 | bytes[1] << 8 | bytes[0]);
-        }
-
         public static TimeSpan ToTimeSpan(byte payload)
         {
             if (payload == 0xFE || payload == 0x0)
@@ -51,22 +26,6 @@ namespace ZWaveDotNet.Util
                 return Encoding.UTF8.GetString(bytes.Slice(1, Math.Min(bytes.Length - 1, maxLen)).Span);
             else
                 return Encoding.Unicode.GetString(bytes.Slice(1, Math.Min(bytes.Length - 1, maxLen)).Span);
-        }
-
-        public static byte[] GetBytes(ushort value)
-        {
-            if (BitConverter.IsLittleEndian)
-                return BitConverter.GetBytes(value).Reverse().ToArray();
-            else
-                return BitConverter.GetBytes(value);
-        }
-
-        public static byte[] GetBytes(uint value)
-        {
-            if (BitConverter.IsLittleEndian)
-                return BitConverter.GetBytes(value).Reverse().ToArray();
-            else
-                return BitConverter.GetBytes(value);
         }
 
         public static byte GetByte(TimeSpan value)
@@ -116,7 +75,7 @@ namespace ZWaveDotNet.Util
                     list.Add((CommandClass)bytes.Span[i]);
                 else
                 {
-                    list.Add((CommandClass)ToUInt16(bytes.Slice(i).Span));
+                    list.Add((CommandClass)BinaryPrimitives.ReadUInt16BigEndian(bytes.Slice(i).Span));
                     i++;
                 }
             }

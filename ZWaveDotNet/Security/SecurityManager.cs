@@ -82,6 +82,7 @@ namespace ZWaveDotNet.Security
 
         public void CreateSpan(ushort nodeId, byte sequence, Memory<byte> mixedEntropy, Memory<byte> personalization, KeyType type)
         {
+            Log.Information($"Created SPAN ({BitConverter.ToString(mixedEntropy.ToArray())}, {BitConverter.ToString(personalization.ToArray())})");
             Memory<byte> working_state = CTR_DRBG.Instantiate(mixedEntropy, personalization);
             NonceRecord nr = new NonceRecord()
             {

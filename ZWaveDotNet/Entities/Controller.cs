@@ -1,4 +1,5 @@
 ﻿using Serilog;
+using System.Buffers.Binary;
 using System.Collections;
 using System.Security.Cryptography;
 using ZWaveDotNet.CommandClasses;
@@ -11,7 +12,6 @@ using ZWaveDotNet.SerialAPI;
 using ZWaveDotNet.SerialAPI.Enums;
 using ZWaveDotNet.SerialAPI.Messages;
 using ZWaveDotNet.SerialAPI.Messages.Enums;
-using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.Entities
 {
@@ -70,6 +70,7 @@ namespace ZWaveDotNet.Entities
             if (networkIds != null && networkIds.Data.Length > 4)
             {
                 HomeID = networkIds.Data.Slice(0, 4);
+                Log.Information($"Home ID: {BitConverter.ToString(HomeID.ToArray())}");
                 ControllerID = networkIds.Data.Span[4]; //TODO - 16 bit
             }
 
@@ -108,13 +109,15 @@ namespace ZWaveDotNet.Entities
 
         public async Task<Memory<byte>> GetRandom(byte length, CancellationToken cancellationToken = default)
         {
+            if (length < 0 || length > 32)
+                throw new ArgumentException(nameof(length) + " must be between 1 and 32");
             PayloadMessage? random = null;
             try
             {
                 random = await flow.SendAcknowledgedResponse(Function.GetRandom, cancellationToken, length) as PayloadMessage;
             }
             catch (Exception) { };
-            if (random == null || random.Data.Span[0] != 0x1)
+            if (random == null || random.Data.Span[0] != 0x1) //TODO - Status Enums
             {
                 Memory<byte> planB = new byte[length];
                 new Random().NextBytes(planB.Span);
@@ -174,16 +177,17 @@ namespace ZWaveDotNet.Entities
             PayloadMessage open = (PayloadMessage)await flow.SendAcknowledgedResponse(Function.NVMBackupRestore, cancellationToken, (byte)NVMOperation.Open);
             if (open.Data.Span[0] != 0)
                 throw new InvalidOperationException($"Failed to open NVM.  Response {open.Data.Span[0]}");
-            ushort len = PayloadConverter.ToUInt16(open.Data.Slice(2).Span);
+            ushort len = BinaryPrimitives.ReadUInt16BigEndian(open.Data.Slice(2).Span);
             byte[] buffer = new byte[len];
             try
             {
                 ushort i = 0;
                 while (i < len)
                 {
-                    var offset = PayloadConverter.GetBytes(i);
+                    Memory<byte> offset = new byte[2];
+                    BinaryPrimitives.WriteUInt16BigEndian(offset.Span, i);
                     byte readLen = (byte)Math.Min(len - i, 255);
-                    PayloadMessage read = (PayloadMessage)await flow.SendAcknowledgedResponse(Function.NVMBackupRestore, cancellationToken, (byte)NVMOperation.Read, readLen, offset[0], offset[1]);
+                    PayloadMessage read = (PayloadMessage)await flow.SendAcknowledgedResponse(Function.NVMBackupRestore, cancellationToken, (byte)NVMOperation.Read, readLen, offset.Span[0], offset.Span[1]);
                     if (read.Data.Span[0] != 0 && read.Data.Span[0] != 0xFF)
                         throw new InvalidOperationException($"Failed to open NVM.  Response {open.Data.Span[0]}");
                     Buffer.BlockCopy(read.Data.ToArray(), 4, buffer, i, read.Data.Span[1]);

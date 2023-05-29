@@ -1,7 +1,7 @@
-﻿using ZWaveDotNet.CommandClasses;
+﻿using System.Buffers.Binary;
+using ZWaveDotNet.CommandClasses;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI.Messages;
-using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.SerialAPI
 {
@@ -17,7 +17,9 @@ namespace ZWaveDotNet.SerialAPI
             if ((ushort)commandClass > 0xFF)
             {
                 Payload = new List<byte>(payload.Length + 3);
-                Payload.AddRange(PayloadConverter.GetBytes((ushort)commandClass));
+                byte[] bytes = new byte[2];
+                BinaryPrimitives.WriteUInt16BigEndian(bytes, (ushort)commandClass);
+                Payload.AddRange(bytes);
                 Payload.Add(command);
             }
             else

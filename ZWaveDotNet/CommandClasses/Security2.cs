@@ -82,7 +82,7 @@ namespace ZWaveDotNet.CommandClasses
             }
 
             var nonce = controller.SecurityManager.NextNonce(node.ID, networkKey.Key)!.Value;
-            AdditionalAuthData ad = new AdditionalAuthData(node, controller, true, payload.Count, nonce.sequence, new byte[0]); //FIXME - Implement extensions here too
+            AdditionalAuthData ad = new AdditionalAuthData(node, controller, true, payload.Count, new byte[0]); //FIXME - Implement unencrypted here too
             Memory<byte> encoded = EncryptCCM(payload.ToArray(),  nonce.output, networkKey!.KeyCCM, ad);
 
             byte[] securePayload = new byte[2 + encoded.Length];
@@ -102,27 +102,25 @@ namespace ZWaveDotNet.CommandClasses
                 Log.Error("Unable to decrypt message without network key");
                 return null;
             }
+            int messageLen = msg.Payload.Length + 2;
             byte sequence = msg.Payload.Span[0];
+            Log.Warning("Sequence #: " + sequence);
             bool unencryptedExt = (msg.Payload.Span[1] & 0x1) == 0x1;
             bool encryptedExt = (msg.Payload.Span[1] & 0x2) == 0x2;
-            Memory<byte> extensions = new byte[0];
+            Memory<byte> unencrypted = msg.Payload;
             if (unencryptedExt)
             {
-                extensions = msg.Payload.Slice(2);
                 msg.Payload = msg.Payload.Slice(2);
                 while (processExtension(msg.Payload, msg.SourceNodeID, controller, networkKey))
                     msg.Payload = msg.Payload.Slice(msg.Payload.Span[0]);
                 msg.Payload = msg.Payload.Slice(msg.Payload.Span[0]);
             }
-            extensions = extensions.Slice(0, extensions.Length - msg.Payload.Length);
-            AdditionalAuthData ad = new AdditionalAuthData(controller.Nodes[msg.SourceNodeID], controller, false, msg.Payload.Length - 8, sequence, extensions);
-            Memory<byte> decoded = DecryptCCM(
-                                                msg.Payload.Slice(0, msg.Payload.Length - 8),
+            unencrypted = unencrypted.Slice(0, unencrypted.Length - msg.Payload.Length);
+            AdditionalAuthData ad = new AdditionalAuthData(controller.Nodes[msg.SourceNodeID], controller, false, messageLen, unencrypted);
+            Memory<byte> decoded = DecryptCCM(  msg.Payload,
                                                 controller.SecurityManager.NextNonce(msg.SourceNodeID, networkKey.Key)!.Value.output,
                                                 networkKey!.KeyCCM,
-                                                msg.Payload.Slice(msg.Payload.Length - 8),
-                                                ad
-                                                );
+                                                ad);
             msg.Update(decoded);
             Log.Warning("Decoded Message: " + msg.ToString());
             return msg;
@@ -138,9 +136,12 @@ namespace ZWaveDotNet.CommandClasses
                 case 0x01: //SPAN
                     Memory<byte> sendersEntropy = payload.Slice(2, 16);
                     var result = controller.SecurityManager.GetEntropy(nodeId, netKey.Key);
-                    byte[] MEI = CKDFMEIExpand(CKDFMEIExtract(sendersEntropy, result!.Value.bytes));
+                    Memory<byte> MEI = CKDFMEIExpand(CKDFMEIExtract(sendersEntropy, result!.Value.bytes));
                     controller.SecurityManager.CreateSpan(nodeId, result!.Value.sequence, MEI, netKey.PString, netKey.Key);
                     Log.Warning("Created new SPAN");
+                    Log.Warning("Senders Entropy: " + BitConverter.ToString(sendersEntropy.ToArray()));
+                    Log.Warning("Receivers Entropy: " + BitConverter.ToString(result!.Value.bytes.ToArray()));
+                    Log.Warning("Mixed Entropy: " + BitConverter.ToString(MEI.ToArray()));
                     break;
             }
             return more;
@@ -250,11 +251,11 @@ namespace ZWaveDotNet.CommandClasses
             return ret;
         }
 
-        public static Memory<byte> DecryptCCM(Memory<byte> cipherText, Memory<byte> nonce, Memory<byte> key, Memory<byte> authTag, AdditionalAuthData ad)
+        public static Memory<byte> DecryptCCM(Memory<byte> cipherText, Memory<byte> nonce, Memory<byte> key, AdditionalAuthData ad)
         {
             Memory<byte> ret = new byte[cipherText.Length];
             using (AesCcm aes = new AesCcm(key.Span))
-                aes.Decrypt(nonce.Span, cipherText.Span, authTag.Span, ret.Span, ad.GetBytes().Span);
+                aes.Decrypt(nonce.Span, cipherText.Slice(0, cipherText.Length - 8).Span, cipherText.Slice(cipherText.Length - 8, 8).Span, ret.Span, ad.GetBytes().Span);
             return ret;
         }
 
@@ -284,26 +285,23 @@ namespace ZWaveDotNet.CommandClasses
             Memory<byte> SREntropy = new byte[SenderEntropy.Length * 2];
             SenderEntropy.CopyTo(SREntropy);
             ReceiverEntropy.CopyTo(SREntropy.Slice(SenderEntropy.Length));
-            return ComputeCMAC(SREntropy, Enumerable.Repeat((byte)0x26, 16).ToArray());
+            return ComputeCMAC(Enumerable.Repeat((byte)0x26, 16).ToArray(), SREntropy);
         }
 
         //Returns MEI
-        public static byte[] CKDFMEIExpand(byte[] NoncePRK)
+        public static Memory<byte> CKDFMEIExpand(byte[] NoncePRK)
         {
-            byte[] buffer = new byte[BLOCK_SIZE << 1];
-            byte[] constantTE = Enumerable.Repeat((byte)0x88, BLOCK_SIZE).ToArray();
-            Array.Copy(constantTE, buffer, BLOCK_SIZE);
-            Array.Copy(constantTE, 0, buffer, BLOCK_SIZE, BLOCK_SIZE);
-            buffer[15] = 0x0;
-            buffer[31] = 0x1;
-            byte[] T1 = ComputeCMAC(buffer, NoncePRK);
-            
-            Array.Copy(T1, buffer, BLOCK_SIZE);
-            buffer[31] = 0x2;
-            byte[] T2 = ComputeCMAC(buffer, NoncePRK);
-            
-            Array.Copy(T1, buffer, BLOCK_SIZE);
-            Array.Copy(T2, 0, buffer, BLOCK_SIZE, BLOCK_SIZE);
+            Memory<byte> buffer = MemoryUtil.Fill(0x88, 32);
+            buffer.Span[15] = 0x0;
+            buffer.Span[31] = 0x1;
+            byte[] T1 = ComputeCMAC(NoncePRK, buffer);
+
+            T1.CopyTo(buffer);
+            buffer.Span[31] = 0x2;
+            byte[] T2 = ComputeCMAC(NoncePRK, buffer);
+
+            T1.CopyTo(buffer);
+            T2.CopyTo(buffer.Slice(BLOCK_SIZE, BLOCK_SIZE));
             return buffer;
         }
 
@@ -314,33 +312,33 @@ namespace ZWaveDotNet.CommandClasses
             secret.CopyTo(payload);
             pubkeyA.CopyTo(payload.Slice(32));
             pubkeyB.CopyTo(payload.Slice(64));
-            return ComputeCMAC(payload, Enumerable.Repeat((byte)0x33, 16).ToArray());
+            return ComputeCMAC(Enumerable.Repeat((byte)0x33, 16).ToArray(), payload);
         }
 
         //Temp = No MPAN
         public static (byte[] KeyCCM, byte[] PString, byte[] MPAN) CKDFExpand(byte[] PRK_PNK, bool temp)
         {
             byte[] T4;
-            byte[] constantTE;
+            byte[] constantNK;
             if (temp)
-                constantTE = Enumerable.Repeat((byte)0x88, BLOCK_SIZE).ToArray();
+                constantNK = Enumerable.Repeat((byte)0x88, BLOCK_SIZE).ToArray();
             else
-                constantTE = Enumerable.Repeat((byte)0x55, BLOCK_SIZE).ToArray();
-            constantTE[15] = 0x1;
-            byte[] T1 = ComputeCMAC(constantTE, PRK_PNK);
-            byte[] buffer = new byte[BLOCK_SIZE<<1];
+                constantNK = Enumerable.Repeat((byte)0x55, BLOCK_SIZE).ToArray();
+            constantNK[15] = 0x1;
+            byte[] T1 = ComputeCMAC(PRK_PNK, constantNK);
+            byte[] buffer = new byte[32];
             Array.Copy(T1, buffer, BLOCK_SIZE);
-            Array.Copy(constantTE, 0, buffer, BLOCK_SIZE, BLOCK_SIZE);
+            Array.Copy(constantNK, 0, buffer, BLOCK_SIZE, BLOCK_SIZE);
             buffer[31] = 0x2;
-            byte[] T2 = ComputeCMAC(buffer, PRK_PNK);
+            byte[] T2 = ComputeCMAC(PRK_PNK, buffer);
             Array.Copy(T2, buffer, BLOCK_SIZE);
             buffer[31] = 0x3;
-            byte[] T3 = ComputeCMAC(buffer, PRK_PNK);
+            byte[] T3 = ComputeCMAC(PRK_PNK, buffer);
             if (!temp)
             {
                 Array.Copy(T3, buffer, BLOCK_SIZE);
                 buffer[31] = 0x4;
-                T4 = ComputeCMAC(buffer, PRK_PNK);
+                T4 = ComputeCMAC(PRK_PNK, buffer);
             }
             else
                 T4 = new byte[0];
@@ -350,7 +348,7 @@ namespace ZWaveDotNet.CommandClasses
         }
 
         //Validated
-        public static byte[] ComputeCMAC(Memory<byte> payload, byte[] key)
+        public static byte[] ComputeCMAC(byte[] key, Memory<byte> payload)
         {
             (Memory<byte> K1, Memory<byte> K2) s = ComputeSubkeys(key);
             bool wholeBlocks = (payload.Length % BLOCK_SIZE == 0) && (payload.Length > 0);

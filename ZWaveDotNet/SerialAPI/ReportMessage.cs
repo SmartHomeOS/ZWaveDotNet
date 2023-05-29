@@ -1,7 +1,7 @@
-﻿using ZWaveDotNet.Enums;
+﻿using System.Buffers.Binary;
+using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI.Messages;
 using ZWaveDotNet.SerialAPI.Messages.Enums;
-using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.SerialAPI
 {
@@ -51,7 +51,7 @@ namespace ZWaveDotNet.SerialAPI
             }
             else
             {
-                CommandClass = (CommandClass)PayloadConverter.ToUInt16(data.Span);
+                CommandClass = (CommandClass)BinaryPrimitives.ReadUInt16BigEndian(data.Span);
                 Command = data.Span[2];
                 Payload = data.Slice(3);
             }
