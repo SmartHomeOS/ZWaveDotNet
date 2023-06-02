@@ -8,3 +8,5 @@
 /TestConsole/obj
 /ZWaveDotNet/bin/
 /ZWaveDotNet/obj
+/UnitTests/bin/Debug/net6.0
+/UnitTests/obj

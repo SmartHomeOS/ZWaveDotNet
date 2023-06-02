@@ -1,18 +1,25 @@
-﻿namespace ZWaveDotNet.Util
+﻿using System.Globalization;
+using System.Text;
+
+namespace ZWaveDotNet.Util
 {
     public static class MemoryUtil
     {
         public static Memory<byte> Fill(byte val, int count)
         {
             Memory<byte> ret = new byte[count];
-            ret.Span.Fill(val);
+            if (val != 0x0)
+                ret.Span.Fill(val);
             return ret;
         }
 
         public static Memory<byte> PadZeros(Memory<byte> val, int count)
         {
+            if (count <= 0)
+                return val;
             Memory<byte> ret = new byte[val.Length + count];
-            val.CopyTo(ret);
+            if (val.Length > 0)
+                val.CopyTo(ret);
             return ret;
         }
 
@@ -29,9 +36,10 @@
         {
             if (a.Length != b.Length)
                 throw new ArgumentException("Invalid Byte Array Sizes");
+            Memory<byte> ret = new byte[a.Length];
             for (int i = 0; i < a.Length; i++)
-                a.Span[i] ^= b.Span[i];
-            return a;
+                ret.Span[i] = (byte)(a.Span[i] ^ b.Span[i]);
+            return ret;
         }
 
         public static void Increment(Memory<byte> mem)
@@ -42,6 +50,30 @@
                 if (mem.Span[i] != 0x0)
                     return;
             }
+        }
+
+        public static string Print(Memory<byte> mem)
+        {
+            StringBuilder ret = new StringBuilder(mem.Length * 3);
+            foreach (byte b in mem.Span)
+            {
+                if (ret.Length > 0)
+                    ret.Append(' ');
+                ret.Append(b.ToString("X2"));
+            }
+            return ret.ToString();
+        }
+
+        public static Memory<byte> From(string hexString)
+        {
+                if (hexString.Length % 2 != 0)
+                    throw new ArgumentException("Not a hex string");
+
+                Memory<byte> data = new byte[hexString.Length / 2];
+                for (int index = 0; index < data.Length; index++)
+                    data.Span[index] = byte.Parse(hexString.Substring(index * 2, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+
+                return data;
         }
     }
 }
