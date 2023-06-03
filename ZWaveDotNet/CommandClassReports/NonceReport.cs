@@ -1,4 +1,6 @@
-﻿namespace ZWaveDotNet.CommandClassReports
+﻿using ZWaveDotNet.Util;
+
+namespace ZWaveDotNet.CommandClassReports
 {
     public class NonceReport
     {
@@ -41,7 +43,7 @@
 
         public override string ToString()
         {
-            return $"Nonce: SPAN {SPAN_OS}, Seq {Sequence}, Entropy: {BitConverter.ToString(Entropy.ToArray())}";
+            return $"Nonce: SPAN {SPAN_OS}, Seq {Sequence}, Entropy: {MemoryUtil.Print(Entropy)}";
         }
     }
 }

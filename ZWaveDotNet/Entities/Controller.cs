@@ -12,6 +12,7 @@ using ZWaveDotNet.SerialAPI;
 using ZWaveDotNet.SerialAPI.Enums;
 using ZWaveDotNet.SerialAPI.Messages;
 using ZWaveDotNet.SerialAPI.Messages.Enums;
+using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.Entities
 {
@@ -31,6 +32,15 @@ namespace ZWaveDotNet.Entities
             s0Key = s2unauth;
             if (s0Key == null || s0Key.Length != 16)
                 throw new ArgumentException(nameof(s0Key));
+            using (Aes aes = Aes.Create())
+            {
+                aes.Key = Enumerable.Repeat((byte)0x0, 16).ToArray();
+                tempA = aes.EncryptEcb(Enumerable.Repeat((byte)0x55, 16).ToArray(), PaddingMode.None);
+                tempE = aes.EncryptEcb(Enumerable.Repeat((byte)0xAA, 16).ToArray(), PaddingMode.None);
+                aes.Key = s0Key;
+                AuthenticationKey = aes.EncryptEcb(Enumerable.Repeat((byte)0x55, 16).ToArray(), PaddingMode.None);
+                EncryptionKey = aes.EncryptEcb(Enumerable.Repeat((byte)0xAA, 16).ToArray(), PaddingMode.None);
+            }
             NetworkKeyS0 = s0Key;
             NetworkKeyS2UnAuth = s2unauth;
             flow = new Flow(port);
@@ -43,7 +53,7 @@ namespace ZWaveDotNet.Entities
         internal byte[] EncryptionKey { get; private set; }
         internal byte[] NetworkKeyS0 { get; private set; }
         internal byte[] NetworkKeyS2UnAuth { get; private set; }
-        internal SecurityManager SecurityManager { get; private set; }
+        internal SecurityManager? SecurityManager { get; private set; }
 
         public async Task Reset()
         {
@@ -54,15 +64,6 @@ namespace ZWaveDotNet.Entities
         public async ValueTask Start()
         {
             SecurityManager = new SecurityManager(await GetRandom(32));
-            using (Aes aes = Aes.Create())
-            {
-                aes.Key = Enumerable.Repeat((byte)0x0, 16).ToArray();
-                tempA = aes.EncryptEcb(Enumerable.Repeat((byte)0x55, 16).ToArray(), PaddingMode.None);
-                tempE = aes.EncryptEcb(Enumerable.Repeat((byte)0xAA, 16).ToArray(), PaddingMode.None);
-                aes.Key = NetworkKeyS0;
-                AuthenticationKey = aes.EncryptEcb(Enumerable.Repeat((byte)0x55, 16).ToArray(), PaddingMode.None);
-                EncryptionKey = aes.EncryptEcb(Enumerable.Repeat((byte)0xAA, 16).ToArray(), PaddingMode.None);
-            }
             await Task.Factory.StartNew(EventLoop);
 
             //Encap Configuration
@@ -237,10 +238,13 @@ namespace ZWaveDotNet.Entities
                             if (inc.NodeID > 0 && Nodes.TryGetValue(inc.NodeID, out Node? node))
                             { 
                                 Log.Information("Added " + node.ToString()); //TODO - Event this
-                                if (node.CommandClasses.ContainsKey(CommandClass.Security2))
-                                    await BootstrapS2(node);
-                                else if (node.CommandClasses.ContainsKey(CommandClass.Security))
-                                    await BootstrapS0(node);
+                                if (SecurityManager != null)
+                                {
+                                    if (node.CommandClasses.ContainsKey(CommandClass.Security2))
+                                        await BootstrapS2(node);
+                                    else if (node.CommandClasses.ContainsKey(CommandClass.Security))
+                                        await BootstrapS0(node);
+                                }
                             }
                         }
                     }
@@ -269,10 +273,14 @@ namespace ZWaveDotNet.Entities
             Security2 sec2 = ((Security2)node.CommandClasses[CommandClass.Security2]);
             Log.Information("Starting Secure S2 Inclusion");
             KeyExchangeReport kep = await sec2.KexGet();
-            kep.RequestedKeys = SecurityKey.S2Unauthenticated;
-            Memory<byte> pub = await sec2.KexSet(kep);
-            byte[] sharedSecret = SecurityManager.CreateSharedSecret(pub);
-            var ckdf = Security2.CKDFExpand(Security2.CKDFTempExtract(sharedSecret, SecurityManager.PublicKey, pub), true);
+            SecurityManager!.StoreRequestedKeys(node.ID, kep);
+            KeyExchangeReport resp = new KeyExchangeReport(false, false, SecurityKey.S2Unauthenticated);
+            Log.Information("Sending " + resp.ToString());
+            Memory<byte> pub = await sec2.KexSet(resp);
+            byte[] sharedSecret = SecurityManager!.CreateSharedSecret(pub);
+            var prk = Security2.CKDFTempExtract(sharedSecret, SecurityManager.PublicKey, pub);
+            Log.Error("Temp Key: " + MemoryUtil.Print(prk));
+            var ckdf = Security2.CKDFExpand(prk, true);
             SecurityManager.StoreKey(node.ID, SecurityManager.KeyType.ECDH_TEMP, ckdf.KeyCCM, ckdf.PString);
             await sec2.SendPublicKey();
         }

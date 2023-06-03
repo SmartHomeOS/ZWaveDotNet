@@ -779,7 +779,7 @@ namespace ZWaveDotNet.Security
         /// <summary>
         /// P = kG   and  s = sign(P)/k
         /// </summary>
-        static void Core(byte[] publicKey, byte[] signingKey, byte[] privateKey, byte[] peerPublicKey)
+        static void Core(byte[]? publicKey, byte[]? signingKey, byte[]? privateKey, byte[]? peerPublicKey)
         {
             if (publicKey == null) throw new ArgumentNullException("publicKey");
             if (publicKey.Length != 32) throw new ArgumentException(string.Format("publicKey must be 32 bytes long (but was {0} bytes long)", publicKey.Length), "publicKey");

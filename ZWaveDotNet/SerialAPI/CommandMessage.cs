@@ -13,6 +13,7 @@ namespace ZWaveDotNet.SerialAPI
 
         public CommandMessage(ushort nodeId, CommandClass commandClass, byte command, bool supervised = false, params byte[] payload)
         {
+            DestinationEndpoint = 0;
             DestinationNodeId = nodeId;
             if ((ushort)commandClass > 0xFF)
             {
@@ -38,6 +39,8 @@ namespace ZWaveDotNet.SerialAPI
         public CommandMessage(ushort nodeId, byte endpoint, CommandClass commandClass, byte command, bool supervised = false, params byte[] payload) : this(nodeId, commandClass, command, supervised, payload)
         {
             DestinationEndpoint = endpoint;
+            if (supervised)
+                Supervision.Encapsulate(Payload, true);
             if (endpoint != 0)
                 MultiChannel.Encapsulate(Payload, endpoint);
         }

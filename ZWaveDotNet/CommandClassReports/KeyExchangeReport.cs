@@ -35,5 +35,10 @@ namespace ZWaveDotNet.CommandClassReports
             ret[3] = (byte)RequestedKeys;
             return ret;
         }
+
+        public override string ToString()
+        {
+            return $"Key Exchange Report (Echo {Echo}, ClientSideAuth {ClientSideAuth}, Keys {RequestedKeys}";
+        }
     }
 }

@@ -1,5 +1,7 @@
 ﻿
 using Serilog;
+using ZWaveDotNet.CommandClassReports;
+using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.Security
 {
@@ -8,10 +10,12 @@ namespace ZWaveDotNet.Security
         private byte[] publicKey;
         private Memory<byte> privateKey;
         private Memory<byte> prngWorking;
-        public enum KeyType { ECDH_TEMP, S2Access, S2Auth, S2UnAuth, S0 };
+        public enum KeyType { ECDH_TEMP, S0, S2UnAuth, S2Auth, S2Access };
         private static readonly TimeSpan s0 = TimeSpan.FromSeconds(20);
         private Dictionary<ushort, Stack<NonceRecord>> records = new Dictionary<ushort, Stack<NonceRecord>>();
         private Dictionary<ushort, List<NetworkKey>> keys = new Dictionary<ushort, List<NetworkKey>>();
+        private Dictionary<ushort, KeyExchangeReport> requestedAccess = new Dictionary<ushort, KeyExchangeReport>();
+
         private class NonceRecord
         {
             public Memory<byte> Bytes;
@@ -26,6 +30,12 @@ namespace ZWaveDotNet.Security
             public byte[] PString;
             public byte[]? MPAN;
             public KeyType Key;
+            public NetworkKey(byte[] keyCCM, byte[] pString, KeyType key)
+            {
+                this.KeyCCM = keyCCM;
+                this.PString = pString;
+                this.Key = key;
+            }
         }
 
         public byte[] PublicKey { get { return publicKey; } }
@@ -57,14 +67,25 @@ namespace ZWaveDotNet.Security
                 list = new List<NetworkKey>();
                 keys.Add(nodeId, list);
             }
-            NetworkKey networkKey = new NetworkKey()
-            {
-                Key = type,
-                KeyCCM = keyCCM,
-                MPAN = mPAN,
-                PString = pString,
-            };
+            NetworkKey networkKey = new NetworkKey(keyCCM, pString, type); //TODO - MPAN
             list.Add(networkKey);
+        }
+
+        public NetworkKey? GetHighestKey(ushort nodeId)
+        {
+            if (keys.TryGetValue(nodeId, out List<NetworkKey>? keyLst))
+            {
+                NetworkKey? highest = null;
+                foreach (NetworkKey key in keyLst)
+                {
+                    if (highest == null)
+                        highest = key;
+                    else if (highest.Key < key.Key)
+                        highest = key;
+                }
+                return highest;
+            }
+            return null;
         }
 
         public NetworkKey? GetKey(ushort nodeId, KeyType type)
@@ -80,9 +101,21 @@ namespace ZWaveDotNet.Security
             return null;
         }
 
+        public void StoreRequestedKeys(ushort nodeId, KeyExchangeReport request)
+        {
+            requestedAccess[nodeId] = request;
+        }
+
+        public KeyExchangeReport? GetRequestedKeys(ushort nodeId)
+        {
+            if (requestedAccess.ContainsKey(nodeId))
+                return requestedAccess[nodeId];
+            return null;
+        }
+
         public void CreateSpan(ushort nodeId, byte sequence, Memory<byte> mixedEntropy, Memory<byte> personalization, KeyType type)
         {
-            Log.Information($"Created SPAN ({BitConverter.ToString(mixedEntropy.ToArray())}, {BitConverter.ToString(personalization.ToArray())})");
+            Log.Information($"Created SPAN ({MemoryUtil.Print(mixedEntropy)}, {MemoryUtil.Print(personalization)})");
             Memory<byte> working_state = CTR_DRBG.Instantiate(mixedEntropy, personalization);
             NonceRecord nr = new NonceRecord()
             {
@@ -105,10 +138,10 @@ namespace ZWaveDotNet.Security
                     if (record.Key == type && record.Entropy == false)
                     {
                         Log.Warning("Generating New Nonce");
-                        var result = CTR_DRBG.Generate(record.Bytes);
+                        var result = CTR_DRBG.Generate(record.Bytes, 13);
                         record.SequenceNumber++;
                         record.Bytes = result.working_state;
-                        return (result.output.Slice(0, 13), record.SequenceNumber);
+                        return (result.output, record.SequenceNumber);
                     }
                 }
             }
@@ -143,7 +176,7 @@ namespace ZWaveDotNet.Security
 
         public (Memory<byte> Bytes, byte Sequence) CreateEntropy(ushort nodeId, KeyType type)
         {
-            var result = CTR_DRBG.Generate(prngWorking);
+            var result = CTR_DRBG.Generate(prngWorking, 16);
             prngWorking = result.working_state;
             NonceRecord nr = new NonceRecord()
             {

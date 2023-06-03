@@ -2,7 +2,7 @@
 {
     const ushort poly = 4129;
     ushort[] table = new ushort[256];
-    ushort init = 0x1D0F;
+    const ushort INIT = 0x1D0F;
 
     public CRC16_CCITT()
     {
@@ -25,7 +25,7 @@
 
     public byte[] ComputeChecksum(List<byte> bytes)
     {
-        ushort crc = this.init;
+        ushort crc = INIT;
         for (int i = 0; i < bytes.Count; i++)
             crc = (ushort)((crc << 8) ^ table[((crc >> 8) ^ (0xff & bytes[i]))]);
         
@@ -37,7 +37,7 @@
 
     public byte[] ComputeChecksum(Memory<byte> bytes)
     {
-        ushort crc = this.init;
+        ushort crc = INIT;
         for (int i = 0; i < bytes.Length; i++)
             crc = (ushort)((crc << 8) ^ table[((crc >> 8) ^ (0xff & bytes.Span[i]))]);
 
