@@ -18,6 +18,11 @@ namespace TestConsole
                     attrs.Add(cc.commandClass, cc);
             }
 
+            try
+            {
+                File.Delete("status.md");
+            }
+            catch (Exception) { }
             FileStream fo = File.OpenWrite("status.md");
             StreamWriter fw = new StreamWriter(fo);
             FileStream fs = File.OpenRead("CCs.csv");

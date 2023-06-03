@@ -72,7 +72,7 @@ NETWORK_MANAGEMENT_INCLUSION | 0 | 4 | None
 NETWORK_MANAGEMENT_INSTALLATION_MAINTENANCE | 0 | 4 | None
 NETWORK_MANAGEMENT_PRIMARY | 0 | 1 | None
 NETWORK_MANAGEMENT_PROXY | 0 | 4 | None
-NO_OPERATION | 0 | 1 | None
+NO_OPERATION | 1 | 1 | Full
 NODE_NAMING | 1 | 1 | Partial
 NODE_PROVISIONING | 0 | 1 | None
 NOTIFICATION | 0 | 8 | None
@@ -122,5 +122,5 @@ ZIP_ND | 0 | 1 | None
 ZIP_PORTAL | 0 | 1 | None
 ZWAVEPLUS_INFO | 0 | 2 | None
 
-Full Support for 4/121 Command Classes.
+Full Support for 5/121 Command Classes.
 Partial Support for 5/121 Command Classes.

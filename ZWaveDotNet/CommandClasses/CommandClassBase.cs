@@ -28,6 +28,8 @@ namespace ZWaveDotNet.CommandClasses
         {
             switch (cc)
             {
+                case CommandClass.NoOperation:
+                    return new NoOperation(node, endpoint);
                 case CommandClass.Security:
                     return new Security0(node, endpoint);
                 case CommandClass.Security2:

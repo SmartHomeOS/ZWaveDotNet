@@ -31,6 +31,8 @@ namespace ZWaveDotNet.Entities
                         this.commandClasses.Add(cc, CommandClassBase.Create(cc, controller, this, 0));
                 }
             }
+            if (!this.commandClasses.ContainsKey(CommandClass.NoOperation))
+                this.commandClasses.Add(CommandClass.NoOperation, CommandClassBase.Create(CommandClass.NoOperation, controller, this, 0));
         }
 
         public async Task DeleteReturnRoute(CancellationToken cancellationToken)

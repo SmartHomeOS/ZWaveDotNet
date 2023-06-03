@@ -9,7 +9,7 @@ Features:
 * Support for 16-bit Command Classes
 
 Current Status:
-* Not yet ready for use - follow for our first release. 
+* **Not yet ready for use - follow for our first release.** 
 * Security2 is working in Unauth-mode singlecast only.
 * ZWave LR is not yet exposed.
 * Transport CC is unimplemented.
