@@ -9,6 +9,6 @@
         SupervisedOnce = 0x04,
         SupervisedWithProgress = 0x08,
         EnhancedChecksum = 0x10,
-        LegacySecurity = 0x20,
+        Security = 0x20,
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System.Buffers.Binary;
+using ZWaveDotNet.CommandClasses.Enums;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI.Messages;
 using ZWaveDotNet.SerialAPI.Messages.Enums;
@@ -13,9 +14,11 @@ namespace ZWaveDotNet.SerialAPI
         public CommandClass CommandClass;
         public byte Command;
         public Memory<byte> Payload;
+
         public byte SourceEndpoint;
         public ReportFlags Flags = ReportFlags.None;
         public byte SessionID;
+        internal SecurityKey SecurityLevel;
 
         public ReportMessage(ApplicationCommand cmd) : this(cmd.SourceNodeID, cmd.Data, cmd.RSSI)
         {
@@ -28,6 +31,7 @@ namespace ZWaveDotNet.SerialAPI
         public ReportMessage(ushort sourceNodeId, Memory<byte> data, sbyte rssi)
         {
             SourceNodeID = sourceNodeId;
+            RSSI = rssi;
             Update(data);
         }
 
@@ -59,7 +63,7 @@ namespace ZWaveDotNet.SerialAPI
 
         public override string ToString()
         {
-            return $"Node: {SourceNodeID}[{SourceEndpoint}] {CommandClass}-{Command} ({RSSI} dBm)";
+            return $"Node: {SourceNodeID}[{SourceEndpoint}] {CommandClass}-{Command} <S:{SecurityLevel}> ({RSSI} dBm)";
         }
     }
 }

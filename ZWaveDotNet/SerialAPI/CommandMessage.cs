@@ -39,8 +39,7 @@ namespace ZWaveDotNet.SerialAPI
         public CommandMessage(ushort nodeId, byte endpoint, CommandClass commandClass, byte command, bool supervised = false, params byte[] payload) : this(nodeId, commandClass, command, supervised, payload)
         {
             DestinationEndpoint = endpoint;
-            if (supervised)
-                Supervision.Encapsulate(Payload, true);
+            //Supervise done in super
             if (endpoint != 0)
                 MultiChannel.Encapsulate(Payload, endpoint);
         }

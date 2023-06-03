@@ -11,10 +11,11 @@ namespace TestConsole
         {
             int total = 0, full = 0, partial = 0;
             Dictionary<CommandClass, CCVersion> attrs = new Dictionary<CommandClass, CCVersion>();
-            foreach (Type t in GetTypesWithHelpAttribute(Assembly.GetAssembly(typeof(CCVersion))))
+            foreach (Type t in GetTypesWithHelpAttribute(Assembly.GetAssembly(typeof(CCVersion))!))
             { 
-                CCVersion cc = (CCVersion)t.GetCustomAttribute(typeof(CCVersion));
-                attrs.Add(cc.commandClass, cc);
+                CCVersion? cc = (CCVersion?)t.GetCustomAttribute(typeof(CCVersion));
+                if (cc != null)
+                    attrs.Add(cc.commandClass, cc);
             }
 
             FileStream fo = File.OpenWrite("status.md");
@@ -36,7 +37,7 @@ namespace TestConsole
                     if (cc != CommandClass.SecurityMark && cc != CommandClass.Mark)
                     {
                         total++;
-                        fw.Write(parts[0] + " | ");
+                        fw.Write(parts[0].Replace("COMMAND_CLASS_","") + " | ");
                         if (attrs.ContainsKey(cc))
                         {
                             CCVersion ccv = attrs[cc];
@@ -61,7 +62,7 @@ namespace TestConsole
                     }
                 }
             } while (line != null);
-            fw.WriteLine($"\nFull Support for {full} Command Classes, Partial Support for {partial}.  Total possible command classes {total}");
+            fw.WriteLine($"\nFull Support for {full}/{total} Command Classes.\nPartial Support for {partial}/{total} Command Classes.");
             fw.Close();
             Log.Information("Done");
         }

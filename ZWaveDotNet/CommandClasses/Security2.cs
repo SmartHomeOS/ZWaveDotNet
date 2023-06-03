@@ -52,9 +52,10 @@ namespace ZWaveDotNet.CommandClasses
             return msg.Payload.Slice(1);
         }
 
-        internal async Task NonceGet(byte sequence, CancellationToken cancellationToken = default)
+        public async Task GetSupportedCommands(CancellationToken cancellationToken = default)
         {
-            await SendCommand(Security2Command.NonceGet, cancellationToken, sequence);
+            CommandMessage request = new CommandMessage(node.ID, endpoint, commandClass, (byte)Security2Command.CommandsSupportedGet);
+            await Transmit(request.Payload, null, cancellationToken);
         }
 
         internal async Task SendPublicKey(CancellationToken cancellationToken = default)
@@ -73,41 +74,78 @@ namespace ZWaveDotNet.CommandClasses
             return msg.CommandClass == CommandClass.Security2 && msg.Command == (byte)Security2Command.MessageEncap;
         }
 
-        public async Task Transmit(List<byte> payload, SecurityManager.KeyType type, CancellationToken cancellationToken = default)
+        public async Task Transmit(List<byte> payload, SecurityManager.RecordType? type, CancellationToken cancellationToken = default)
         {
+            List<byte> extensionData = new List<byte>();
+            Log.Information("Encrypting Payload for " + node.ID.ToString());
             if (controller.SecurityManager == null)
                 throw new InvalidOperationException("Security Manager does not exist");
-            Log.Information("Encrypting Payload for " + node.ID.ToString());
-            SecurityManager.NetworkKey? networkKey = controller.SecurityManager.GetKey(node.ID, type);
+            
+            SecurityManager.NetworkKey? networkKey;
+            if (type == null)
+                networkKey = controller.SecurityManager.GetHighestKey(node.ID);
+            else
+                networkKey = controller.SecurityManager.GetKey(node.ID, type.Value);
             if (networkKey == null)
             {
                 Log.Error("Unable to encrypt message without network key");
                 return;
             }
+            else
+                Log.Information("Using Key " + networkKey.Key.ToString());
 
-            var nonce = controller.SecurityManager.NextNonce(node.ID, networkKey.Key)!.Value; //8(tag) + 1(seq) + 1(extensions byte) + 1 (command class) + 1 (command)
-            AdditionalAuthData ad = new AdditionalAuthData(node, controller, true, payload.Count + 12, new byte[] {nonce.sequence, 0x0}); //FIXME - Implement unencrypted here too
-            Memory<byte> encoded = EncryptCCM(payload.ToArray(),  nonce.output, networkKey!.KeyCCM, ad);
+            (Memory<byte> output, byte sequence)? nonce = controller.SecurityManager.NextNonce(node.ID, networkKey.Key);
+            if (nonce == null)
+            {
+                //We need a new Nonce
+                Log.Information("Requesting new Nonce");
+                ReportMessage msg = await SendAndGet(Security2Command.NonceGet, Security2Command.NonceReport, cancellationToken, (byte)new Random().Next());
+                NonceReport nr = new NonceReport(msg.Payload);
+                var entropy = controller.SecurityManager.CreateEntropy(node.ID);
+                Memory<byte> MEI = CKDFMEIExpand(CKDFMEIExtract(entropy.Bytes, nr.Entropy));
+                controller.SecurityManager.CreateSpan(node.ID, entropy.Sequence, MEI, networkKey.PString, networkKey.Key);
+                nonce = controller.SecurityManager.NextNonce(node.ID, networkKey.Key);
+                if (nonce == null)
+                {
+                    Log.Error("Unable to create new Nonce");
+                    return;
+                }
 
-            byte[] securePayload = new byte[2 + encoded.Length];
-            securePayload[0] = nonce.sequence;
-            //securePayload[1] = //TODO - Extensions
-            encoded.CopyTo(securePayload.AsMemory().Slice(2));
+                extensionData.Add(nonce.Value.sequence);
+                extensionData.Add(0x1);
+                extensionData.Add(18);
+                extensionData.Add(0x41); //SPAN Ext
+                extensionData.AddRange(entropy.Bytes.ToArray());
+            }
+            else
+            {
+                extensionData.Add(nonce.Value.sequence);
+                extensionData.Add(0x0);
+            }
+
+            //                                                          8(tag) + 1 (command class) + 1 (command) + extension len
+            AdditionalAuthData ad = new AdditionalAuthData(node, controller, true, payload.Count + 10 + extensionData.Count, extensionData.ToArray()); //FIXME - Implement unencrypted here too
+            Memory<byte> encoded = EncryptCCM(payload.ToArray(),  nonce.Value.output, networkKey!.KeyCCM, ad);
+
+            byte[] securePayload = new byte[extensionData.Count + encoded.Length];
+            extensionData.CopyTo(securePayload);
+            encoded.CopyTo(securePayload.AsMemory().Slice(extensionData.Count));
 
             await SendCommand(Security2Command.MessageEncap, cancellationToken, securePayload);
+            Log.Debug("Transmit Complete");
         }
 
         internal static ReportMessage? Free(ReportMessage msg, Controller controller)
         {
             if (controller.SecurityManager == null)
                 throw new InvalidOperationException("Security Manager does not exist");
-            Log.Information("Decrypting Secure2 Message");
             SecurityManager.NetworkKey? networkKey = controller.SecurityManager.GetHighestKey(msg.SourceNodeID);
             if (networkKey == null)
             {
                 Log.Error("Unable to decrypt message without network key");
                 return null;
             }
+            Log.Information("Decrypting Secure2 Message with key (" + networkKey.Key + ")");
             int messageLen = msg.Payload.Length + 2;
             byte sequence = msg.Payload.Span[0];
             Log.Warning("Sequence #: " + sequence);
@@ -137,6 +175,8 @@ namespace ZWaveDotNet.CommandClasses
                 return null;
             }
             msg.Update(decoded);
+            msg.Flags |= ReportFlags.Security;
+            msg.SecurityLevel = SecurityManager.TypeToKey(networkKey.Key);
             Log.Warning("Decoded Message: " + msg.ToString());
             return msg;
         }
@@ -150,7 +190,7 @@ namespace ZWaveDotNet.CommandClasses
             {
                 case 0x01: //SPAN
                     Memory<byte> sendersEntropy = payload.Slice(2, 16);
-                    var result = sm.GetEntropy(nodeId, netKey.Key);
+                    var result = sm.GetEntropy(nodeId);
                     Memory<byte> MEI = CKDFMEIExpand(CKDFMEIExtract(sendersEntropy, result!.Value.bytes));
                     sm.CreateSpan(nodeId, result!.Value.sequence, MEI, netKey.PString, netKey.Key);
                     Log.Warning("Created new SPAN");
@@ -168,9 +208,6 @@ namespace ZWaveDotNet.CommandClasses
             {
                 case Security2Command.KEXGet:
                     await SendCommand(Security2Command.KEXReport, CancellationToken.None, 0x0, 0x2, 0x1, (byte)SecurityKey.S2Unauthenticated);
-                    break;
-                case Security2Command.KEXReport:
-                    Log.Information("KEXReport Requesting Keys " + (SecurityKey)message.Payload.Span[3]);
                     break;
                 case Security2Command.NonceReport:
                     NonceReport nr = new NonceReport(message.Payload);
@@ -191,7 +228,7 @@ namespace ZWaveDotNet.CommandClasses
                             kexReport.Echo = true;
                             Log.Information("Responding: " + kexReport.ToString());
                             CommandMessage reportKex = new CommandMessage(node.ID, endpoint, commandClass, (byte)Security2Command.KEXReport, false, kexReport.ToBytes());
-                            await Transmit(reportKex.Payload, SecurityManager.KeyType.ECDH_TEMP);
+                            await Transmit(reportKex.Payload, SecurityManager.RecordType.ECDH_TEMP);
                         }
                     }
                     else
@@ -206,34 +243,34 @@ namespace ZWaveDotNet.CommandClasses
                     resp[0] = (byte)key;
                     controller.NetworkKeyS2UnAuth.CopyTo(resp, 1); //FIXME - Type hardcoded
                     var permKey = CKDFExpand(controller.NetworkKeyS2UnAuth, false);
-                    controller.SecurityManager.StoreKey(node.ID, SecurityManager.KeyType.S2UnAuth, permKey.KeyCCM, permKey.PString, permKey.MPAN); //FIXME - Type hardcoded
+                    controller.SecurityManager.StoreKey(node.ID, SecurityManager.RecordType.S2UnAuth, permKey.KeyCCM, permKey.PString, permKey.MPAN); //FIXME - Type hardcoded
                     CommandMessage data = new CommandMessage(node.ID, endpoint, commandClass, (byte)Security2Command.NetworkKeyReport, false, resp);
-                    await Transmit(data.Payload, SecurityManager.KeyType.ECDH_TEMP);
+                    await Transmit(data.Payload, SecurityManager.RecordType.ECDH_TEMP);
                     break;
                 case Security2Command.NetworkKeyVerify:
-                    Log.Warning("Success!");
+                    if (controller.SecurityManager == null)
+                        return;
+                    Log.Warning("Network Key Verify!");
+                    SecurityManager.NetworkKey? nk = controller.SecurityManager.GetHighestKey(node.ID);
+                    if (nk != null && nk.Key != SecurityManager.RecordType.Entropy && nk.Key != SecurityManager.RecordType.ECDH_TEMP)
+                        controller.SecurityManager.RevokeKey(node.ID, nk.Key);
+                    CommandMessage transferEnd = new CommandMessage(node.ID, endpoint, commandClass, (byte)Security2Command.TransferEnd, false, 0x2); //Key Verified
+                    await Transmit(transferEnd.Payload, SecurityManager.RecordType.ECDH_TEMP);
                     break;
                 case Security2Command.NonceGet:
                     //TODO - Validate sequence number
                     if (controller.SecurityManager == null)
                         return;
-                    if (controller.SecurityManager.SpanExists(node.ID, SecurityManager.KeyType.ECDH_TEMP)) //FIXME: Need to figure out which key
-                    {
-                        var entropy = controller.SecurityManager.GetEntropy(node.ID, SecurityManager.KeyType.ECDH_TEMP); //FIXME: Need to figure out which key
-                        Log.Warning("Nonce Get Received for existing SPAN");
-                        if (entropy.HasValue)
-                        {
-                            NonceReport nonceGetReport = new NonceReport(entropy.Value.sequence, true, false, entropy.Value.bytes);
-                            await SendCommand(Security2Command.NonceReport, CancellationToken.None, nonceGetReport.GetBytes());
-                        }
-                    }
-                    else
-                    {
-                        Log.Warning("Creating new Nonce");
-                        var entropy = controller.SecurityManager.CreateEntropy(node.ID, SecurityManager.KeyType.ECDH_TEMP);
-                        NonceReport nonceGetReport = new NonceReport(entropy.Sequence, true, false, entropy.Bytes);
-                        await SendCommand(Security2Command.NonceReport, CancellationToken.None, nonceGetReport.GetBytes());
-                    }
+                    Log.Warning("Creating new Nonce");
+                    var entropy = controller.SecurityManager.CreateEntropy(node.ID);
+                    NonceReport nonceGetReport = new NonceReport(entropy.Sequence, true, false, entropy.Bytes);
+                    await SendCommand(Security2Command.NonceReport, CancellationToken.None, nonceGetReport.GetBytes());
+                    break;
+                case Security2Command.TransferEnd:
+                    Log.Warning("Transfer Complete"); //TODO - Event This
+                    break;
+                case Security2Command.CommandsSupportedReport:
+                    Log.Warning("Supported Secure Commands: " + string.Join(',', PayloadConverter.GetCommandClasses(message.Payload)));
                     break;
                 case Security2Command.KEXFail:
                     switch (message.Payload.Span[0])

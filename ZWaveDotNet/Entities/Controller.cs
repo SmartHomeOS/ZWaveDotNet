@@ -53,7 +53,7 @@ namespace ZWaveDotNet.Entities
         internal byte[] EncryptionKey { get; private set; }
         internal byte[] NetworkKeyS0 { get; private set; }
         internal byte[] NetworkKeyS2UnAuth { get; private set; }
-        internal SecurityManager? SecurityManager { get; private set; }
+        public SecurityManager? SecurityManager { get; private set; } //TODO - Make this internal
 
         public async Task Reset()
         {
@@ -281,7 +281,7 @@ namespace ZWaveDotNet.Entities
             var prk = Security2.CKDFTempExtract(sharedSecret, SecurityManager.PublicKey, pub);
             Log.Error("Temp Key: " + MemoryUtil.Print(prk));
             var ckdf = Security2.CKDFExpand(prk, true);
-            SecurityManager.StoreKey(node.ID, SecurityManager.KeyType.ECDH_TEMP, ckdf.KeyCCM, ckdf.PString);
+            SecurityManager.StoreKey(node.ID, SecurityManager.RecordType.ECDH_TEMP, ckdf.KeyCCM, ckdf.PString);
             await sec2.SendPublicKey();
         }
     }

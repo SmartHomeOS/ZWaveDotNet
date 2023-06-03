@@ -1,5 +1,6 @@
 ﻿using Serilog;
 using System.Security.Cryptography;
+using ZWaveDotNet.CommandClasses.Enums;
 using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
@@ -79,6 +80,11 @@ namespace ZWaveDotNet.CommandClasses
 
         internal static ReportMessage? Free(ReportMessage msg, Controller controller)
         {
+            if (controller.SecurityManager == null)
+            {
+                Log.Error("Security Manager is not ready for decryption");
+                return null;
+            }
             Memory<byte>? receiversNonce = controller.SecurityManager.ValidateS0Nonce(msg.SourceNodeID, msg.Payload.Span[msg.Payload.Length - 9]);
             if (receiversNonce == null)
             {
@@ -99,7 +105,8 @@ namespace ZWaveDotNet.CommandClasses
             if (sequenced)
                 throw new PlatformNotSupportedException("Sequenced Security0 Not Supported"); //TODO
             msg.Update(decryptedPayload.Slice(1));
-            msg.Flags |= ReportFlags.LegacySecurity;
+            msg.Flags |= ReportFlags.Security;
+            msg.SecurityLevel = SecurityKey.S0;
             return msg;
         }
 
