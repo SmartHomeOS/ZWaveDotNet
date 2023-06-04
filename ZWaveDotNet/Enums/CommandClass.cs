@@ -87,7 +87,7 @@
         ScheduleEntryLock = 0x4E,
         ScreenAttributes = 0x93,
         ScreenMD = 0x92,
-        Security = 0x98,
+        Security0 = 0x98,
         Security2 = 0x9F,
         SecurityMark = 0xF100,
         SensorAlarm = 0x9C,

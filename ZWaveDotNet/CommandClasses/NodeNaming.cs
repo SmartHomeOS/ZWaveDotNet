@@ -1,6 +1,4 @@
-﻿using Serilog;
-using ZWaveDotNet.CommandClassReports;
-using ZWaveDotNet.Entities;
+﻿using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
 using ZWaveDotNet.Util;
@@ -22,18 +20,20 @@ namespace ZWaveDotNet.CommandClasses
 
         public NodeNaming(Node node, byte endpoint) : base(node, endpoint, CommandClass.NodeNaming) { }
 
-        public async Task<NodeNamingNameReport> GetName(CancellationToken cancellationToken = default)
+        public async Task<string> GetName(CancellationToken cancellationToken = default)
         {
             ReportMessage resp = await SendReceive(Command.GetName, Command.ReportName, cancellationToken);
-            NodeNamingNameReport name = new NodeNamingNameReport(resp.Payload);
-            return name;
+            if (resp.Payload.Length < 1)
+                throw new FormatException($"The response was not in the expected format. Payload: {MemoryUtil.Print(resp.Payload)}");
+            return PayloadConverter.ToEncodedString(resp.Payload, 16);
         }
 
-        public async Task<NodeNamingLocationReport> GetLocation(CancellationToken cancellationToken = default)
+        public async Task<string> GetLocation(CancellationToken cancellationToken = default)
         {
             ReportMessage resp = await SendReceive(Command.GetLocation, Command.ReportLocation, cancellationToken);
-            NodeNamingLocationReport location = new NodeNamingLocationReport(resp.Payload);
-            return location;
+            if (resp.Payload.Length < 1)
+                throw new FormatException($"The response was not in the expected format. Payload: {MemoryUtil.Print(resp.Payload)}");
+            return PayloadConverter.ToEncodedString(resp.Payload, 16);
         }
 
         public Task SetName(string name, CancellationToken cancellationToken = default)

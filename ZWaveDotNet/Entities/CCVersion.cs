@@ -1,6 +1,6 @@
 ﻿using ZWaveDotNet.Enums;
 
-namespace ZWaveDotNet.CommandClasses
+namespace ZWaveDotNet.Entities
 {
     public class CCVersion : Attribute
     {
@@ -8,7 +8,7 @@ namespace ZWaveDotNet.CommandClasses
         public byte minVersion;
         public byte maxVersion;
         public bool complete;
-        public CCVersion(CommandClass @class, byte version) 
+        public CCVersion(CommandClass @class, byte version)
         {
             commandClass = @class;
             minVersion = maxVersion = version;
@@ -16,14 +16,14 @@ namespace ZWaveDotNet.CommandClasses
         }
         public CCVersion(CommandClass @class, byte minVersion, byte maxVersion)
         {
-            commandClass = @class; 
+            commandClass = @class;
             this.minVersion = minVersion;
             this.maxVersion = maxVersion;
             complete = true;
         }
         public CCVersion(CommandClass @class, byte minVersion, byte maxVersion, bool complete)
         {
-            commandClass = @class; 
+            commandClass = @class;
             this.minVersion = minVersion;
             this.maxVersion = maxVersion;
             this.complete = complete;

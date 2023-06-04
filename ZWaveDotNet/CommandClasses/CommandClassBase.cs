@@ -4,6 +4,7 @@ using ZWaveDotNet.Enums;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.SerialAPI.Messages.Enums;
 using ZWaveDotNet.CommandClassReports;
+using ZWaveDotNet.Security;
 
 namespace ZWaveDotNet.CommandClasses
 {
@@ -16,7 +17,7 @@ namespace ZWaveDotNet.CommandClasses
         protected Controller controller;
         protected CommandClass commandClass;
         protected byte endpoint;
-        protected Dictionary<byte, TaskCompletionSource<ReportMessage>> callbacks = new Dictionary<byte, TaskCompletionSource<ReportMessage>>();
+        protected Dictionary<byte, List<TaskCompletionSource<ReportMessage>>> callbacks = new Dictionary<byte, List<TaskCompletionSource<ReportMessage>>>();
 
         protected CommandClassBase(Node node, byte endpoint, CommandClass commandClass)
         {
@@ -36,8 +37,10 @@ namespace ZWaveDotNet.CommandClasses
         {
             if (callbacks.ContainsKey(message.Command))
             {
-                callbacks[message.Command].SetResult(message);
+                List<TaskCompletionSource<ReportMessage>> lst = callbacks[message.Command];
                 callbacks.Remove(message.Command);
+                foreach (TaskCompletionSource<ReportMessage> callback in lst)
+                    callback.TrySetResult(message);
                 return;
             }
             await Handle(message);
@@ -49,7 +52,7 @@ namespace ZWaveDotNet.CommandClasses
             {
                 case CommandClass.NoOperation:
                     return new NoOperation(node, endpoint);
-                case CommandClass.Security:
+                case CommandClass.Security0:
                     return new Security0(node, endpoint);
                 case CommandClass.Security2:
                     return new Security2(node, endpoint);
@@ -68,7 +71,7 @@ namespace ZWaveDotNet.CommandClasses
                 case CommandClass.NodeNaming:
                     return new NodeNaming(node, endpoint);
             }
-            return new UnknownCommandClass(node, endpoint, cc);
+            return new Unknown(node, endpoint, cc);
         }
 
         protected async Task SendCommand(Enum command, CancellationToken token, params byte[] payload)
@@ -79,9 +82,27 @@ namespace ZWaveDotNet.CommandClasses
         protected async Task SendCommand(Enum command, CancellationToken token, bool supervised = false, params byte[] payload)
         {
             CommandMessage data = new CommandMessage(node.ID, (byte)(endpoint & 0x7F), commandClass, Convert.ToByte(command), supervised, payload);//Endpoint 0x80 is multicast
+            if (data.Payload.Count > 1 && IsSecure(data.Payload[1]))
+            {
+                if (controller.SecurityManager == null)
+                    throw new InvalidOperationException("Secure command requires security manager");
+                 SecurityManager.NetworkKey? key = controller.SecurityManager.GetHighestKey(node.ID);
+                if (key == null)
+                    throw new InvalidOperationException($"Command classes are secure but no keys exist for node {node.ID}");
+                if (key.Key == SecurityManager.RecordType.S0)
+                    await ((Security0)node.CommandClasses[CommandClass.Security0]).Encapsulate(data.Payload, token);
+                else if (key.Key > SecurityManager.RecordType.S0)
+                    await ((Security2)node.CommandClasses[CommandClass.Security2]).Encapsulate(data.Payload, key.Key, token);
+            }
+            
             DataCallback dc = await controller.Flow.SendAcknowledgedResponseCallback(data.ToMessage());
             if (dc.Status != TransmissionStatus.CompleteOk && dc.Status != TransmissionStatus.CompleteNoAck && dc.Status != TransmissionStatus.CompleteVerified)
                 throw new Exception("Transmission Failure " + dc.Status.ToString());
+        }
+
+        protected virtual bool IsSecure(byte command)
+        {
+            return secure;
         }
 
         protected async Task<ReportMessage> SendReceive(Enum command, Enum response, CancellationToken token, params byte[] payload)
@@ -92,9 +113,19 @@ namespace ZWaveDotNet.CommandClasses
         protected async Task<ReportMessage> SendReceive(Enum command, Enum response, CancellationToken token, bool supervised = false, params byte[] payload)
         {
             TaskCompletionSource<ReportMessage> src = new TaskCompletionSource<ReportMessage>();
-            callbacks.Add(Convert.ToByte(response), src);
+            byte cmd = Convert.ToByte(response);
+            if (callbacks.TryGetValue(cmd, out List<TaskCompletionSource<ReportMessage>>? cbList))
+                cbList.Add(src);
+            else
+            {
+                List<TaskCompletionSource<ReportMessage>> newCallbacks = new List<TaskCompletionSource<ReportMessage>>
+                {
+                    src
+                };
+                callbacks.Add(cmd, newCallbacks);
+            }
             await SendCommand(command, token, supervised, payload);
-            return await src.Task;
+            return await src.Task.WaitAsync(token);
         }
 
         protected async Task FireEvent(CommandClassEvent? evt, ICommandClassReport report)

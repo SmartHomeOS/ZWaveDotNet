@@ -33,16 +33,16 @@ namespace ZWaveDotNet.CommandClasses
 
         public Security2(Node node, byte endpoint) : base(node, endpoint, CommandClass.Security2) { }
 
-        public async Task GetSupportedCommands(CancellationToken cancellationToken = default)
+        public async Task<List<CommandClass>> GetSupportedCommands(CancellationToken cancellationToken = default)
         {
-            CommandMessage request = new CommandMessage(node.ID, endpoint, commandClass, (byte)Security2Command.CommandsSupportedGet);
-            await Transmit(request.Payload, null, cancellationToken);
+            ReportMessage msg = await SendReceive(Security2Command.CommandsSupportedGet, Security2Command.CommandsSupportedReport, cancellationToken);
+            return PayloadConverter.GetCommandClasses(msg.Payload);
         }
 
         internal async Task<KeyExchangeReport> KexGet(CancellationToken cancellationToken = default)
         {
             Log.Information("Requesting Supported Curves and schemes");
-            ReportMessage msg = await SendAndGet(Security2Command.KEXGet, Security2Command.KEXReport, cancellationToken);
+            ReportMessage msg = await SendReceive(Security2Command.KEXGet, Security2Command.KEXReport, cancellationToken);
             Log.Information("Curves and schemes Received");
             return new KeyExchangeReport(msg.Payload);
         }
@@ -50,7 +50,7 @@ namespace ZWaveDotNet.CommandClasses
         internal async Task<Memory<byte>> KexSet(KeyExchangeReport report, CancellationToken cancellationToken = default)
         {
             Log.Information($"Granting Keys {report.RequestedKeys}");
-            ReportMessage msg = await SendAndGet(Security2Command.KEXSet, Security2Command.PublicKeyReport,  cancellationToken, report.ToBytes());
+            ReportMessage msg = await SendReceive(Security2Command.KEXSet, Security2Command.PublicKeyReport,  cancellationToken, report.ToBytes());
             Log.Information("Received Public Key "+ MemoryUtil.Print(msg.Payload.Slice(1)));
             return msg.Payload.Slice(1);
         }
@@ -72,6 +72,15 @@ namespace ZWaveDotNet.CommandClasses
         }
 
         public async Task Transmit(List<byte> payload, SecurityManager.RecordType? type, CancellationToken cancellationToken = default)
+        {
+            await Encapsulate(payload, type, cancellationToken);
+            if (payload.Count > 2)
+                payload.RemoveRange(0, 2);
+            await SendCommand(Security2Command.MessageEncap, cancellationToken, payload.ToArray());
+            Log.Debug("Transmit Complete");
+        }
+
+        public async Task Encapsulate(List<byte> payload, SecurityManager.RecordType? type, CancellationToken cancellationToken = default)
         {
             List<byte> extensionData = new List<byte>();
             Log.Information("Encrypting Payload for " + node.ID.ToString());
@@ -96,7 +105,7 @@ namespace ZWaveDotNet.CommandClasses
             {
                 //We need a new Nonce
                 Log.Information("Requesting new Nonce");
-                ReportMessage msg = await SendAndGet(Security2Command.NonceGet, Security2Command.NonceReport, cancellationToken, (byte)new Random().Next());
+                ReportMessage msg = await SendReceive(Security2Command.NonceGet, Security2Command.NonceReport, cancellationToken, (byte)new Random().Next());
                 NonceReport nr = new NonceReport(msg.Payload);
                 var entropy = controller.SecurityManager.CreateEntropy(node.ID);
                 Memory<byte> MEI = AES.CKDFMEIExpand(AES.CKDFMEIExtract(entropy.Bytes, nr.Entropy));
@@ -128,8 +137,10 @@ namespace ZWaveDotNet.CommandClasses
             extensionData.CopyTo(securePayload);
             encoded.CopyTo(securePayload.AsMemory().Slice(extensionData.Count));
 
-            await SendCommand(Security2Command.MessageEncap, cancellationToken, securePayload);
-            Log.Debug("Transmit Complete");
+            payload.Clear();
+            payload.Add((byte)commandClass);
+            payload.Add((byte)Security2Command.MessageEncap);
+            payload.AddRange(securePayload);
         }
 
         internal static ReportMessage? Free(ReportMessage msg, Controller controller)
@@ -260,9 +271,6 @@ namespace ZWaveDotNet.CommandClasses
                 case Security2Command.TransferEnd:
                     Log.Warning("Transfer Complete"); //TODO - Event This
                     break;
-                case Security2Command.CommandsSupportedReport:
-                    Log.Warning("Supported Secure Commands: " + string.Join(',', PayloadConverter.GetCommandClasses(message.Payload)));
-                    break;
                 case Security2Command.KEXFail:
                     //TODO - Event This
                     switch (message.Payload.Span[0])
@@ -299,10 +307,17 @@ namespace ZWaveDotNet.CommandClasses
             }
         }
 
-        private async Task<ReportMessage> SendAndGet(Enum command, Security2Command responseCommand, CancellationToken token, params byte[] payload)
+        protected override bool IsSecure(byte command)
         {
-            CommandMessage cmsg = new CommandMessage(node.ID, (byte)(endpoint & 0x7F), commandClass, Convert.ToByte(command), false, payload);//Endpoint 0x80 is multicast
-            return await controller.Flow.SendReceiveSequence(cmsg.ToMessage(), CommandClass.Security2, (byte)responseCommand, token);
+            switch ((Security2Command)command)
+            {
+                case Security2Command.CommandsSupportedGet:
+                case Security2Command.NetworkKeyGet:
+                case Security2Command.NetworkKeyReport:
+                case Security2Command.NetworkKeyVerify:
+                    return true;
+            }
+            return false;
         }
 
         public static Memory<byte> EncryptCCM(Memory<byte> plaintext, Memory<byte> nonce, Memory<byte> key, AdditionalAuthData ad)

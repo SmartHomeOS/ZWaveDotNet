@@ -9,7 +9,7 @@ using ZWaveDotNet.SerialAPI;
 
 namespace ZWaveDotNet.CommandClasses
 {
-    [CCVersion(CommandClass.Security, 1)]
+    [CCVersion(CommandClass.Security0, 1)]
     public class Security0 : CommandClassBase
     {
         private static readonly byte[] EMPTY_IV = new byte[]{ 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
@@ -29,13 +29,11 @@ namespace ZWaveDotNet.CommandClasses
             MessageEncapNonceGet = 0xC1
         }
 
-        public Security0(Node node, byte endpoint) : base(node, endpoint, CommandClass.Security) { }
+        public Security0(Node node, byte endpoint) : base(node, endpoint, CommandClass.Security0) { }
 
         public async Task CommandsSupportedGet(CancellationToken cancellationToken = default)
         {
-            Log.Debug("Getting Supported Commands");
-            CommandMessage data = new CommandMessage(node.ID, endpoint, commandClass, (byte)SecurityCommand.CommandsSupportedGet);
-            await Transmit(data.Payload);
+            await SendReceive(SecurityCommand.CommandsSupportedGet, SecurityCommand.CommandsSupportedReport, cancellationToken);
         }
 
         internal async Task SchemeGet(CancellationToken cancellationToken = default)
@@ -48,27 +46,31 @@ namespace ZWaveDotNet.CommandClasses
         {
             Log.Information($"Setting Network Key on {node.ID}");
             CommandMessage data = new CommandMessage(node.ID, endpoint, commandClass, (byte)SecurityCommand.NetworkKeySet, false, controller.NetworkKeyS0);
-            await Transmit(data.Payload, true);
+            await TransmitTemp(data.Payload);
+        }
+
+        protected async Task<ReportMessage> GetNonce(CancellationToken cancellationToken)
+        {
+            Log.Information("Fetching Nonce");
+            return await SendReceive(SecurityCommand.NonceGet, SecurityCommand.NonceReport, cancellationToken);
         }
 
         public static bool IsEncapsulated(ReportMessage msg)
         {
-            return msg.CommandClass == CommandClass.Security && (msg.Command == (byte)SecurityCommand.MessageEncap || msg.Command == (byte)SecurityCommand.MessageEncapNonceGet);
+            return msg.CommandClass == CommandClass.Security0 && (msg.Command == (byte)SecurityCommand.MessageEncap || msg.Command == (byte)SecurityCommand.MessageEncapNonceGet);
         }
 
-        public async Task Transmit(List<byte> payload, bool temp = false)
+        public async Task TransmitTemp(List<byte> payload, CancellationToken cancellationToken = default)
         {
-            Log.Information("Fetching Nonce");
-            CommandMessage request = new CommandMessage(node.ID, endpoint, commandClass, (byte)SecurityCommand.NonceGet);
-            ReportMessage report = await controller.Flow.SendReceiveSequence(request.ToMessage(), commandClass, (byte)SecurityCommand.NonceReport);
+            ReportMessage report = await GetNonce(cancellationToken);
 
-            Log.Information("Creating Payload for " + node.ID.ToString());
+            Log.Information("Creating Temp Payload for " + node.ID.ToString());
             byte[] receiversNonce = report.Payload.ToArray();
             byte[] sendersNonce = new byte[8];
             new Random().NextBytes(sendersNonce);
             payload.Insert(0, (byte)0x0); //Sequenced = False
-            byte[] encrypted = EncryptDecryptPayload(payload.ToArray(), sendersNonce, receiversNonce, temp ? controller.tempE : controller.EncryptionKey);
-            byte[] mac = ComputeMAC(controller.ControllerID, node.ID, (byte)SecurityCommand.MessageEncap, sendersNonce, receiversNonce, encrypted, temp ? controller.tempA : controller.AuthenticationKey);
+            byte[] encrypted = EncryptDecryptPayload(payload.ToArray(), sendersNonce, receiversNonce, controller.tempE);
+            byte[] mac = AES.ComputeMAC(controller.ControllerID, node.ID, (byte)SecurityCommand.MessageEncap, sendersNonce, receiversNonce, encrypted, controller.tempA);
 
             byte[] securePayload = new byte[17 + encrypted.Length];
             Array.Copy(sendersNonce, 0, securePayload, 0, 8);
@@ -76,7 +78,31 @@ namespace ZWaveDotNet.CommandClasses
             securePayload[8 + encrypted.Length] = receiversNonce[0];
             Array.Copy(mac, 0, securePayload, 9 + encrypted.Length, 8);
 
-            await SendCommand(SecurityCommand.MessageEncap, CancellationToken.None, securePayload);
+            await SendCommand(SecurityCommand.MessageEncap, cancellationToken, securePayload);
+        }
+
+        public async Task Encapsulate(List<byte> payload, CancellationToken cancellationToken)
+        {
+            ReportMessage report = await GetNonce(cancellationToken);
+
+            Log.Information("Creating Payload for " + node.ID.ToString());
+            byte[] receiversNonce = report.Payload.ToArray();
+            byte[] sendersNonce = new byte[8];
+            new Random().NextBytes(sendersNonce);
+            payload.Insert(0, (byte)0x0); //Sequenced = False
+            byte[] encrypted = EncryptDecryptPayload(payload.ToArray(), sendersNonce, receiversNonce, controller.EncryptionKey);
+            byte[] mac = AES.ComputeMAC(controller.ControllerID, node.ID, (byte)SecurityCommand.MessageEncap, sendersNonce, receiversNonce, encrypted, controller.AuthenticationKey);
+
+            byte[] securePayload = new byte[17 + encrypted.Length];
+            Array.Copy(sendersNonce, 0, securePayload, 0, 8);
+            Array.Copy(encrypted, 0, securePayload, 8, encrypted.Length);
+            securePayload[8 + encrypted.Length] = receiversNonce[0];
+            Array.Copy(mac, 0, securePayload, 9 + encrypted.Length, 8);
+
+            payload.Clear();
+            payload.Add((byte)commandClass);
+            payload.Add((byte)SecurityCommand.MessageEncap);
+            payload.AddRange(securePayload);
         }
 
         internal static ReportMessage? Free(ReportMessage msg, Controller controller)
@@ -94,7 +120,7 @@ namespace ZWaveDotNet.CommandClasses
             }
             byte[] sendersNonce = msg.Payload.Slice(0, 8).ToArray();
             byte[] payload = msg.Payload.Slice(8, msg.Payload.Length - 17).ToArray();
-            byte[] computedMAC = ComputeMAC(msg.SourceNodeID, controller.ControllerID, msg.Command, sendersNonce, (Memory<byte>)receiversNonce, payload, controller.AuthenticationKey);
+            byte[] computedMAC = AES.ComputeMAC(msg.SourceNodeID, controller.ControllerID, msg.Command, sendersNonce, (Memory<byte>)receiversNonce, payload, controller.AuthenticationKey);
             if (!msg.Payload.Slice(msg.Payload.Length - 8, 8).Span.SequenceEqual(computedMAC))
             {
                 Log.Error("Invalid MAC");
@@ -115,14 +141,8 @@ namespace ZWaveDotNet.CommandClasses
         {
             switch ((SecurityCommand)message.Command)
             {
-                case SecurityCommand.CommandsSupportedReport:
-                    //TODO - Event this
-                    Log.Information("Received Supported Secure Commands");
-                    SupportedCommands supported = new SupportedCommands(message.Payload);
-                    Log.Information(supported.ToString());
-                    break;
                 case SecurityCommand.NetworkKeyVerify:
-                    Log.Information("Success - Key Verified");
+                    Log.Information("Success - Key Verified"); //TODO - Event this
                     if (controller.SecurityManager != null)
                         controller.SecurityManager.StoreKey(node.ID, SecurityManager.RecordType.S0, null, null, null);
                     break;
@@ -159,23 +179,9 @@ namespace ZWaveDotNet.CommandClasses
             return output;
         }
 
-        private static byte[] ComputeMAC(ushort sourceId, ushort destId, byte command, byte[] sendersNonce, Memory<byte> receiversNonce, byte[] encryptedPayload, byte[] key)
+        protected override bool IsSecure(byte command)
         {
-            Memory<byte> authenticationData = new byte[20 + encryptedPayload.Length];
-            sendersNonce.CopyTo(authenticationData);
-            receiversNonce.CopyTo(authenticationData.Slice(8, 8));
-            authenticationData.Span[16] = command;
-            authenticationData.Span[17] = (byte)sourceId;
-            authenticationData.Span[18] = (byte)destId;
-            authenticationData.Span[19] = (byte)encryptedPayload.Length;
-            encryptedPayload.CopyTo(authenticationData.Slice(20, encryptedPayload.Length));
-
-            using (Aes aes = Aes.Create())
-            {
-                aes.Key = key;
-                byte[] mac = aes.EncryptCbc(authenticationData.Span, EMPTY_IV, PaddingMode.Zeros);
-                return mac.Skip(mac.Length - 16).Take(8).ToArray();
-            }
+            return command == (byte)SecurityCommand.CommandsSupportedGet;
         }
     }
 }

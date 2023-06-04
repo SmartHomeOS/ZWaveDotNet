@@ -1,8 +1,6 @@
 ﻿using System.Threading.Channels;
-using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI.Enums;
 using ZWaveDotNet.SerialAPI.Messages;
-using ZWaveDotNet.SerialAPI.Messages.Enums;
 
 namespace ZWaveDotNet.SerialAPI
 {
@@ -80,37 +78,6 @@ namespace ZWaveDotNet.SerialAPI
                 return await SendAcknowledgedResponseCallbackIntl(reader, frame, message.SessionID, token);
             }
             finally {
-                port.DisposeReader(reader);
-            }
-        }
-
-        public async Task<ReportMessage> SendReceiveSequence(DataMessage message, CommandClass ResponseClass, byte ResponseCommand, CancellationToken cancellationToken = default)
-        {
-            Frame frame = new Frame(FrameType.SOF, DataFrameType.Request, message.Function, message.GetPayload());
-            var reader = port.CreateReader();
-            try
-            {
-                DataCallback dc = await SendAcknowledgedResponseCallbackIntl(reader, frame, message.SessionID, cancellationToken);
-                if (dc.Status != TransmissionStatus.CompleteOk && dc.Status != TransmissionStatus.CompleteNoAck && dc.Status != TransmissionStatus.CompleteVerified)
-                    throw new Exception("Transmission Failure " + dc.Status.ToString());
-                while (!cancellationToken.IsCancellationRequested)
-                {
-                    Frame response = await reader.Reader.ReadAsync(cancellationToken);
-                    if (response.DataType == DataFrameType.Request)
-                    {
-                        Message msg = GetMessage(response)!;
-                        if (msg is ApplicationCommand ac && ac.SourceNodeID == message.DestinationNodeID)
-                        {
-                            ReportMessage rm = new ReportMessage(ac);
-                            if (rm.CommandClass == ResponseClass && rm.Command == ResponseCommand)
-                                return rm;
-                        }
-                    }
-                }
-                throw new TimeoutException("Response not received");
-            }
-            finally
-            {
                 port.DisposeReader(reader);
             }
         }

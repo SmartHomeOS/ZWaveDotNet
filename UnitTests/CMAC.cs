@@ -1,6 +1,3 @@
-
-
-using ZWaveDotNet.CommandClasses;
 using ZWaveDotNet.Security;
 using ZWaveDotNet.Util;
 

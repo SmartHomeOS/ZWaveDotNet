@@ -5,9 +5,9 @@ using ZWaveDotNet.SerialAPI;
 
 namespace ZWaveDotNet.CommandClasses
 {
-    public class UnknownCommandClass : CommandClassBase
+    public class Unknown : CommandClassBase
     {
-        public UnknownCommandClass(Node node, byte endpoint, CommandClass commandClass) : base(node, endpoint, commandClass)
+        public Unknown(Node node, byte endpoint, CommandClass commandClass) : base(node, endpoint, commandClass)
         {
         }
 

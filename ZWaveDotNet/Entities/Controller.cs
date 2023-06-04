@@ -321,7 +321,7 @@ namespace ZWaveDotNet.Entities
                                 {
                                     if (node.CommandClasses.ContainsKey(CommandClass.Security2))
                                         await BootstrapS2(node);
-                                    else if (node.CommandClasses.ContainsKey(CommandClass.Security))
+                                    else if (node.CommandClasses.ContainsKey(CommandClass.Security0))
                                         await BootstrapS0(node);
                                 }
                             }
@@ -342,8 +342,8 @@ namespace ZWaveDotNet.Entities
         private async Task BootstrapS0(Node node)
         {
             Log.Information("Starting Secure(0-Legacy) Inclusion");
-            await((Security0)node.CommandClasses[CommandClass.Security]).SchemeGet();
-            await((Security0)node.CommandClasses[CommandClass.Security]).KeySet();
+            await((Security0)node.CommandClasses[CommandClass.Security0]).SchemeGet();
+            await((Security0)node.CommandClasses[CommandClass.Security0]).KeySet();
         }
 
         private async Task BootstrapS2(Node node)

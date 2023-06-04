@@ -1,6 +1,6 @@
 ﻿using Serilog;
 using System.Reflection;
-using ZWaveDotNet.CommandClasses;
+using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 
 namespace TestConsole

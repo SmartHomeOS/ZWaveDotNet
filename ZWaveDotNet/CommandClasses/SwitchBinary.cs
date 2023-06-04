@@ -1,9 +1,7 @@
-﻿using Serilog;
-using ZWaveDotNet.CommandClassReports;
+﻿using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
-using ZWaveDotNet.SerialAPI.Messages;
 using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.CommandClasses

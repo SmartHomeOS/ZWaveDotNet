@@ -142,5 +142,24 @@ namespace ZWaveDotNet.Security
             }
             return ret.ToArray();
         }
+
+        public static byte[] ComputeMAC(ushort sourceId, ushort destId, byte command, byte[] sendersNonce, Memory<byte> receiversNonce, byte[] encryptedPayload, byte[] key)
+        {
+            Memory<byte> authenticationData = new byte[20 + encryptedPayload.Length];
+            sendersNonce.CopyTo(authenticationData);
+            receiversNonce.CopyTo(authenticationData.Slice(8, 8));
+            authenticationData.Span[16] = command;
+            authenticationData.Span[17] = (byte)sourceId;
+            authenticationData.Span[18] = (byte)destId;
+            authenticationData.Span[19] = (byte)encryptedPayload.Length;
+            encryptedPayload.CopyTo(authenticationData.Slice(20, encryptedPayload.Length));
+
+            using (Aes aes = Aes.Create())
+            {
+                aes.Key = key;
+                byte[] mac = aes.EncryptCbc(authenticationData.Span, EMPTY_IV, PaddingMode.Zeros);
+                return mac.Skip(mac.Length - 16).Take(8).ToArray();
+            }
+        }
     }
 }
