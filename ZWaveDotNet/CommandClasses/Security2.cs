@@ -13,9 +13,6 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.Security2, 1, 1, false)]
     public class Security2 : CommandClassBase
     {
-        private const int BLOCK_SIZE = 16;
-        private static readonly byte[] EMPTY_IV = new byte[] { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
-
         public enum Security2Command
         {
             NonceGet = 0x01,
@@ -36,6 +33,12 @@ namespace ZWaveDotNet.CommandClasses
 
         public Security2(Node node, byte endpoint) : base(node, endpoint, CommandClass.Security2) { }
 
+        public async Task GetSupportedCommands(CancellationToken cancellationToken = default)
+        {
+            CommandMessage request = new CommandMessage(node.ID, endpoint, commandClass, (byte)Security2Command.CommandsSupportedGet);
+            await Transmit(request.Payload, null, cancellationToken);
+        }
+
         internal async Task<KeyExchangeReport> KexGet(CancellationToken cancellationToken = default)
         {
             Log.Information("Requesting Supported Curves and schemes");
@@ -50,12 +53,6 @@ namespace ZWaveDotNet.CommandClasses
             ReportMessage msg = await SendAndGet(Security2Command.KEXSet, Security2Command.PublicKeyReport,  cancellationToken, report.ToBytes());
             Log.Information("Received Public Key "+ MemoryUtil.Print(msg.Payload.Slice(1)));
             return msg.Payload.Slice(1);
-        }
-
-        public async Task GetSupportedCommands(CancellationToken cancellationToken = default)
-        {
-            CommandMessage request = new CommandMessage(node.ID, endpoint, commandClass, (byte)Security2Command.CommandsSupportedGet);
-            await Transmit(request.Payload, null, cancellationToken);
         }
 
         internal async Task SendPublicKey(CancellationToken cancellationToken = default)
@@ -102,7 +99,7 @@ namespace ZWaveDotNet.CommandClasses
                 ReportMessage msg = await SendAndGet(Security2Command.NonceGet, Security2Command.NonceReport, cancellationToken, (byte)new Random().Next());
                 NonceReport nr = new NonceReport(msg.Payload);
                 var entropy = controller.SecurityManager.CreateEntropy(node.ID);
-                Memory<byte> MEI = CKDFMEIExpand(CKDFMEIExtract(entropy.Bytes, nr.Entropy));
+                Memory<byte> MEI = AES.CKDFMEIExpand(AES.CKDFMEIExtract(entropy.Bytes, nr.Entropy));
                 controller.SecurityManager.CreateSpan(node.ID, entropy.Sequence, MEI, networkKey.PString, networkKey.Key);
                 nonce = controller.SecurityManager.NextNonce(node.ID, networkKey.Key);
                 if (nonce == null)
@@ -123,7 +120,7 @@ namespace ZWaveDotNet.CommandClasses
                 extensionData.Add(0x0);
             }
 
-            //                                                          8(tag) + 1 (command class) + 1 (command) + extension len
+            //                                                        8(tag) + 1 (command class) + 1 (command) + extension len
             AdditionalAuthData ad = new AdditionalAuthData(node, controller, true, payload.Count + 10 + extensionData.Count, extensionData.ToArray()); //FIXME - Implement unencrypted here too
             Memory<byte> encoded = EncryptCCM(payload.ToArray(),  nonce.Value.output, networkKey!.KeyCCM, ad);
 
@@ -148,7 +145,6 @@ namespace ZWaveDotNet.CommandClasses
             Log.Information("Decrypting Secure2 Message with key (" + networkKey.Key + ")");
             int messageLen = msg.Payload.Length + 2;
             byte sequence = msg.Payload.Span[0];
-            Log.Warning("Sequence #: " + sequence);
             bool unencryptedExt = (msg.Payload.Span[1] & 0x1) == 0x1;
             bool encryptedExt = (msg.Payload.Span[1] & 0x2) == 0x2;
             Memory<byte> unencrypted = msg.Payload;
@@ -191,7 +187,7 @@ namespace ZWaveDotNet.CommandClasses
                 case 0x01: //SPAN
                     Memory<byte> sendersEntropy = payload.Slice(2, 16);
                     var result = sm.GetEntropy(nodeId);
-                    Memory<byte> MEI = CKDFMEIExpand(CKDFMEIExtract(sendersEntropy, result!.Value.bytes));
+                    Memory<byte> MEI = AES.CKDFMEIExpand(AES.CKDFMEIExtract(sendersEntropy, result!.Value.bytes));
                     sm.CreateSpan(nodeId, result!.Value.sequence, MEI, netKey.PString, netKey.Key);
                     Log.Warning("Created new SPAN");
                     Log.Warning("Senders Entropy: " + MemoryUtil.Print(sendersEntropy));
@@ -208,11 +204,6 @@ namespace ZWaveDotNet.CommandClasses
             {
                 case Security2Command.KEXGet:
                     await SendCommand(Security2Command.KEXReport, CancellationToken.None, 0x0, 0x2, 0x1, (byte)SecurityKey.S2Unauthenticated);
-                    break;
-                case Security2Command.NonceReport:
-                    NonceReport nr = new NonceReport(message.Payload);
-                    Log.Information("Nonce Report Received: " + nr.ToString());
-                    //TODO
                     break;
                 case Security2Command.KEXSet:
                     KeyExchangeReport? kexReport = new KeyExchangeReport(message.Payload);
@@ -242,7 +233,7 @@ namespace ZWaveDotNet.CommandClasses
                     SecurityKey key = (SecurityKey)message.Payload.Span[0];
                     resp[0] = (byte)key;
                     controller.NetworkKeyS2UnAuth.CopyTo(resp, 1); //FIXME - Type hardcoded
-                    var permKey = CKDFExpand(controller.NetworkKeyS2UnAuth, false);
+                    AES.KeyTuple permKey = AES.CKDFExpand(controller.NetworkKeyS2UnAuth, false);
                     controller.SecurityManager.StoreKey(node.ID, SecurityManager.RecordType.S2UnAuth, permKey.KeyCCM, permKey.PString, permKey.MPAN); //FIXME - Type hardcoded
                     CommandMessage data = new CommandMessage(node.ID, endpoint, commandClass, (byte)Security2Command.NetworkKeyReport, false, resp);
                     await Transmit(data.Payload, SecurityManager.RecordType.ECDH_TEMP);
@@ -273,6 +264,7 @@ namespace ZWaveDotNet.CommandClasses
                     Log.Warning("Supported Secure Commands: " + string.Join(',', PayloadConverter.GetCommandClasses(message.Payload)));
                     break;
                 case Security2Command.KEXFail:
+                    //TODO - Event This
                     switch (message.Payload.Span[0])
                     {
                         case 0x1:
@@ -327,128 +319,6 @@ namespace ZWaveDotNet.CommandClasses
             using (AesCcm aes = new AesCcm(key.Span))
                 aes.Decrypt(nonce.Span, cipherText.Slice(0, cipherText.Length - 8).Span, cipherText.Slice(cipherText.Length - 8, 8).Span, ret.Span, ad.GetBytes().Span);
             return ret;
-        }
-
-        //Returns NoncePRK
-        public static byte[] CKDFMEIExtract(Memory<byte> SenderEntropy, Memory<byte> ReceiverEntropy)
-        {
-            //Sender EntropyInput | Receiver EntropyInput
-            Memory<byte> SREntropy = new byte[SenderEntropy.Length * 2];
-            SenderEntropy.CopyTo(SREntropy);
-            ReceiverEntropy.CopyTo(SREntropy.Slice(SenderEntropy.Length));
-            return ComputeCMAC(Enumerable.Repeat((byte)0x26, 16).ToArray(), SREntropy);
-        }
-
-        //Returns MEI
-        public static Memory<byte> CKDFMEIExpand(byte[] NoncePRK)
-        {
-            Memory<byte> buffer = MemoryUtil.Fill(0x88, 32);
-            buffer.Span[15] = 0x0;
-            buffer.Span[31] = 0x1;
-            byte[] T1 = ComputeCMAC(NoncePRK, buffer);
-
-            T1.CopyTo(buffer);
-            buffer.Span[31] = 0x2;
-            byte[] T2 = ComputeCMAC(NoncePRK, buffer);
-
-            T1.CopyTo(buffer);
-            T2.CopyTo(buffer.Slice(BLOCK_SIZE, BLOCK_SIZE));
-            return buffer;
-        }
-
-        //Returns PRK
-        public static byte[] CKDFTempExtract(Memory<byte> secret, Memory<byte> pubkeyA, Memory<byte> pubkeyB)
-        {
-            Memory<byte> payload = new byte[96];
-            secret.CopyTo(payload);
-            pubkeyA.CopyTo(payload.Slice(32));
-            pubkeyB.CopyTo(payload.Slice(64));
-            return ComputeCMAC(Enumerable.Repeat((byte)0x33, 16).ToArray(), payload);
-        }
-
-        //Temp = No MPAN
-        public static (byte[] KeyCCM, byte[] PString, byte[] MPAN) CKDFExpand(byte[] PRK_PNK, bool temp)
-        {
-            byte[] T4;
-            byte[] constantNK;
-            if (temp)
-                constantNK = Enumerable.Repeat((byte)0x88, BLOCK_SIZE).ToArray();
-            else
-                constantNK = Enumerable.Repeat((byte)0x55, BLOCK_SIZE).ToArray();
-            constantNK[15] = 0x1;
-            byte[] T1 = ComputeCMAC(PRK_PNK, constantNK);
-            byte[] buffer = new byte[32];
-            Array.Copy(T1, buffer, BLOCK_SIZE);
-            Array.Copy(constantNK, 0, buffer, BLOCK_SIZE, BLOCK_SIZE);
-            buffer[31] = 0x2;
-            byte[] T2 = ComputeCMAC(PRK_PNK, buffer);
-            Array.Copy(T2, buffer, BLOCK_SIZE);
-            buffer[31] = 0x3;
-            byte[] T3 = ComputeCMAC(PRK_PNK, buffer);
-            if (!temp)
-            {
-                Array.Copy(T3, buffer, BLOCK_SIZE);
-                buffer[31] = 0x4;
-                T4 = ComputeCMAC(PRK_PNK, buffer);
-            }
-            else
-                T4 = new byte[0];
-            Array.Copy(T2, buffer, BLOCK_SIZE);
-            Array.Copy(T3, 0, buffer, BLOCK_SIZE, BLOCK_SIZE);
-            return (T1, buffer, T4);
-        }
-
-        private static (Memory<byte>, Memory<byte>) ComputeSubkeys(byte[] key)
-        {
-            byte[] R16 = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x87 }; //Section 5.3 (128bit)
-            Memory<byte> L, K1, K2;
-            using (Aes aes = Aes.Create())
-            {
-                aes.Key = key;
-                L = aes.EncryptEcb(EMPTY_IV, PaddingMode.None);
-            }
-            K1 = MemoryUtil.LeftShift1(L);
-            if ((L.Span[0] & 0x80) != 0)
-                K1 = MemoryUtil.XOR(K1, R16);
-            K2 = MemoryUtil.LeftShift1(K1);
-            if ((K1.Span[0] & 0x80) != 0)
-                K2 = MemoryUtil.XOR(K2, R16);
-            return (K1, K2);
-        }
-
-        public static byte[] ComputeCMAC(byte[] key, Memory<byte> payload)
-        {
-            (Memory<byte> K1, Memory<byte> K2) s = ComputeSubkeys(key);
-            bool wholeBlocks = (payload.Length % BLOCK_SIZE == 0) && (payload.Length > 0);
-            int blockCount = payload.Length / BLOCK_SIZE;
-            if (!wholeBlocks)
-            { 
-                blockCount++;
-
-                //Padding
-                Memory<byte> payload2 = new byte[blockCount * BLOCK_SIZE];
-                payload.CopyTo(payload2);
-                for (int i = payload.Length; i < payload2.Length; i++)
-                    payload2.Span[i] = (i == payload.Length) ? (byte)0x80 : (byte)0x00;
-                payload = payload2;
-            }
-
-            Memory<byte> ret = MemoryUtil.Fill(0x0, 16);
-            using (Aes aes = Aes.Create())
-            {
-                aes.Key = key;
-                //All blocks except the last which is mixed with a subkey
-                for (int i = 0; i < blockCount - 1; i++)
-                {
-                    ret = MemoryUtil.XOR(ret, payload.Slice(i * BLOCK_SIZE, BLOCK_SIZE));
-                    ret = aes.EncryptEcb(ret.Span, PaddingMode.None);
-                }
-
-                //Apply Step 4 on the last block
-                ret = MemoryUtil.XOR(ret, MemoryUtil.XOR(wholeBlocks ? s.K1 : s.K2, payload.Slice(payload.Length - BLOCK_SIZE, BLOCK_SIZE)));
-                ret = aes.EncryptEcb(ret.Span, PaddingMode.None);
-            }
-            return ret.ToArray();
         }
     }
 }

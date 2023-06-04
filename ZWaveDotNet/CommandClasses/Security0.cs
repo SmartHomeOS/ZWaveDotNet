@@ -4,6 +4,7 @@ using ZWaveDotNet.CommandClasses.Enums;
 using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
+using ZWaveDotNet.Security;
 using ZWaveDotNet.SerialAPI;
 
 namespace ZWaveDotNet.CommandClasses
@@ -48,6 +49,9 @@ namespace ZWaveDotNet.CommandClasses
             Log.Information($"Setting Network Key on {node.ID}");
             CommandMessage data = new CommandMessage(node.ID, endpoint, commandClass, (byte)SecurityCommand.NetworkKeySet, false, controller.NetworkKeyS0);
             await Transmit(data.Payload, true);
+
+            if (controller.SecurityManager != null)
+                controller.SecurityManager.StoreKey(node.ID, SecurityManager.RecordType.S0, null, null, null);
         }
 
         public static bool IsEncapsulated(ReportMessage msg)
@@ -128,7 +132,10 @@ namespace ZWaveDotNet.CommandClasses
                     //TODO - node.inclusionStatus = s0;
                     break;
                 case SecurityCommand.NonceGet:
-                    await SendCommand(SecurityCommand.NonceReport, CancellationToken.None, node.Controller.SecurityManager.CreateS0Nonce(node.ID));
+                    if (controller.SecurityManager == null)
+                        return;
+
+                    await SendCommand(SecurityCommand.NonceReport, CancellationToken.None, controller.SecurityManager.CreateS0Nonce(node.ID));
                     break;
             }
         }

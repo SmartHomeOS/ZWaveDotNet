@@ -27,14 +27,15 @@ namespace ZWaveDotNet.Security
         }
         public class NetworkKey
         {
-            public byte[] KeyCCM;
-            public byte[] PString;
+            public byte[]? KeyCCM;
+            public byte[]? PString;
             public byte[]? MPAN;
             public RecordType Key;
-            public NetworkKey(byte[] keyCCM, byte[] pString, RecordType key)
+            public NetworkKey(byte[]? keyCCM, byte[]? pString, byte[]? mPAN, RecordType key)
             {
                 this.KeyCCM = keyCCM;
                 this.PString = pString;
+                this.MPAN = mPAN;
                 this.Key = key;
             }
         }
@@ -55,7 +56,7 @@ namespace ZWaveDotNet.Security
             return Curve25519.GetSharedSecret(privateKey.ToArray(), publicKeyB.ToArray());
         }
 
-        public void StoreKey(ushort nodeId, RecordType type, byte[] keyCCM, byte[] pString, byte[]? mPAN = null)
+        public void StoreKey(ushort nodeId, RecordType type, byte[]? keyCCM, byte[]? pString, byte[]? mPAN = null)
         {
             List<NetworkKey> list;
             if (keys.TryGetValue(nodeId, out List<NetworkKey>? keyLst))
@@ -68,7 +69,7 @@ namespace ZWaveDotNet.Security
                 list = new List<NetworkKey>();
                 keys.Add(nodeId, list);
             }
-            NetworkKey networkKey = new NetworkKey(keyCCM, pString, type); //TODO - MPAN
+            NetworkKey networkKey = new NetworkKey(keyCCM, pString, mPAN, type);
             list.Add(networkKey);
         }
 
@@ -87,6 +88,15 @@ namespace ZWaveDotNet.Security
                 return highest;
             }
             return null;
+        }
+
+        public RecordType[] GetKeys(ushort nodeId)
+        {
+            if (keys.TryGetValue(nodeId, out List<NetworkKey>? keyLst))
+            {
+                return keyLst.Select(r => r.Key).ToArray();
+            }
+            return new RecordType[0];
         }
 
         public NetworkKey? GetKey(ushort nodeId, RecordType type)

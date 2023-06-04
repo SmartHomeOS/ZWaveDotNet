@@ -24,6 +24,8 @@ namespace ZWaveDotNet.Entities
                         this.commandClasses.Add(cc, CommandClassBase.Create(cc, node.Controller, node, ID));
                 }
             }
+            if (!this.commandClasses.ContainsKey(CommandClass.NoOperation))
+                this.commandClasses.Add(CommandClass.NoOperation, CommandClassBase.Create(CommandClass.NoOperation, node.Controller, node, ID));
         }
 
         public ReadOnlyDictionary<CommandClass, CommandClassBase> CommandClasses

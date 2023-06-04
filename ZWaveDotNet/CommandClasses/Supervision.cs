@@ -56,6 +56,7 @@ namespace ZWaveDotNet.CommandClasses
         {
             SupervisionReport report = new SupervisionReport(message.Payload);
             Log.Information(report.ToString());
+            //TODO - Event this
         }
     }
 }

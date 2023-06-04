@@ -7,7 +7,7 @@ namespace ZWaveDotNet.Security
     {
         ushort sender;
         ushort destination;
-        Memory<byte> homeId;
+        uint homeId;
         ushort messageLen;
         Memory<byte> extensionData;
 
@@ -33,7 +33,7 @@ namespace ZWaveDotNet.Security
             Memory<byte> ret = new byte[8 + extensionData.Length]; //+extension length
             ret.Span[0] = (byte)sender;
             ret.Span[1] = (byte)destination;
-            homeId.CopyTo(ret.Slice(2));
+            BinaryPrimitives.WriteUInt32BigEndian(ret.Slice(2, 4).Span, homeId);
             BinaryPrimitives.WriteUInt16BigEndian(ret.Slice(6).Span, messageLen);
             extensionData.CopyTo(ret.Slice(8));
             return ret;
