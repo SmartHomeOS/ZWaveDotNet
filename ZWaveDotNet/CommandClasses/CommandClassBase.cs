@@ -70,6 +70,8 @@ namespace ZWaveDotNet.CommandClasses
                     return new TransportService(node, endpoint);
                 case CommandClass.NodeNaming:
                     return new NodeNaming(node, endpoint);
+                case CommandClass.Version:
+                    return new ZWave.CommandClasses.Version(node, endpoint);
             }
             return new Unknown(node, endpoint, cc);
         }

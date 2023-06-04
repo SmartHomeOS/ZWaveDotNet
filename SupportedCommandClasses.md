@@ -111,7 +111,7 @@ TIME | 0 | 2 | None
 TIME_PARAMETERS | 0 | 2 | None
 TRANSPORT_SERVICE | 1 | 2 | Partial
 USER_CODE | 0 | 2 | None
-VERSION | 0 | 3 | None
+VERSION | 3 | 3 | Full
 WAKE_UP | 0 | 3 | None
 WINDOW_COVERING | 0 | 1 | None
 ZIP_6LOWPAN | 0 | 1 | None
@@ -122,5 +122,5 @@ ZIP_ND | 0 | 1 | None
 ZIP_PORTAL | 0 | 1 | None
 ZWAVEPLUS_INFO | 0 | 2 | None
 
-Full Support for 7/121 Command Classes.
+Full Support for 8/121 Command Classes.
 Partial Support for 3/121 Command Classes.
