@@ -9,6 +9,7 @@ namespace ZWaveDotNet.CommandClasses
     public abstract class CommandClassBase
     {
         public bool secure;
+
         protected Node node;
         protected Controller controller;
         protected CommandClass commandClass;
@@ -21,6 +22,10 @@ namespace ZWaveDotNet.CommandClasses
             this.commandClass = commandClass;
             this.endpoint = endpoint;
         }
+
+        public byte Version { get; internal set; } = 1;
+        public byte EndPoint { get { return endpoint; } }
+        public CommandClass CommandClass { get { return commandClass; } }
 
         public abstract Task Handle(ReportMessage message);
 

@@ -2,6 +2,7 @@
 using System.Buffers.Binary;
 using System.Collections;
 using System.Security.Cryptography;
+using System.Text.Json;
 using ZWaveDotNet.CommandClasses;
 using ZWaveDotNet.CommandClasses.Enums;
 using ZWaveDotNet.CommandClassReports;
@@ -47,12 +48,14 @@ namespace ZWaveDotNet.Entities
         }
 
         public ushort ControllerID { get; private set; }
-        public Memory<byte> HomeID { get; private set; }
+        public uint HomeID { get; private set; }
         internal Flow Flow { get { return flow; } }
         internal byte[] AuthenticationKey { get; private set; }
         internal byte[] EncryptionKey { get; private set; }
         internal byte[] NetworkKeyS0 { get; private set; }
         internal byte[] NetworkKeyS2UnAuth { get; private set; }
+        internal byte[] NetworkKeyS2Auth { get; private set; }
+        internal byte[] NetworkKeyS2Access { get; private set; }
         public SecurityManager? SecurityManager { get; private set; } //TODO - Make this internal
 
         public async Task Reset()
@@ -70,20 +73,21 @@ namespace ZWaveDotNet.Entities
             PayloadMessage? networkIds = await flow.SendAcknowledgedResponse(Function.MemoryGetId) as PayloadMessage;
             if (networkIds != null && networkIds.Data.Length > 4)
             {
-                HomeID = networkIds.Data.Slice(0, 4);
-                Log.Information($"Home ID: {BitConverter.ToString(HomeID.ToArray())}");
+                HomeID = BinaryPrimitives.ReadUInt32BigEndian(networkIds.Data.Slice(0, 4).Span);
+                Log.Information($"Home ID: {HomeID}");
                 ControllerID = networkIds.Data.Span[4]; //TODO - 16 bit
             }
 
-            //Query Node Database
+            //Begin the interview
             InitData? init = await flow.SendAcknowledgedResponse(Function.GetSerialAPIInitData) as InitData;
             if (init != null)
             {
                 foreach (ushort id in init.NodeIDs)
                 {
-                    if (id != ControllerID)
+                    if (id != ControllerID && !Nodes.ContainsKey(id))
                     {
-                        Nodes.Add(id, new Node(id, this));
+                        NodeProtocolInfo nodeInfo = await GetNodeProtocolInfo(id);
+                        Nodes.Add(id, new Node(id, this, nodeInfo));
                         await flow.SendAcknowledgedResponse(Function.RequestNodeInfo, CancellationToken.None, (byte)id);
                     }
                 }
@@ -204,6 +208,64 @@ namespace ZWaveDotNet.Entities
             return buffer;
         }
 
+        public string ExportNodeDB()
+        {
+            ControllerJSON json = Serialize();
+            return JsonSerializer.Serialize(json);
+        }
+        public async Task ExportNodeDB(string path)
+        {
+            using (FileStream outputStream = new FileStream(path, FileMode.Create))
+            {
+                ControllerJSON json = Serialize();
+                await JsonSerializer.SerializeAsync(outputStream, json);
+            }
+        }
+
+        private ControllerJSON Serialize()
+        {
+            ControllerJSON json = new ControllerJSON();
+            json.HomeID = HomeID;
+            json.ID = ControllerID;
+            json.Nodes = new NodeJSON[Nodes.Count];
+            int i = 0;
+            foreach (Node node in Nodes.Values)
+            {
+                json.Nodes[i] = node.Serialize();
+                i++;
+            }
+            return json;
+        }
+
+        private void Deserialize(ControllerJSON json)
+        {
+            HomeID = json.HomeID;
+            ControllerID = json.ID;
+            foreach (NodeJSON node in json.Nodes)
+            {
+                Nodes[node.ID].Deserialize(node);
+            }
+        }
+
+        public bool ImportNodeDB(string json)
+        {
+            ControllerJSON? entity = JsonSerializer.Deserialize<ControllerJSON>(json);
+            if (entity == null)
+                return false;
+            Deserialize(entity);
+            return true;
+        }
+
+        public async Task<bool> ImportNodeDBAsync(string path)
+        {
+            FileStream fs = new FileStream(path, FileMode.Open);
+            ControllerJSON? entity = await JsonSerializer.DeserializeAsync<ControllerJSON>(fs);
+            if (entity == null)
+                return false;
+            Deserialize(entity);
+            return true;
+        }
+
         private async Task EventLoop()
         {
             while (true)
@@ -228,7 +290,8 @@ namespace ZWaveDotNet.Entities
                     {
                         if (inc.CommandClasses.Length > 0) //We found a node
                         {
-                            Node node = new Node(inc.NodeID, this, inc.CommandClasses);
+                            NodeProtocolInfo nodeInfo = await GetNodeProtocolInfo(inc.NodeID);
+                            Node node = new Node(inc.NodeID, this, nodeInfo, inc.CommandClasses);
                             Nodes.TryAdd(inc.NodeID, node);
                         }
                         if (inc.Status == InclusionExclusionStatus.InclusionProtocolComplete)
@@ -278,11 +341,16 @@ namespace ZWaveDotNet.Entities
             Log.Information("Sending " + resp.ToString());
             Memory<byte> pub = await sec2.KexSet(resp);
             byte[] sharedSecret = SecurityManager!.CreateSharedSecret(pub);
-            var prk = Security2.CKDFTempExtract(sharedSecret, SecurityManager.PublicKey, pub);
+            var prk = AES.CKDFTempExtract(sharedSecret, SecurityManager.PublicKey, pub);
             Log.Error("Temp Key: " + MemoryUtil.Print(prk));
-            var ckdf = Security2.CKDFExpand(prk, true);
+            AES.KeyTuple ckdf = AES.CKDFExpand(prk, true);
             SecurityManager.StoreKey(node.ID, SecurityManager.RecordType.ECDH_TEMP, ckdf.KeyCCM, ckdf.PString);
             await sec2.SendPublicKey();
+        }
+
+        public override string ToString()
+        {
+            return "Nodes: \n" + string.Join('\n', Nodes.Values);
         }
     }
 }

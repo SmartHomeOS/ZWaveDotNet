@@ -1,4 +1,5 @@
 ﻿
+using System.Text.Json.Serialization;
 using ZWaveDotNet.SerialAPI.Enums;
 using ZWaveDotNet.SerialAPI.Messages.Enums;
 
@@ -6,12 +7,14 @@ namespace ZWaveDotNet.SerialAPI.Messages
 {
     public class NodeProtocolInfo : Message
     {
-        public byte Capability { get; private set; }
-        public byte Reserved { get; private set; }
-        public BasicType BasicType { get; private set; }
-        public GenericType GenericType { get; private set; }
-        public SpecificType SpecificType { get; private set; }
-        public NIFSecurity Security { get; private set; }
+        public byte Capability { get; internal set; }
+        public byte Reserved { get; internal set; }
+        public BasicType BasicType { get; internal set; }
+        public GenericType GenericType { get; internal set; }
+        public SpecificType SpecificType { get; internal set; }
+        public NIFSecurity Security { get; internal set; }
+
+        public NodeProtocolInfo() : base(Function.GetNodeProtocolInfo) { }
 
         public NodeProtocolInfo(Memory<byte> payload) : base(Function.GetNodeProtocolInfo)
         {
@@ -23,16 +26,19 @@ namespace ZWaveDotNet.SerialAPI.Messages
             SpecificType = SpecificTypeMapping.Get((GenericType)payload.Span[4], payload.Span[5]);
         }
 
+        [JsonIgnore]
         public bool Routing
         {
             get { return (Capability & 0x40) == 0x40; }
         }
 
+        [JsonIgnore]
         public bool IsListening
         {
             get { return (Capability & 0x80) == 0x80; }
         }
 
+        [JsonIgnore]
         public decimal Version
         {
             get
@@ -43,6 +49,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
             }
         }
 
+        [JsonIgnore]
         public int[] BaudRates
         {
             get
