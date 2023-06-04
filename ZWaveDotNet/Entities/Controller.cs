@@ -24,6 +24,7 @@ namespace ZWaveDotNet.Entities
         private Flow flow;
         internal byte[] tempA;
         internal byte[] tempE;
+        private Function[] supportedFunctions = new Function[0];
 
         public Controller(string port, byte[] s0Key, byte[] s2unauth)
         {
@@ -64,13 +65,16 @@ namespace ZWaveDotNet.Entities
             await Task.Delay(1500);
         }
 
-        public async ValueTask Start()
+        public async ValueTask Start(CancellationToken cancellationToken = default)
         {
             SecurityManager = new SecurityManager(await GetRandom(32));
             await Task.Factory.StartNew(EventLoop);
 
+            //See what the controller supports
+            await GetSupportedFunctions(cancellationToken);
+
             //Encap Configuration
-            PayloadMessage? networkIds = await flow.SendAcknowledgedResponse(Function.MemoryGetId) as PayloadMessage;
+            PayloadMessage? networkIds = await flow.SendAcknowledgedResponse(Function.MemoryGetId, cancellationToken) as PayloadMessage;
             if (networkIds != null && networkIds.Data.Length > 4)
             {
                 HomeID = BinaryPrimitives.ReadUInt32BigEndian(networkIds.Data.Slice(0, 4).Span);
@@ -79,7 +83,7 @@ namespace ZWaveDotNet.Entities
             }
 
             //Begin the interview
-            InitData? init = await flow.SendAcknowledgedResponse(Function.GetSerialAPIInitData) as InitData;
+            InitData? init = await flow.SendAcknowledgedResponse(Function.GetSerialAPIInitData, cancellationToken) as InitData;
             if (init != null)
             {
                 foreach (ushort id in init.NodeIDs)
@@ -96,6 +100,8 @@ namespace ZWaveDotNet.Entities
 
         public async Task<Function[]> GetSupportedFunctions(CancellationToken cancellationToken = default)
         {
+            if (supportedFunctions.Length > 0)
+                return supportedFunctions;
             PayloadMessage response = (PayloadMessage)await flow.SendAcknowledgedResponse(Function.GetSerialCapabilities, cancellationToken);
             var bits = new BitArray(response.Data.Slice(8).ToArray());
             List<Function> functions = new List<Function>();
@@ -104,7 +110,15 @@ namespace ZWaveDotNet.Entities
                 if (bits[i])
                     functions.Add((Function)i + 1);
             }
-            return functions.ToArray();
+            supportedFunctions = functions.ToArray();
+            return supportedFunctions;
+        }
+
+        protected bool Supports(Function function)
+        {
+            if (supportedFunctions.Length == 0)
+                return true; //We don't know - assume yes?
+            return supportedFunctions.Contains(function);
         }
 
         public async Task<NodeProtocolInfo> GetNodeProtocolInfo(ushort nodeId, CancellationToken cancellationToken = default)
@@ -179,6 +193,8 @@ namespace ZWaveDotNet.Entities
 
         public async Task<byte[]> BackupNVM(CancellationToken cancellationToken = default)
         {
+            if (!Supports(Function.NVMBackupRestore))
+                throw new PlatformNotSupportedException("Backup not supported by this controller");
             PayloadMessage open = (PayloadMessage)await flow.SendAcknowledgedResponse(Function.NVMBackupRestore, cancellationToken, (byte)NVMOperation.Open);
             if (open.Data.Span[0] != 0)
                 throw new InvalidOperationException($"Failed to open NVM.  Response {open.Data.Span[0]}");
@@ -280,7 +296,7 @@ namespace ZWaveDotNet.Entities
                 else if (msg is ApplicationCommand cmd)
                 {
                     if (Nodes.TryGetValue(cmd.SourceNodeID, out Node? node))
-                        node.HandleApplicationCommand(cmd);
+                        await node.HandleApplicationCommand(cmd);
                     Log.Information(cmd.ToString());
                 }
                 else if (msg is InclusionStatus inc)
@@ -350,7 +366,7 @@ namespace ZWaveDotNet.Entities
 
         public override string ToString()
         {
-            return "Nodes: \n" + string.Join('\n', Nodes.Values);
+            return $"Controller {ControllerID}'s Nodes: \n" + string.Join('\n', Nodes.Values);
         }
     }
 }

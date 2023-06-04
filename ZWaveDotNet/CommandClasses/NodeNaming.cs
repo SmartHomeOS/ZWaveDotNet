@@ -7,7 +7,7 @@ using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.CommandClasses
 {
-    [CCVersion(CommandClass.NodeNaming, 1, 1, false)]
+    [CCVersion(CommandClass.NodeNaming, 1)]
     public class NodeNaming : CommandClassBase
     {
         enum Command : byte
@@ -22,14 +22,18 @@ namespace ZWaveDotNet.CommandClasses
 
         public NodeNaming(Node node, byte endpoint) : base(node, endpoint, CommandClass.NodeNaming) { }
 
-        public async Task GetName(CancellationToken cancellationToken = default)
+        public async Task<NodeNamingNameReport> GetName(CancellationToken cancellationToken = default)
         {
-            await SendCommand(Command.GetName, cancellationToken);
+            ReportMessage resp = await SendReceive(Command.GetName, Command.ReportName, cancellationToken);
+            NodeNamingNameReport name = new NodeNamingNameReport(resp.Payload);
+            return name;
         }
 
-        public async Task GetLocation(CancellationToken cancellationToken = default)
+        public async Task<NodeNamingLocationReport> GetLocation(CancellationToken cancellationToken = default)
         {
-            await SendCommand(Command.GetLocation, cancellationToken);
+            ReportMessage resp = await SendReceive(Command.GetLocation, Command.ReportLocation, cancellationToken);
+            NodeNamingLocationReport location = new NodeNamingLocationReport(resp.Payload);
+            return location;
         }
 
         public Task SetName(string name, CancellationToken cancellationToken = default)
@@ -48,18 +52,10 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(command, cancellationToken, payload.ToArray());
         }
 
-        public override async Task Handle(ReportMessage message)
+        protected override Task Handle(ReportMessage message)
         {
-            if (message.Command == (byte)Command.ReportName)
-            {
-                NodeNamingNameReport name = new NodeNamingNameReport(message.Payload);
-                Log.Information(name.ToString());
-            }
-            else if (message.Command == (byte)Command.ReportLocation)
-            {
-                NodeNamingLocationReport loc = new NodeNamingLocationReport(message.Payload);
-                Log.Information(loc.ToString());
-            }
+            //No unsolicited message
+            return Task.CompletedTask;
         }
     }
 }

@@ -1,6 +1,5 @@
 ﻿using Serilog;
 using System.Collections.ObjectModel;
-using System.Xml.Linq;
 using ZWaveDotNet.CommandClasses;
 using ZWaveDotNet.CommandClasses.Enums;
 using ZWaveDotNet.Enums;
@@ -14,6 +13,7 @@ namespace ZWaveDotNet.Entities
     public class Node
     {
         public const ushort BROADCAST_ID = 0xFFFF;
+        public const ushort UNINITIALIZED_ID = 0x0000;
 
         public readonly ushort ID;
         protected readonly Controller controller;
@@ -82,7 +82,7 @@ namespace ZWaveDotNet.Entities
             }
         }
 
-        internal void HandleApplicationCommand(ApplicationCommand cmd)
+        internal async Task HandleApplicationCommand(ApplicationCommand cmd)
         {
             ReportMessage? msg = new ReportMessage(cmd);
             Log.Information(msg.ToString());
@@ -119,18 +119,18 @@ namespace ZWaveDotNet.Entities
             {
                 ReportMessage[] msgs = MultiCommand.Unwrap(msg);
                 foreach (ReportMessage r in msgs)
-                    HandleReport(r);
+                    await HandleReport(r);
             }
             else
-                HandleReport(msg);
+                await HandleReport(msg);
         }
 
-        private void HandleReport(ReportMessage msg)
+        private async Task HandleReport(ReportMessage msg)
         {
             if (msg.SourceEndpoint == 0)
             {
                 if (commandClasses.ContainsKey(msg.CommandClass))
-                    commandClasses[msg.CommandClass].Handle(msg);
+                    await commandClasses[msg.CommandClass].ProcessMessage(msg);
                 else
                     Log.Information("Unhandled Report Message: " + msg.ToString());
             }
@@ -140,7 +140,7 @@ namespace ZWaveDotNet.Entities
                 if (ep != null)
                 {
                     if (ep.CommandClasses.ContainsKey(msg.CommandClass))
-                        ep.CommandClasses[msg.CommandClass].Handle(msg);
+                        await ep.CommandClasses[msg.CommandClass].ProcessMessage(msg);
                     else
                         Log.Information("Unhandled Report Message: " + msg.ToString());
                 }

@@ -3,7 +3,7 @@ using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.CommandClassReports
 {
-    public class SupervisionReport
+    public class SupervisionReport : ICommandClassReport
     {
         public bool MoreReports;
         public byte SessionID;

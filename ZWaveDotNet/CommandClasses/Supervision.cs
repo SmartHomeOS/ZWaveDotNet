@@ -52,7 +52,7 @@ namespace ZWaveDotNet.CommandClasses
             msg.Update(msg.Payload.Slice(4));
         }
 
-        public override async Task Handle(ReportMessage message)
+        protected override async Task Handle(ReportMessage message)
         {
             SupervisionReport report = new SupervisionReport(message.Payload);
             Log.Information(report.ToString());

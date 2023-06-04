@@ -51,7 +51,7 @@ namespace ZWaveDotNet.CommandClasses
             msg.Flags |= ReportFlags.EnhancedChecksum;
         }
 
-        public override Task Handle(ReportMessage message)
+        protected override Task Handle(ReportMessage message)
         {
             //No Reports
             return Task.CompletedTask;

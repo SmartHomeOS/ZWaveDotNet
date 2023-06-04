@@ -3,7 +3,7 @@ using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.CommandClassReports
 {
-    internal class SupportedCommands
+    internal class SupportedCommands : ICommandClassReport
     {
         public byte RemainingReports;
         public List<CommandClass> CommandClasses;

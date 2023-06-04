@@ -47,7 +47,7 @@ namespace ZWaveDotNet.CommandClasses
             msg.Update(msg.Payload.Slice(4));
         }
 
-        public override Task Handle(ReportMessage message)
+        protected override Task Handle(ReportMessage message)
         {
             //TODO
             return Task.CompletedTask;

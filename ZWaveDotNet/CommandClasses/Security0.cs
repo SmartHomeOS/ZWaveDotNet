@@ -49,9 +49,6 @@ namespace ZWaveDotNet.CommandClasses
             Log.Information($"Setting Network Key on {node.ID}");
             CommandMessage data = new CommandMessage(node.ID, endpoint, commandClass, (byte)SecurityCommand.NetworkKeySet, false, controller.NetworkKeyS0);
             await Transmit(data.Payload, true);
-
-            if (controller.SecurityManager != null)
-                controller.SecurityManager.StoreKey(node.ID, SecurityManager.RecordType.S0, null, null, null);
         }
 
         public static bool IsEncapsulated(ReportMessage msg)
@@ -107,14 +104,14 @@ namespace ZWaveDotNet.CommandClasses
             Memory<byte> decryptedPayload = EncryptDecryptPayload(payload, sendersNonce, (Memory<byte>)receiversNonce, controller.EncryptionKey);
             bool sequenced = ((decryptedPayload.Span[0] & 0x10) == 0x10);
             if (sequenced)
-                throw new PlatformNotSupportedException("Sequenced Security0 Not Supported"); //TODO
+                throw new NotImplementedException("Sequenced Security0 Not Supported"); //TODO
             msg.Update(decryptedPayload.Slice(1));
             msg.Flags |= ReportFlags.Security;
             msg.SecurityLevel = SecurityKey.S0;
             return msg;
         }
 
-        public override async Task Handle(ReportMessage message)
+        protected override async Task Handle(ReportMessage message)
         {
             switch ((SecurityCommand)message.Command)
             {
@@ -124,12 +121,10 @@ namespace ZWaveDotNet.CommandClasses
                     SupportedCommands supported = new SupportedCommands(message.Payload);
                     Log.Information(supported.ToString());
                     break;
-                case SecurityCommand.SchemeReport:
-                    //We don't care
-                    break;
                 case SecurityCommand.NetworkKeyVerify:
                     Log.Information("Success - Key Verified");
-                    //TODO - node.inclusionStatus = s0;
+                    if (controller.SecurityManager != null)
+                        controller.SecurityManager.StoreKey(node.ID, SecurityManager.RecordType.S0, null, null, null);
                     break;
                 case SecurityCommand.NonceGet:
                     if (controller.SecurityManager == null)

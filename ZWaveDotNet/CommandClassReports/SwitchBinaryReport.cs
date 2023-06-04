@@ -2,7 +2,7 @@
 
 namespace ZWaveDotNet.CommandClassReports
 {
-    public class SwitchBinaryReport
+    public class SwitchBinaryReport : ICommandClassReport
     {
         private const byte UNKNOWN = 0xFE;
 

@@ -19,7 +19,7 @@ BASIC_TARIFF_INFO | 0 | 1 | None
 BASIC_WINDOW_COVERING | 0 | 1 | None
 BATTERY | 0 | 3 | None
 SENSOR_BINARY | 0 | 2 | None
-SWITCH_BINARY | 1 | 2 | Partial
+SWITCH_BINARY | 1 | 2 | Full
 SWITCH_TOGGLE_BINARY | 0 | 1 | None
 CENTRAL_SCENE | 0 | 3 | None
 CLIMATE_CONTROL_SCHEDULE | 0 | 1 | None
@@ -73,7 +73,7 @@ NETWORK_MANAGEMENT_INSTALLATION_MAINTENANCE | 0 | 4 | None
 NETWORK_MANAGEMENT_PRIMARY | 0 | 1 | None
 NETWORK_MANAGEMENT_PROXY | 0 | 4 | None
 NO_OPERATION | 1 | 1 | Full
-NODE_NAMING | 1 | 1 | Partial
+NODE_NAMING | 1 | 1 | Full
 NODE_PROVISIONING | 0 | 1 | None
 NOTIFICATION | 0 | 8 | None
 POWERLEVEL | 0 | 1 | None
@@ -122,5 +122,5 @@ ZIP_ND | 0 | 1 | None
 ZIP_PORTAL | 0 | 1 | None
 ZWAVEPLUS_INFO | 0 | 2 | None
 
-Full Support for 5/121 Command Classes.
-Partial Support for 5/121 Command Classes.
+Full Support for 7/121 Command Classes.
+Partial Support for 3/121 Command Classes.

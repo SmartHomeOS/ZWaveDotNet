@@ -2,7 +2,7 @@
 
 namespace ZWaveDotNet.CommandClassReports
 {
-    public class NodeNamingNameReport
+    public class NodeNamingNameReport : ICommandClassReport
     {
         public readonly string Name;
 

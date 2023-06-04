@@ -3,13 +3,15 @@ using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
+using ZWaveDotNet.SerialAPI.Messages;
 using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.CommandClasses
 {
-    [CCVersion(CommandClass.SwitchBinary, 1, 1, false)]
+    [CCVersion(CommandClass.SwitchBinary, 1)]
     public class SwitchBinary : CommandClassBase
     {
+        public event CommandClassEvent? SwitchReport;
         public enum SwitchBinaryCommand
         {
             Set = 0x01,
@@ -19,9 +21,10 @@ namespace ZWaveDotNet.CommandClasses
 
         public SwitchBinary(Node node, byte endpoint) : base(node, endpoint, CommandClass.SwitchBinary) { }
 
-        public async Task Get(CancellationToken cancellationToken = default)
+        public async Task<SwitchBinaryReport> Get(CancellationToken cancellationToken = default)
         {
-            await SendCommand(SwitchBinaryCommand.Get, cancellationToken);
+            ReportMessage msg = await SendReceive(SwitchBinaryCommand.Get, SwitchBinaryCommand.Report, cancellationToken);
+            return new SwitchBinaryReport(msg.Payload);
         }
 
         public async Task Set(bool value, CancellationToken cancellationToken = default)
@@ -37,10 +40,10 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(SwitchBinaryCommand.Set, cancellationToken, value ? (byte)0xFF : (byte)0x00, time);
         }
 
-        public override async Task Handle(ReportMessage message)
+        protected override async Task Handle(ReportMessage message)
         {
             SwitchBinaryReport report = new SwitchBinaryReport(message.Payload);
-            Log.Information(report.ToString());
+            await FireEvent(SwitchReport, report);
         }
     }
 }

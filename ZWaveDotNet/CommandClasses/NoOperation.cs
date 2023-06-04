@@ -20,7 +20,7 @@ namespace ZWaveDotNet.CommandClasses
                 throw new Exception("Transmission Failure " + dc.Status.ToString());
         }
 
-        public override Task Handle(ReportMessage message)
+        protected override Task Handle(ReportMessage message)
         {
             //Ignore This
             return Task.CompletedTask;

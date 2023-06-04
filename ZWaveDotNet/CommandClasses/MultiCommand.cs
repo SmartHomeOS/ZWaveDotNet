@@ -50,7 +50,7 @@ namespace ZWaveDotNet.CommandClasses
             return list;
         }
 
-        public override Task Handle(ReportMessage message)
+        protected override Task Handle(ReportMessage message)
         {
             //No Reports
             return Task.CompletedTask;

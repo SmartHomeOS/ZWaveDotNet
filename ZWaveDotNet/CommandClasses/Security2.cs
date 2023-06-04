@@ -198,7 +198,7 @@ namespace ZWaveDotNet.CommandClasses
             return more;
         }
 
-        public override async Task Handle(ReportMessage message)
+        protected override async Task Handle(ReportMessage message)
         {
             switch ((Security2Command)message.Command)
             {
