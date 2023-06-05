@@ -1,3 +1,4 @@
+using NUnit.Framework;
 using ZWaveDotNet.Security;
 using ZWaveDotNet.Util;
 
