@@ -63,7 +63,7 @@ namespace ZWaveDotNet.SerialAPI
             try
             {
                 await SendAcknowledgedIntl(reader, frame, cancellationToken);
-                return await SendAcknowledgedResponseIntl(frame, reader, cancellationToken);
+                return await GetAcknowledgedResponseIntl(frame, reader, cancellationToken);
             }
             finally  {
                 port.DisposeReader(reader); 
@@ -90,7 +90,7 @@ namespace ZWaveDotNet.SerialAPI
         private async Task<DataCallback> SendAcknowledgedResponseCallbackIntl(Channel<Frame> reader, Frame frame, byte sessionId, CancellationToken token = default)
         {
             await SendAcknowledgedIntl(reader, frame, token);
-            Frame status = await SendAcknowledgedResponseIntl(frame, reader, token);
+            Frame status = await GetAcknowledgedResponseIntl(frame, reader, token);
             if (!new Response(status.Payload, status.CommandID).Success)
                 throw new Exception("Failed to transmit command");
             while (!token.IsCancellationRequested)
@@ -116,7 +116,7 @@ namespace ZWaveDotNet.SerialAPI
             } while (!await SuccessfulAck(reader, token));
         }
 
-        private async Task<Frame> SendAcknowledgedResponseIntl(Frame frame, Channel<Frame> reader, CancellationToken token)
+        private async Task<Frame> GetAcknowledgedResponseIntl(Frame frame, Channel<Frame> reader, CancellationToken token)
         {
             while (!token.IsCancellationRequested)
             {
@@ -168,6 +168,8 @@ namespace ZWaveDotNet.SerialAPI
                             return new DataCallback(frame.Payload, frame.CommandID);
                     case Function.GetSerialAPIInitData:
                         return new InitData(frame.Payload);
+                    case Function.GetLRNodes:
+                        return new LongRangeNodes(frame.Payload);
                     case Function.AddNodeToNetwork:
                     case Function.RemoveNodeFromNetwork:
                         return new InclusionStatus(frame.Payload, frame.CommandID);

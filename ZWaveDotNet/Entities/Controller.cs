@@ -46,10 +46,13 @@ namespace ZWaveDotNet.Entities
             NetworkKeyS0 = s0Key;
             NetworkKeyS2UnAuth = s2unauth;
             flow = new Flow(port);
+            BroadcastNode = new Node(Node.BROADCAST_ID, this, null, new CommandClass[] { CommandClass.Basic, CommandClass.SwitchAll });
         }
 
         public ushort ControllerID { get; private set; }
         public uint HomeID { get; private set; }
+        public bool SupportsLongRange { get; private set; }
+        public Node BroadcastNode { get; private set; }
         internal Flow Flow { get { return flow; } }
         internal byte[] AuthenticationKey { get; private set; }
         internal byte[] EncryptionKey { get; private set; }
@@ -78,8 +81,10 @@ namespace ZWaveDotNet.Entities
             if (networkIds != null && networkIds.Data.Length > 4)
             {
                 HomeID = BinaryPrimitives.ReadUInt32BigEndian(networkIds.Data.Slice(0, 4).Span);
-                Log.Information($"Home ID: {HomeID}");
-                ControllerID = networkIds.Data.Span[4]; //TODO - 16 bit
+                if (networkIds.Data.Span.Length == 5)
+                    ControllerID = networkIds.Data.Span[4];
+                else
+                    ControllerID = BinaryPrimitives.ReadUInt16BigEndian(networkIds.Data.Slice(4, 2).Span);
             }
 
             //Begin the interview
@@ -96,6 +101,36 @@ namespace ZWaveDotNet.Entities
                     }
                 }
             }
+
+            if (Supports(Function.GetLRNodes))
+            {
+                ushort[] nodeIds = await GetLRNodes(cancellationToken);
+                foreach (ushort id in nodeIds)
+                {
+                    if (!Nodes.ContainsKey(id))
+                    {
+                        NodeProtocolInfo nodeInfo = await GetNodeProtocolInfo(id); //FIXME - Ensure 16 bit IDs are enabled first
+                        Nodes.Add(id, new Node(id, this, nodeInfo));
+                        byte[] bytes = new byte[2];
+                        BinaryPrimitives.WriteUInt16BigEndian(bytes, id);
+                        await flow.SendAcknowledgedResponse(Function.RequestNodeInfo, CancellationToken.None, bytes);
+                    }
+                }
+            }
+        }
+
+        private async Task<ushort[]> GetLRNodes(CancellationToken cancellationToken = default)
+        {
+            LongRangeNodes? lrn;
+            byte offset = 0;
+            List<ushort> nodes = new List<ushort>();
+            do
+            {
+                lrn = (LongRangeNodes)await flow.SendAcknowledgedResponse(Function.GetLRNodes, cancellationToken, offset);
+                nodes.AddRange(lrn.NodeIDs);
+                offset++;
+            } while (lrn != null && lrn.MoreNodes);
+            return nodes.ToArray();
         }
 
         public async Task<Function[]> GetSupportedFunctions(CancellationToken cancellationToken = default)
@@ -282,6 +317,15 @@ namespace ZWaveDotNet.Entities
             return true;
         }
 
+        public async Task InterviewNodes()
+        {
+            foreach (Node n in Nodes.Values)
+            {
+                if (n.Listening)
+                    await n.Interview();
+            }
+        }
+
         private async Task EventLoop()
         {
             while (true)
@@ -292,6 +336,11 @@ namespace ZWaveDotNet.Entities
                     if (Nodes.TryGetValue(au.NodeId, out Node? node))
                         node.HandleApplicationUpdate(au);
                     Log.Information(au.ToString());
+                }
+                else if (msg is APIStarted start)
+                {
+                    //TODO - event this
+                    SupportsLongRange = start.SupportsLR;
                 }
                 else if (msg is ApplicationCommand cmd)
                 {
@@ -348,7 +397,6 @@ namespace ZWaveDotNet.Entities
 
         private async Task BootstrapS2(Node node)
         {
-            ///No Encryption
             Security2 sec2 = ((Security2)node.CommandClasses[CommandClass.Security2]);
             Log.Information("Starting Secure S2 Inclusion");
             KeyExchangeReport kep = await sec2.KexGet();
@@ -366,7 +414,7 @@ namespace ZWaveDotNet.Entities
 
         public override string ToString()
         {
-            return $"Controller {ControllerID}'s Nodes: \n" + string.Join('\n', Nodes.Values);
+            return $"Controller {ControllerID} - LR: {SupportsLongRange}\nNodes: \n" + string.Join('\n', Nodes.Values);
         }
     }
 }

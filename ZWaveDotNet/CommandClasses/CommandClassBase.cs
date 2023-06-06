@@ -11,7 +11,7 @@ namespace ZWaveDotNet.CommandClasses
     public abstract class CommandClassBase
     {
         public delegate Task CommandClassEvent(Node sender,  CommandClassEventArgs args);
-        public bool secure;
+        public bool Secure;
 
         protected Node node;
         protected Controller controller;
@@ -46,12 +46,21 @@ namespace ZWaveDotNet.CommandClasses
             await Handle(message);
         }
 
+        public static CommandClassBase Create(CommandClass cc, Controller controller, Node node, byte endpoint, bool secure)
+        {
+            CommandClassBase instance = Create(cc, controller, node, endpoint);
+            instance.Secure = secure;
+            return instance;
+        }
+
         public static CommandClassBase Create(CommandClass cc, Controller controller, Node node, byte endpoint)
         {
             switch (cc)
             {
                 case CommandClass.NoOperation:
                     return new NoOperation(node, endpoint);
+                case CommandClass.Basic:
+                    return new Basic(node, endpoint);
                 case CommandClass.Security0:
                     return new Security0(node, endpoint);
                 case CommandClass.Security2:
@@ -83,7 +92,7 @@ namespace ZWaveDotNet.CommandClasses
 
         protected async Task SendCommand(Enum command, CancellationToken token, bool supervised = false, params byte[] payload)
         {
-            CommandMessage data = new CommandMessage(node.ID, (byte)(endpoint & 0x7F), commandClass, Convert.ToByte(command), supervised, payload);//Endpoint 0x80 is multicast
+            CommandMessage data = new CommandMessage(node.ID, endpoint, commandClass, Convert.ToByte(command), supervised, payload);
             if (data.Payload.Count > 1 && IsSecure(data.Payload[1]))
             {
                 if (controller.SecurityManager == null)
@@ -95,6 +104,8 @@ namespace ZWaveDotNet.CommandClasses
                     await ((Security0)node.CommandClasses[CommandClass.Security0]).Encapsulate(data.Payload, token);
                 else if (key.Key > SecurityManager.RecordType.S0)
                     await ((Security2)node.CommandClasses[CommandClass.Security2]).Encapsulate(data.Payload, key.Key, token);
+                else
+                    throw new InvalidOperationException("Security required but no keys are available");
             }
             
             DataCallback dc = await controller.Flow.SendAcknowledgedResponseCallback(data.ToMessage());
@@ -104,7 +115,7 @@ namespace ZWaveDotNet.CommandClasses
 
         protected virtual bool IsSecure(byte command)
         {
-            return secure;
+            return Secure;
         }
 
         protected async Task<ReportMessage> SendReceive(Enum command, Enum response, CancellationToken token, params byte[] payload)

@@ -31,9 +31,10 @@ namespace ZWaveDotNet.CommandClasses
 
         public Security0(Node node, byte endpoint) : base(node, endpoint, CommandClass.Security0) { }
 
-        public async Task CommandsSupportedGet(CancellationToken cancellationToken = default)
+        public async Task<SupportedCommands> CommandsSupportedGet(CancellationToken cancellationToken = default)
         {
-            await SendReceive(SecurityCommand.CommandsSupportedGet, SecurityCommand.CommandsSupportedReport, cancellationToken);
+            ReportMessage msg = await SendReceive(SecurityCommand.CommandsSupportedGet, SecurityCommand.CommandsSupportedReport, cancellationToken);
+            return new SupportedCommands(msg.Payload);
         }
 
         internal async Task SchemeGet(CancellationToken cancellationToken = default)

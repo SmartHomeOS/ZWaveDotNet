@@ -2,6 +2,7 @@
 using System.Collections.ObjectModel;
 using ZWaveDotNet.CommandClasses;
 using ZWaveDotNet.CommandClasses.Enums;
+using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.Security;
 using ZWaveDotNet.SerialAPI;
@@ -17,7 +18,7 @@ namespace ZWaveDotNet.Entities
 
         public readonly ushort ID;
         protected readonly Controller controller;
-        protected readonly NodeProtocolInfo nodeInfo;
+        protected readonly NodeProtocolInfo? nodeInfo;
         protected bool lr;
         
         protected Dictionary<CommandClass, CommandClassBase> commandClasses = new Dictionary<CommandClass, CommandClassBase>();
@@ -25,12 +26,12 @@ namespace ZWaveDotNet.Entities
 
         public Controller Controller { get { return controller; } }
         public bool LongRange {  get { return lr; } }
-        public bool Listening { get { return nodeInfo.IsListening; } }
-        public bool Routing { get { return nodeInfo.Routing; } }
-        public SpecificType SpecificType { get { return nodeInfo.SpecificType; } }
-        public GenericType GenericType { get { return nodeInfo.GenericType; } }
+        public bool Listening { get { return nodeInfo?.IsListening ?? false; } }
+        public bool Routing { get { return nodeInfo?.Routing ?? false; } }
+        public SpecificType SpecificType { get { return nodeInfo?.SpecificType ?? SpecificType.Unknown; } }
+        public GenericType GenericType { get { return nodeInfo?.GenericType ?? GenericType.Unknown; } }
 
-        public Node(ushort id, Controller controller, NodeProtocolInfo nodeInfo, CommandClass[]? commandClasses = null)
+        public Node(ushort id, Controller controller, NodeProtocolInfo? nodeInfo, CommandClass[]? commandClasses = null)
         {
             ID = id;
             this.controller = controller;
@@ -38,13 +39,15 @@ namespace ZWaveDotNet.Entities
             if (commandClasses != null)
             {
                 foreach (CommandClass cc in commandClasses)
-                {
-                    if (!this.commandClasses.ContainsKey(cc))
-                        this.commandClasses.Add(cc, CommandClassBase.Create(cc, controller, this, 0));
-                }
+                    AddCommandClass(cc);
             }
-            if (!this.commandClasses.ContainsKey(CommandClass.NoOperation))
-                this.commandClasses.Add(CommandClass.NoOperation, CommandClassBase.Create(CommandClass.NoOperation, controller, this, 0));
+            AddCommandClass(CommandClass.NoOperation);
+        }
+
+        private void AddCommandClass(CommandClass cls, bool secure = false)
+        {
+            if (!this.commandClasses.ContainsKey(cls))
+                this.commandClasses.Add(cls, CommandClassBase.Create(cls, controller, this, 0, secure));
         }
 
         public async Task DeleteReturnRoute(CancellationToken cancellationToken)
@@ -174,7 +177,7 @@ namespace ZWaveDotNet.Entities
                 json.CommandClasses[i] = new CommandClassJson();
                 json.CommandClasses[i].CommandClass = commandClasses[cls].CommandClass;
                 json.CommandClasses[i].Version = commandClasses[cls].Version;
-                json.CommandClasses[i].Secure = commandClasses[cls].secure;
+                json.CommandClasses[i].Secure = commandClasses[cls].Secure;
             }
             return json;
         }
@@ -186,7 +189,7 @@ namespace ZWaveDotNet.Entities
                 if (!commandClasses.ContainsKey(cc.CommandClass))
                 {
                     CommandClassBase ccb = CommandClassBase.Create(cc.CommandClass, controller, this, 0);
-                    ccb.secure = cc.Secure;
+                    ccb.Secure = cc.Secure;
                     ccb.Version = cc.Version;
                     commandClasses.Add(cc.CommandClass, ccb);
                 }
@@ -221,6 +224,24 @@ namespace ZWaveDotNet.Entities
         public override string ToString()
         {
             return $"Node: {ID}, CommandClasses: {string.Join(',', commandClasses.Keys)}, Security: {controller.SecurityManager!.GetHighestKey(ID)?.Key}";
+        }
+
+        public async Task Interview()
+        {
+            if (this.commandClasses.ContainsKey(CommandClass.Security0))
+            {
+                Log.Information("Requesting S0 classes");
+                SupportedCommands supportedCmds = await ((Security0)commandClasses[CommandClass.Security0]).CommandsSupportedGet();
+                foreach (CommandClass cls in supportedCmds.CommandClasses)
+                    AddCommandClass(cls, true);
+            }
+            if (this.commandClasses.ContainsKey(CommandClass.Security2))
+            {
+                Log.Information("Requesting S2 classes");
+                List<CommandClass> supportedCmds = await ((Security2)commandClasses[CommandClass.Security2]).GetSupportedCommands();
+                foreach (CommandClass cls in supportedCmds)
+                    AddCommandClass(cls, true);
+            }
         }
     }
 }

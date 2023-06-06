@@ -312,6 +312,7 @@ namespace ZWaveDotNet.CommandClasses
             switch ((Security2Command)command)
             {
                 case Security2Command.CommandsSupportedGet:
+                case Security2Command.CommandsSupportedReport:
                 case Security2Command.NetworkKeyGet:
                 case Security2Command.NetworkKeyReport:
                 case Security2Command.NetworkKeyVerify:

@@ -1,9 +1,6 @@
 Command Class | Max Supported Version | Max Spec Version | Support
 --------------|-------------------|---------------|---------
 ALARM | 0 | 2 | None
-SENSOR_ALARM | 0 | 1 | None
-SILENCE_ALARM | 0 | 1 | None
-SWITCH_ALL | 0 | 1 | None
 ANTITHEFT | 0 | 3 | None
 ANTITHEFT_UNLOCK | 0 | 1 | None
 APPLICATION_CAPABILITY | 0 | 1 | None
@@ -14,17 +11,13 @@ ASSOCIATION_GRP_INFO | 0 | 3 | None
 AUTHENTICATION | 0 | 1 | None
 AUTHENTICATION_MEDIA_WRITE | 0 | 1 | None
 BARRIER_OPERATOR | 0 | 1 | None
-BASIC | 0 | 2 | None
+BASIC | 1 | 2 | Full
 BASIC_TARIFF_INFO | 0 | 1 | None
 BASIC_WINDOW_COVERING | 0 | 1 | None
 BATTERY | 0 | 3 | None
-SENSOR_BINARY | 0 | 2 | None
-SWITCH_BINARY | 1 | 2 | Full
-SWITCH_TOGGLE_BINARY | 0 | 1 | None
 CENTRAL_SCENE | 0 | 3 | None
 CLIMATE_CONTROL_SCHEDULE | 0 | 1 | None
 CLOCK | 0 | 1 | None
-SWITCH_COLOR | 0 | 3 | None
 CONFIGURATION | 0 | 4 | None
 CONTROLLER_REPLICATION | 0 | 1 | None
 CRC_16_ENCAP | 1 | 1 | Full
@@ -57,16 +50,14 @@ MAILBOX | 0 | 2 | None
 MANUFACTURER_PROPRIETARY | 0 | 1 | None
 MANUFACTURER_SPECIFIC | 0 | 2 | None
 METER | 0 | 6 | None
+METER_PULSE | 0 | 1 | None
 METER_TBL_CONFIG | 0 | 1 | None
 METER_TBL_MONITOR | 0 | 3 | None
 METER_TBL_PUSH | 0 | 1 | None
 MTP_WINDOW_COVERING | 0 | 1 | None
-MULTI_CHANNEL_ASSOCIATION | 0 | 4 | None
 MULTI_CHANNEL | 3 | 4 | Partial
+MULTI_CHANNEL_ASSOCIATION | 0 | 4 | None
 MULTI_CMD | 1 | 1 | Full
-SENSOR_MULTILEVEL | 0 | 11 | None
-SWITCH_MULTILEVEL | 0 | 4 | None
-SWITCH_TOGGLE_MULTILEVEL | 0 | 1 | None
 NETWORK_MANAGEMENT_BASIC | 0 | 2 | None
 NETWORK_MANAGEMENT_INCLUSION | 0 | 4 | None
 NETWORK_MANAGEMENT_INSTALLATION_MAINTENANCE | 0 | 4 | None
@@ -81,11 +72,10 @@ PREPAYMENT | 0 | 1 | None
 PREPAYMENT_ENCAPSULATION | 0 | 1 | None
 PROPRIETARY | 0 | 1 | None
 PROTECTION | 0 | 2 | None
-METER_PULSE | 0 | 1 | None
 RATE_TBL_CONFIG | 0 | 1 | None
 RATE_TBL_MONITOR | 0 | 1 | None
-REMOTE_ASSOCIATION_ACTIVATE | 0 | 1 | None
 REMOTE_ASSOCIATION | 0 | 1 | None
+REMOTE_ASSOCIATION_ACTIVATE | 0 | 1 | None
 SCENE_ACTIVATION | 0 | 1 | None
 SCENE_ACTUATOR_CONF | 0 | 1 | None
 SCENE_CONTROLLER_CONF | 0 | 1 | None
@@ -95,10 +85,20 @@ SCREEN_ATTRIBUTES | 0 | 2 | None
 SCREEN_MD | 0 | 2 | None
 SECURITY | 1 | 1 | Full
 SECURITY_2 | 1 | 1 | Partial
+SENSOR_ALARM | 0 | 1 | None
+SENSOR_BINARY | 0 | 2 | None
 SENSOR_CONFIGURATION | 0 | 1 | None
+SENSOR_MULTILEVEL | 0 | 11 | None
+SILENCE_ALARM | 0 | 1 | None
 SIMPLE_AV_CONTROL | 0 | 4 | None
 SOUND_SWITCH | 0 | 2 | None
 SUPERVISION | 1 | 2 | Full
+SWITCH_ALL | 0 | 1 | None
+SWITCH_BINARY | 1 | 2 | Full
+SWITCH_COLOR | 0 | 3 | None
+SWITCH_MULTILEVEL | 0 | 4 | None
+SWITCH_TOGGLE_BINARY | 0 | 1 | None
+SWITCH_TOGGLE_MULTILEVEL | 0 | 1 | None
 TARIFF_CONFIG | 0 | 1 | None
 TARIFF_TBL_MONITOR | 0 | 1 | None
 THERMOSTAT_FAN_MODE | 0 | 5 | None
@@ -114,13 +114,13 @@ USER_CODE | 0 | 2 | None
 VERSION | 3 | 3 | Full
 WAKE_UP | 0 | 3 | None
 WINDOW_COVERING | 0 | 1 | None
-ZIP_6LOWPAN | 0 | 1 | None
 ZIP | 0 | 5 | None
+ZIP_6LOWPAN | 0 | 1 | None
 ZIP_GATEWAY | 0 | 1 | None
 ZIP_NAMING | 0 | 1 | None
 ZIP_ND | 0 | 1 | None
 ZIP_PORTAL | 0 | 1 | None
 ZWAVEPLUS_INFO | 0 | 2 | None
 
-Full Support for 8/121 Command Classes.
+Full Support for 9/121 Command Classes.
 Partial Support for 3/121 Command Classes.
