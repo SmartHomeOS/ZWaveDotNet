@@ -6,7 +6,7 @@ using ZWaveDotNet.SerialAPI.Messages;
 
 namespace ZWaveDotNet.CommandClasses
 {
-    [CCVersion(CommandClass.NoOperation, 1)]
+    [CCVersion(CommandClass.NoOperation)]
     public class NoOperation : CommandClassBase
     {
         public NoOperation(Node node, byte endpoint) : base(node, endpoint, CommandClass.NoOperation)  {  }

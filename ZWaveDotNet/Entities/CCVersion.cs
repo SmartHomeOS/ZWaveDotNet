@@ -8,6 +8,12 @@ namespace ZWaveDotNet.Entities
         public byte minVersion;
         public byte maxVersion;
         public bool complete;
+        public CCVersion(CommandClass @class)
+        {
+            commandClass = @class;
+            minVersion = maxVersion = 1;
+            complete = true;
+        }
         public CCVersion(CommandClass @class, byte version)
         {
             commandClass = @class;

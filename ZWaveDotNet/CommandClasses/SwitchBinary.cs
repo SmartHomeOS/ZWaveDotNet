@@ -6,7 +6,7 @@ using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.CommandClasses
 {
-    [CCVersion(CommandClass.SwitchBinary, 1)]
+    [CCVersion(CommandClass.SwitchBinary, 2)]
     public class SwitchBinary : CommandClassBase
     {
         public event CommandClassEvent? SwitchReport;

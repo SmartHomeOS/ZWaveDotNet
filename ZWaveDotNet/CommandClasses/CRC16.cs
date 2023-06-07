@@ -4,7 +4,7 @@ using ZWaveDotNet.SerialAPI;
 
 namespace ZWaveDotNet.CommandClasses
 {
-    [CCVersion(CommandClass.CRC16, 1)]
+    [CCVersion(CommandClass.CRC16)]
     public class CRC16 : CommandClassBase
     {
         private static CRC16_CCITT? crc;
@@ -36,11 +36,9 @@ namespace ZWaveDotNet.CommandClasses
 
         internal static void Unwrap(ReportMessage msg)
         {
-            if (msg.Payload.Span[0] != (byte)CommandClass.CRC16 || msg.Payload.Length < 4)
+            if (msg.Payload.Length < 3)
                 throw new ArgumentException("Report is not a CRC16");
-            if (msg.Payload.Span[1] != (byte)CRC16Command.Encap)
-                throw new ArgumentException("Report is not Encapsulated");
-            Memory<byte> payload = msg.Payload.Slice(2, msg.Payload.Length - 4);
+            Memory<byte> payload = msg.Payload.Slice(0, msg.Payload.Length - 2);
             if (crc == null)
                 crc = new CRC16_CCITT();
             var chk = crc.ComputeChecksum(payload);

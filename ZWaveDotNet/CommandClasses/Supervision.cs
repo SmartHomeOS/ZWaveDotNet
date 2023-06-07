@@ -6,7 +6,7 @@ using ZWaveDotNet.SerialAPI;
 
 namespace ZWaveDotNet.CommandClasses
 {
-    [CCVersion(CommandClass.Supervision, 1)]
+    [CCVersion(CommandClass.Supervision, 2)]
     public class Supervision : CommandClassBase
     {
         public event CommandClassEvent? StatusReport;

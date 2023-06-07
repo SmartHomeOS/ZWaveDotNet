@@ -5,7 +5,7 @@ using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.CommandClasses
 {
-    [CCVersion(CommandClass.NodeNaming, 1)]
+    [CCVersion(CommandClass.NodeNaming)]
     public class NodeNaming : CommandClassBase
     {
         enum Command : byte

@@ -42,25 +42,46 @@ namespace TestConsole
                     if (cc != CommandClass.SecurityMark && cc != CommandClass.Mark)
                     {
                         total++;
-                        fw.Write(parts[0].Replace("COMMAND_CLASS_","") + " | ");
                         if (attrs.ContainsKey(cc))
                         {
                             CCVersion ccv = attrs[cc];
-                            fw.Write(ccv.maxVersion.ToString() + " | ");
-                            fw.Write(parts[2] + " | ");
+                            bool complete = ccv.complete && int.TryParse(parts[2], out int result) && ccv.maxVersion == result;
+                            if (complete)
+                                fw.Write("**");
+                            else
+                                fw.Write("*");
+                            fw.Write(parts[0].Replace("COMMAND_CLASS_", ""));
+                            if (complete)
+                                fw.Write("** | **");
+                            else
+                                fw.Write("* | *");
+                            fw.Write(ccv.maxVersion.ToString());
+                            if (complete)
+                                fw.Write("** | **");
+                            else
+                                fw.Write("* | *");
+                            fw.Write(parts[2]);
+                            if (complete)
+                                fw.Write("** | **");
+                            else
+                                fw.Write("* | *");
                             if (ccv.complete)
                             {
-                                fw.WriteLine("Full");
+                                fw.Write("Full*");
+                                if (complete)
+                                    fw.Write('*');
+                                fw.WriteLine();
                                 full++;
                             }
                             else
                             {
-                                fw.WriteLine("Partial");
+                                fw.WriteLine("Partial*");
                                 partial++;
                             }
                         }
                         else
                         {
+                            fw.Write(parts[0].Replace("COMMAND_CLASS_", "") + " | ");
                             fw.Write("0 | ");
                             fw.WriteLine(parts[2] + " | None");
                         }

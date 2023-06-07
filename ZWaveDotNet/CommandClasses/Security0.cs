@@ -9,7 +9,7 @@ using ZWaveDotNet.SerialAPI;
 
 namespace ZWaveDotNet.CommandClasses
 {
-    [CCVersion(CommandClass.Security0, 1)]
+    [CCVersion(CommandClass.Security0)]
     public class Security0 : CommandClassBase
     {
         private static readonly byte[] EMPTY_IV = new byte[]{ 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };

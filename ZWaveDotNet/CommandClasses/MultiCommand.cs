@@ -4,7 +4,7 @@ using ZWaveDotNet.SerialAPI;
 
 namespace ZWaveDotNet.CommandClasses
 {
-    [CCVersion(CommandClass.MultiCommand, 1)]
+    [CCVersion(CommandClass.MultiCommand)]
     public class MultiCommand : CommandClassBase
     {
         public enum MultiCommandCommand
@@ -33,12 +33,10 @@ namespace ZWaveDotNet.CommandClasses
 
         internal static ReportMessage[] Unwrap(ReportMessage msg)
         {
-            if (msg.Payload.Span[0] != (byte)CommandClass.MultiCommand || msg.Payload.Length < 4)
+            if (msg.Payload.Length < 2)
                 throw new ArgumentException("Report is not a MultiCommand");
-            if (msg.Payload.Span[1] != (byte)MultiCommandCommand.Encap)
-                throw new ArgumentException("Report is not Encapsulated");
-            ReportMessage[] list = new ReportMessage[msg.Payload.Span[2]];
-            Memory<byte> payload = msg.Payload.Slice(3);
+            ReportMessage[] list = new ReportMessage[msg.Payload.Span[0]];
+            Memory<byte> payload = msg.Payload.Slice(1);
             for (int i = 0; i < list.Length; i++)
             {
                 byte len = payload.Span[0];
