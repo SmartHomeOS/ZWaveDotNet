@@ -254,7 +254,7 @@ namespace ZWaveDotNet.Entities
 
             if (this.commandClasses.ContainsKey(CommandClass.Version))
             {
-                ZWave.CommandClasses.Version version = (ZWave.CommandClasses.Version)commandClasses[CommandClass.Version];
+                CommandClasses.Version version = (CommandClasses.Version)commandClasses[CommandClass.Version];
                 foreach (CommandClassBase cc in commandClasses.Values)
                 {
                     CCVersion? ccVersion = (CCVersion?)cc.GetType().GetCustomAttribute(typeof(CCVersion));

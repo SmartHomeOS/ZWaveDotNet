@@ -5,7 +5,6 @@ using ZWaveDotNet.Entities;
 using ZWaveDotNet.SerialAPI.Messages.Enums;
 using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.Security;
-using ZWave.CommandClasses;
 
 namespace ZWaveDotNet.CommandClasses
 {
@@ -80,12 +79,14 @@ namespace ZWaveDotNet.CommandClasses
                     return new Security2(node, endpoint);
                 case CommandClass.Supervision:
                     return new Supervision(node);
+                case CommandClass.SwitchAll:
+                    return new SwitchAll(node, endpoint);
                 case CommandClass.SwitchBinary:
                     return new SwitchBinary(node, endpoint);
                 case CommandClass.TransportService:
                     return new TransportService(node, endpoint);
                 case CommandClass.Version:
-                    return new ZWave.CommandClasses.Version(node, endpoint);
+                    return new Version(node, endpoint);
                 case CommandClass.WakeUp:
                     return new WakeUp(node, endpoint);
                 case CommandClass.ZWavePlusInfo:

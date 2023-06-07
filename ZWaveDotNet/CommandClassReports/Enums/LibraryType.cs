@@ -1,4 +1,4 @@
-﻿namespace ZWave.CommandClasses
+﻿namespace ZWaveDotNet.CommandClassReports.Enums
 {
     public enum LibraryType : byte
     {

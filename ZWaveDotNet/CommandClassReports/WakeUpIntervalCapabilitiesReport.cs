@@ -1,7 +1,6 @@
-﻿using ZWaveDotNet.CommandClassReports;
-using ZWaveDotNet.Util;
+﻿using ZWaveDotNet.Util;
 
-namespace ZWave.CommandClasses
+namespace ZWaveDotNet.CommandClassReports
 {
     public class WakeUpIntervalCapabilitiesReport : ICommandClassReport
     {

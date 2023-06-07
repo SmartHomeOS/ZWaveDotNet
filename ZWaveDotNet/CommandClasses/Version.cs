@@ -1,10 +1,9 @@
-﻿using ZWaveDotNet.CommandClasses;
-using ZWaveDotNet.CommandClassReports;
+﻿using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
 
-namespace ZWave.CommandClasses
+namespace ZWaveDotNet.CommandClasses
 {
     [CCVersion(CommandClass.Version, 1, 3)]
     public class Version : CommandClassBase

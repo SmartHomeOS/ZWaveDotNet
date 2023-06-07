@@ -1,10 +1,10 @@
-﻿using ZWaveDotNet.CommandClasses;
+﻿using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
 using ZWaveDotNet.Util;
 
-namespace ZWave.CommandClasses
+namespace ZWaveDotNet.CommandClasses
 {
     [CCVersion(CommandClass.WakeUp, 1, 3)]
     public class WakeUp : CommandClassBase

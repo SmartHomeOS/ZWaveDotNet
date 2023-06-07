@@ -93,7 +93,7 @@ SILENCE_ALARM | 0 | 1 | None
 SIMPLE_AV_CONTROL | 0 | 4 | None
 SOUND_SWITCH | 0 | 2 | None
 **SUPERVISION** | **2** | **2** | **Full**
-SWITCH_ALL | 0 | 1 | None
+**SWITCH_ALL** | **1** | **1** | **Full**
 **SWITCH_BINARY** | **2** | **2** | **Full**
 SWITCH_COLOR | 0 | 3 | None
 SWITCH_MULTILEVEL | 0 | 4 | None
@@ -122,5 +122,5 @@ ZIP_ND | 0 | 1 | None
 ZIP_PORTAL | 0 | 1 | None
 **ZWAVEPLUS_INFO** | **2** | **2** | **Full**
 
-- Full Support for 13/121 Command Classes.
+- Full Support for 14/121 Command Classes.
 - Partial Support for 2/121 Command Classes.

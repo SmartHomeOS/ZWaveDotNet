@@ -1,8 +1,8 @@
 ﻿using System.Data;
-using ZWaveDotNet.CommandClassReports;
+using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Util;
 
-namespace ZWave.CommandClasses
+namespace ZWaveDotNet.CommandClassReports
 {
     public class VersionReport : ICommandClassReport
     {
@@ -20,14 +20,14 @@ namespace ZWave.CommandClasses
             Protocol = payload.Span[1].ToString("d") + "." + payload.Span[2].ToString("d2");
             List<string> firmwares = new List<string>();
             firmwares.Add(payload.Span[3].ToString("d") + "." + payload.Span[4].ToString("d2"));
-            
+
             if (payload.Length > 6)
             {
                 //Version 2+
                 Hardware = payload.Span[5];
                 byte numFirmwares = payload.Span[6];
                 for (byte i = 0; i < numFirmwares; i++)
-                    firmwares.Add(payload.Span[7 + (i * 2)].ToString("d") + "." + payload.Span[8 + (i * 2)].ToString("d2"));
+                    firmwares.Add(payload.Span[7 + i * 2].ToString("d") + "." + payload.Span[8 + i * 2].ToString("d2"));
             }
             else
                 Hardware = 0;
