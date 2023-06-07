@@ -1,12 +1,17 @@
-﻿using ZWaveDotNet.Entities;
+﻿using System.Collections;
+using ZWaveDotNet.CommandClassReports;
+using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
+using ZWaveDotNet.SerialAPI.Enums;
 
 namespace ZWaveDotNet.CommandClasses
 {
-    [CCVersion(CommandClass.MultiChannel, 1, 3, false)]
+    [CCVersion(CommandClass.MultiChannel, 1, 4)]
     public class MultiChannel : CommandClassBase
     {
+        public event CommandClassEvent? EndpointCapabilitiesUpdated;
+
         public enum MultiChannelCommand
         {
             EndPointGet = 0x07,
@@ -20,6 +25,45 @@ namespace ZWaveDotNet.CommandClasses
             AggregatedMembersReport = 0x0F
         }
         public MultiChannel(Node node, byte endpoint) : base(node, endpoint, CommandClass.MultiChannel) {  }
+
+        public async Task<EndPointReport> GetEndPoints(CancellationToken cancellationToken = default)
+        {
+            if (node.ID == Node.BROADCAST_ID)
+                throw new MethodAccessException("GET methods may not be called on broadcast nodes");
+            ReportMessage response = await SendReceive(MultiChannelCommand.EndPointGet, MultiChannelCommand.EndPointReport, cancellationToken);
+            return new EndPointReport(response.Payload);
+        }
+
+        public async Task<EndPointCapabilities> GetCapabilities(byte endpointId, CancellationToken cancellationToken = default)
+        {
+            if (node.ID == Node.BROADCAST_ID)
+                throw new MethodAccessException("GET methods may not be called on broadcast nodes");
+            ReportMessage response = await SendReceive(MultiChannelCommand.CapabilityGet, MultiChannelCommand.CapabilityReport, cancellationToken, endpointId);
+            return new EndPointCapabilities(response.Payload);
+        }
+
+        public async Task<EndPointFindReport> FindEndPoints(GenericType generic, SpecificType specific, CancellationToken cancellationToken = default)
+        {
+            if (node.ID == Node.BROADCAST_ID)
+                throw new MethodAccessException("GET methods may not be called on broadcast nodes");
+            ReportMessage response = await SendReceive(MultiChannelCommand.EndPointFind, MultiChannelCommand.EndPointFindReport, cancellationToken, (byte)generic, SpecificTypeMapping.Get(generic, specific));
+            return new EndPointFindReport(response.Payload);
+        }
+
+        public async Task<List<byte>> GetAggregatedMembers(byte endpointId, CancellationToken cancellationToken = default)
+        {
+            if (node.ID == Node.BROADCAST_ID)
+                throw new MethodAccessException("GET methods may not be called on broadcast nodes");
+            ReportMessage response = await SendReceive(MultiChannelCommand.AggregatedMembersGet, MultiChannelCommand.AggregatedMembersReport, cancellationToken, endpointId);
+            List<byte> ret = new List<byte>();
+            BitArray bits = new BitArray(response.Payload.Slice(2).ToArray());
+            for (int i = 0; i < bits.Length; i++)
+            {
+                if (bits[i])
+                    ret.Add((byte)(i + 1));
+            }
+            return ret;
+        }
 
         public static bool IsEncapsulated(ReportMessage msg)
         {
@@ -50,10 +94,13 @@ namespace ZWaveDotNet.CommandClasses
             msg.Update(msg.Payload.Slice(2));
         }
 
-        protected override Task Handle(ReportMessage message)
+        protected override async Task Handle(ReportMessage message)
         {
-            //TODO
-            return Task.CompletedTask;
+            if (message.Command == (byte)MultiChannelCommand.CapabilityReport)
+            {
+                EndPointCapabilities report = new EndPointCapabilities(message.Payload);
+                await FireEvent(EndpointCapabilitiesUpdated, report);
+            }
         }
     }
 }

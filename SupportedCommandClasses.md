@@ -55,7 +55,7 @@ METER_TBL_CONFIG | 0 | 1 | None
 METER_TBL_MONITOR | 0 | 3 | None
 METER_TBL_PUSH | 0 | 1 | None
 MTP_WINDOW_COVERING | 0 | 1 | None
-MULTI_CHANNEL | 3 | 4 | Partial
+MULTI_CHANNEL | 4 | 4 | Full
 MULTI_CHANNEL_ASSOCIATION | 0 | 4 | None
 MULTI_CMD | 1 | 1 | Full
 NETWORK_MANAGEMENT_BASIC | 0 | 2 | None
@@ -122,5 +122,5 @@ ZIP_ND | 0 | 1 | None
 ZIP_PORTAL | 0 | 1 | None
 ZWAVEPLUS_INFO | 0 | 2 | None
 
-Full Support for 9/121 Command Classes.
-Partial Support for 3/121 Command Classes.
+Full Support for 10/121 Command Classes.
+Partial Support for 2/121 Command Classes.

@@ -28,7 +28,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
             bytes.Add((byte)CommandClasses.Length);
             bytes.Add((byte)BasicType);
             bytes.Add((byte)GenericType);
-            bytes.Add((byte)SpecificType); //FIXME: This is wrong
+            bytes.Add(SpecificTypeMapping.Get(GenericType, SpecificType));
             for (byte i = 0; i < CommandClasses.Length; i++)
                 bytes.Add((byte)CommandClasses[i]);
             return bytes;

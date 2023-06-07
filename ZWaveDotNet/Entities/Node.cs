@@ -247,6 +247,13 @@ namespace ZWaveDotNet.Entities
                 foreach (CommandClass cls in supportedCmds)
                     AddCommandClass(cls, true);
             }
+            if (this.commandClasses.ContainsKey(CommandClass.MultiChannel))
+            {
+                Log.Information("Requesting MultiChannel EndPoints");
+                EndPointReport epReport = await ((MultiChannel)commandClasses[CommandClass.MultiChannel]).GetEndPoints();
+                for (int i = 0; i < epReport.IndividualEndPoints; i++)
+                    endPoints.Add(new EndPoint((byte)(i + 1), this));
+            }
         }
 
         private byte[] GetIDBytes(ushort id)
