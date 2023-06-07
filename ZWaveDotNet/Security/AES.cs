@@ -149,8 +149,8 @@ namespace ZWaveDotNet.Security
             sendersNonce.CopyTo(authenticationData);
             receiversNonce.CopyTo(authenticationData.Slice(8, 8));
             authenticationData.Span[16] = command;
-            authenticationData.Span[17] = (byte)sourceId;
-            authenticationData.Span[18] = (byte)destId;
+            authenticationData.Span[17] = (byte)sourceId; //TODO - determine if this can be 2 bytes wide
+            authenticationData.Span[18] = (byte)destId; //TODO - determine if this can be 2 bytes wide
             authenticationData.Span[19] = (byte)encryptedPayload.Length;
             encryptedPayload.CopyTo(authenticationData.Slice(20, encryptedPayload.Length));
 

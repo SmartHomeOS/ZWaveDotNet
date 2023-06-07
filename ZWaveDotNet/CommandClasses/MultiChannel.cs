@@ -33,18 +33,21 @@ namespace ZWaveDotNet.CommandClasses
                 (byte)CommandClass.MultiChannel,
                 (byte)MultiChannelCommand.Encap,
                 0x0,
-                destinationEndpoint
+                (byte)(destinationEndpoint & 0x7F)
             };
             payload.InsertRange(0, header);
         }
 
         internal static void Unwrap(ReportMessage msg)
         {
-            if (msg.Payload.Length < 4)
+            if (msg.Payload.Length < 3)
                 throw new ArgumentException("Report is not a MultiChannel");
 
-            msg.SourceEndpoint = msg.Payload.Span[2];
-            msg.Update(msg.Payload.Slice(4));
+            msg.SourceEndpoint = (byte)(msg.Payload.Span[0] & 0x7F);
+            msg.DestinationEndpoint = (byte)(msg.Payload.Span[1] & 0x7F);
+            if ((msg.Payload.Span[1] & 0x80) == 0x80)
+                msg.Flags |= ReportFlags.Multicast;
+            msg.Update(msg.Payload.Slice(2));
         }
 
         protected override Task Handle(ReportMessage message)

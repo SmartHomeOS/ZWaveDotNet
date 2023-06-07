@@ -16,6 +16,7 @@ namespace ZWaveDotNet.SerialAPI
         public Memory<byte> Payload;
 
         public byte SourceEndpoint;
+        public byte DestinationEndpoint;
         public ReportFlags Flags = ReportFlags.None;
         public byte SessionID;
         internal SecurityKey SecurityLevel;
@@ -59,6 +60,11 @@ namespace ZWaveDotNet.SerialAPI
                 Command = data.Span[2];
                 Payload = data.Slice(3);
             }
+        }
+
+        public bool IsMulticastMethod()
+        {
+            return ((Flags & ReportFlags.Broadcast) == ReportFlags.Broadcast || (Flags & ReportFlags.Multicast) == ReportFlags.Multicast);
         }
 
         public override string ToString()

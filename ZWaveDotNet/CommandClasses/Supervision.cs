@@ -9,6 +9,8 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.Supervision, 1)]
     public class Supervision : CommandClassBase
     {
+        public event CommandClassEvent? StatusReport;
+
         public enum SupervisionCommand
         {
             Get = 0x01,
@@ -42,21 +44,19 @@ namespace ZWaveDotNet.CommandClasses
 
         internal static void Unwrap(ReportMessage msg)
         {
-            if (msg.Payload.Span[0] != (byte)CommandClass.MultiCommand || msg.Payload.Length < 4)
-                throw new ArgumentException("Report is not a Supervision");
-            if (msg.Payload.Span[1] != (byte)SupervisionCommand.Get)
-                throw new ArgumentException("Report is not Encapsulated");
+            if (msg.Payload.Length < 3)
+                throw new ArgumentException("Report is truncated");
            
-            msg.SessionID = (byte)(msg.Payload.Span[2] & 0x3F);
-            msg.Flags |= ((msg.Payload.Span[2] & 0x80) == 0x80) ? ReportFlags.SupervisedWithProgress : ReportFlags.SupervisedOnce;
-            msg.Update(msg.Payload.Slice(4));
+            msg.SessionID = (byte)(msg.Payload.Span[0] & 0x3F);
+            msg.Flags |= ((msg.Payload.Span[0] & 0x80) == 0x80) ? ReportFlags.SupervisedWithProgress : ReportFlags.SupervisedOnce;
+            msg.Update(msg.Payload.Slice(2));
         }
 
         protected override async Task Handle(ReportMessage message)
         {
             SupervisionReport report = new SupervisionReport(message.Payload);
             Log.Information(report.ToString());
-            //TODO - Event this
+            await FireEvent(StatusReport, report);
         }
     }
 }

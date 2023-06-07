@@ -1,4 +1,6 @@
-﻿using ZWaveDotNet.SerialAPI.Enums;
+﻿using System.Buffers.Binary;
+using ZWaveDotNet.Entities;
+using ZWaveDotNet.SerialAPI.Enums;
 using ZWaveDotNet.SerialAPI.Messages.Enums;
 
 
@@ -7,27 +9,17 @@ namespace ZWaveDotNet.SerialAPI.Messages
     public class DataMessage : Message
     {
         public readonly ushort DestinationNodeID;
+        public readonly ushort SourceNodeID;
         public List<byte> Data;
         public readonly TransmitOptions Options;
         public readonly byte SessionID;
 
         private static byte callbackID = 1;
+        private Controller controller;
 
-        public DataMessage(Memory<byte> payload) : base(Function.SendData)
+        public DataMessage(Controller controller, ushort nodeId, List<byte> data, bool callback) : base(controller.IsBridge ? Function.SendDataBridge : Function.SendData)
         {
-            if (payload.Length < 4)
-                throw new InvalidDataException("Empty DataMessage received");
-            DestinationNodeID = payload.Span[0];
-            byte len = payload.Span[1];
-            if (payload.Length < len + 4)
-                throw new InvalidDataException("Truncated DataMessage received");
-            Data = new List<byte>(payload.Slice(2, len).ToArray());
-            Options = (TransmitOptions)payload.Span[2 + len];
-            SessionID = payload.Span[3 + len];
-        }
-
-        public DataMessage(ushort nodeId, List<byte> data, bool callback) : base(Function.SendData)
-        {
+            SourceNodeID = controller.ControllerID;
             DestinationNodeID = nodeId;
             Data = data;
             Options = TransmitOptions.RequestAck | TransmitOptions.AutoRouting | TransmitOptions.ExploreNPDUs;
@@ -37,15 +29,36 @@ namespace ZWaveDotNet.SerialAPI.Messages
                 SessionID = 0;
             if (callbackID == 0)
                 callbackID = 1;
+            this.controller = controller;
         }
 
         public override List<byte> GetPayload()
         {
             List<byte> bytes = base.GetPayload();
-            bytes.Add((byte)DestinationNodeID); //TODO - Support extended Node ID
+            if (Function == Function.SendDataBridge)
+            {
+                if (controller.WideID)
+                {
+                    byte[] tmp = new byte[2];
+                    BinaryPrimitives.WriteUInt16BigEndian(tmp, SourceNodeID);
+                    bytes.AddRange(tmp);
+                }
+                else
+                    bytes.Add((byte)SourceNodeID);
+            }
+            if (controller.WideID)
+            {
+                byte[] tmp = new byte[2];
+                BinaryPrimitives.WriteUInt16BigEndian(tmp, DestinationNodeID);
+                bytes.AddRange(tmp);
+            }
+            else
+                bytes.Add((byte)DestinationNodeID);
             bytes.Add((byte)Data.Count);
             bytes.AddRange(Data);
             bytes.Add((byte)Options);
+            if (Function == Function.SendDataBridge)
+                bytes.AddRange(new byte[] { 0, 0, 0, 0 }); //Use default route
             bytes.Add(SessionID);
             return bytes;
         }

@@ -21,14 +21,13 @@ namespace ZWaveDotNet.SerialAPI
             Task.Factory.StartNew(ReadTask);
         }
 
-        public ValueTask QueueTX(Frame frame)
+        public async ValueTask QueueTX(Frame frame)
         {
-            return tx.Writer.WriteAsync(frame);
+            await tx.Writer.WriteAsync(frame);
         }
 
         public void Reset()
         {
-            //TODO - Flush Channels
             port.DiscardInBuffer();
             port.DiscardOutBuffer();
         }

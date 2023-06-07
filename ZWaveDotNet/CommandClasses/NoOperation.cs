@@ -13,7 +13,7 @@ namespace ZWaveDotNet.CommandClasses
 
         public async Task Ping(CancellationToken cancellationToken = default)
         {
-            CommandMessage data = new CommandMessage(node.ID, (byte)(endpoint & 0x7F), commandClass, 0x0);
+            CommandMessage data = new CommandMessage(controller, node.ID, (byte)(endpoint & 0x7F), commandClass, 0x0);
             data.Payload.RemoveAt(1); //This class sends no command
             DataCallback dc = await controller.Flow.SendAcknowledgedResponseCallback(data.ToMessage());
             if (dc.Status != TransmissionStatus.CompleteOk && dc.Status != TransmissionStatus.CompleteNoAck && dc.Status != TransmissionStatus.CompleteVerified)

@@ -1,5 +1,6 @@
 ﻿using System.Buffers.Binary;
 using ZWaveDotNet.CommandClasses;
+using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI.Messages;
 
@@ -7,12 +8,14 @@ namespace ZWaveDotNet.SerialAPI
 {
     public class CommandMessage
     {
+        private Controller controller;
         public byte DestinationEndpoint;
         public ushort DestinationNodeId;
         public List<byte> Payload;
 
-        public CommandMessage(ushort nodeId, CommandClass commandClass, byte command, bool supervised = false, params byte[] payload)
+        public CommandMessage(Controller controller, ushort nodeId, CommandClass commandClass, byte command, bool supervised = false, params byte[] payload)
         {
+            this.controller = controller;
             DestinationEndpoint = 0;
             DestinationNodeId = nodeId;
             if ((ushort)commandClass > 0xFF)
@@ -36,16 +39,18 @@ namespace ZWaveDotNet.SerialAPI
                 Supervision.Encapsulate(Payload, true);
         }
 
-        public CommandMessage(ushort nodeId, byte endpoint, CommandClass commandClass, byte command, bool supervised = false, params byte[] payload) : this(nodeId, commandClass, command, supervised, payload)
+        public CommandMessage(Controller controller, ushort nodeId, byte endpoint, CommandClass commandClass, byte command, bool supervised = false, params byte[] payload) : this(controller, nodeId, commandClass, command, supervised, payload)
         {
+            this.controller = controller;
             DestinationEndpoint = endpoint;
             //Supervise done in super
             if (endpoint != 0)
                 MultiChannel.Encapsulate(Payload, endpoint);
         }
 
-        public CommandMessage(ushort nodeId, byte endpoint, List<CommandMessage> commands, bool supervised = false) : this(nodeId, CommandClass.NoOperation, 0x0)
+        public CommandMessage(Controller controller, ushort nodeId, byte endpoint, List<CommandMessage> commands, bool supervised = false) : this(controller, nodeId, CommandClass.NoOperation, 0x0)
         {
+            this.controller = controller;
             DestinationEndpoint = endpoint;
             MultiCommand.Encapsulate(Payload, commands); //This clears the payload then adds the encap
             if (supervised)
@@ -56,7 +61,7 @@ namespace ZWaveDotNet.SerialAPI
 
         public DataMessage ToMessage()
         {
-            return new DataMessage(DestinationNodeId, Payload, true);
+            return new DataMessage(controller, DestinationNodeId, Payload, true);
         }
     }
 }

@@ -30,12 +30,23 @@ namespace ZWaveDotNet.Security
 
         public Memory<byte> GetBytes()
         {
-            Memory<byte> ret = new byte[8 + extensionData.Length]; //+extension length
-            ret.Span[0] = (byte)sender;
-            ret.Span[1] = (byte)destination;
-            BinaryPrimitives.WriteUInt32BigEndian(ret.Slice(2, 4).Span, homeId);
-            BinaryPrimitives.WriteUInt16BigEndian(ret.Slice(6).Span, messageLen);
-            extensionData.CopyTo(ret.Slice(8));
+            byte offset = 0;
+            if (sender > 255 || destination > 255)
+                offset = 2;
+            Memory<byte> ret = new byte[8 + extensionData.Length + offset]; //+extension length
+            if (offset == 2)
+            {
+                BinaryPrimitives.WriteUInt16BigEndian(ret.Slice(0, 2).Span, sender);
+                BinaryPrimitives.WriteUInt16BigEndian(ret.Slice(2, 2).Span, destination);
+            }
+            else
+            {
+                ret.Span[0] = (byte)sender;
+                ret.Span[1] = (byte)destination;
+            }
+            BinaryPrimitives.WriteUInt32BigEndian(ret.Slice(2 + offset, 4).Span, homeId);
+            BinaryPrimitives.WriteUInt16BigEndian(ret.Slice(6 + offset).Span, messageLen);
+            extensionData.CopyTo(ret.Slice(8 + offset));
             return ret;
         }
     }

@@ -8,6 +8,7 @@ namespace ZWaveDotNet.SerialAPI
     {
         private Port port;
         private Channel<Frame> unsolicited;
+        public bool WideID { get; set; }
 
         public Flow(string portName)
         {
@@ -145,7 +146,7 @@ namespace ZWaveDotNet.SerialAPI
                 {
                     case Function.ApplicationCommand:
                     case Function.ApplicationCommandHandlerBridge:
-                        return new ApplicationCommand(frame.Payload, frame.CommandID);
+                        return new ApplicationCommand(frame.Payload, frame.CommandID, WideID);
                     case Function.ApplicationUpdate:
                         if (frame.DataType == DataFrameType.Response)
                             return new Response(frame.Payload, frame.CommandID);

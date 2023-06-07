@@ -25,13 +25,12 @@ namespace ZWaveDotNet.Entities
         internal byte[] tempA;
         internal byte[] tempE;
         private Function[] supportedFunctions = new Function[0];
+        private SubCommand supportedSubCommands = SubCommand.None;
 
-        public Controller(string port, byte[] s0Key, byte[] s2unauth)
+        public Controller(string port, byte[] s0Key, byte[] s2unauth, byte[] s2auth, byte[] s2access)
         {
             if (string.IsNullOrEmpty(port))
                 throw new ArgumentNullException(nameof(port));
-            //TODO - Remove This
-            s0Key = s2unauth;
             if (s0Key == null || s0Key.Length != 16)
                 throw new ArgumentException(nameof(s0Key));
             using (Aes aes = Aes.Create())
@@ -45,6 +44,8 @@ namespace ZWaveDotNet.Entities
             }
             NetworkKeyS0 = s0Key;
             NetworkKeyS2UnAuth = s2unauth;
+            NetworkKeyS2Auth = s2auth;
+            NetworkKeyS2Access = s2access;
             flow = new Flow(port);
             BroadcastNode = new Node(Node.BROADCAST_ID, this, null, new CommandClass[] { CommandClass.Basic, CommandClass.SwitchAll });
         }
@@ -60,7 +61,9 @@ namespace ZWaveDotNet.Entities
         internal byte[] NetworkKeyS2UnAuth { get; private set; }
         internal byte[] NetworkKeyS2Auth { get; private set; }
         internal byte[] NetworkKeyS2Access { get; private set; }
-        public SecurityManager? SecurityManager { get; private set; } //TODO - Make this internal
+        internal SecurityManager? SecurityManager { get; private set; }
+        internal bool IsBridge { get; private set; } //TODO - Implement
+        internal bool WideID { get { return flow.WideID; } private set { flow.WideID = value; } }
 
         public async Task Reset()
         {
@@ -97,7 +100,15 @@ namespace ZWaveDotNet.Entities
                     {
                         NodeProtocolInfo nodeInfo = await GetNodeProtocolInfo(id);
                         Nodes.Add(id, new Node(id, this, nodeInfo));
-                        await flow.SendAcknowledgedResponse(Function.RequestNodeInfo, CancellationToken.None, (byte)id);
+                        byte[] cmd;
+                        if (WideID)
+                        {
+                            cmd = new byte[2];
+                            BinaryPrimitives.WriteUInt16BigEndian(cmd, id);
+                        }
+                        else
+                            cmd = new byte[] { (byte)id };
+                        await flow.SendAcknowledgedResponse(Function.RequestNodeInfo, CancellationToken.None, cmd);
                     }
                 }
             }
@@ -109,7 +120,9 @@ namespace ZWaveDotNet.Entities
                 {
                     if (!Nodes.ContainsKey(id))
                     {
-                        NodeProtocolInfo nodeInfo = await GetNodeProtocolInfo(id); //FIXME - Ensure 16 bit IDs are enabled first
+                        NodeProtocolInfo? nodeInfo = null;
+                        if (WideID)
+                            nodeInfo = await GetNodeProtocolInfo(id);
                         Nodes.Add(id, new Node(id, this, nodeInfo));
                         byte[] bytes = new byte[2];
                         BinaryPrimitives.WriteUInt16BigEndian(bytes, id);
@@ -138,14 +151,25 @@ namespace ZWaveDotNet.Entities
             if (supportedFunctions.Length > 0)
                 return supportedFunctions;
             PayloadMessage response = (PayloadMessage)await flow.SendAcknowledgedResponse(Function.GetSerialCapabilities, cancellationToken);
+            //Bytes 0-8: api version, manufacturer, product type, product id
             var bits = new BitArray(response.Data.Slice(8).ToArray());
             List<Function> functions = new List<Function>();
-            for (short i = 0; i < bits.Length; i++)
+            for (ushort i = 0; i < bits.Length; i++)
             {
                 if (bits[i])
                     functions.Add((Function)i + 1);
             }
             supportedFunctions = functions.ToArray();
+            if (Supports(Function.SerialAPISetup))
+            {
+                response = (PayloadMessage)await flow.SendAcknowledgedResponse(Function.SerialAPISetup, cancellationToken, (byte)SubCommand.GetSupportedCommands);
+                bits = new BitArray(response.Data.Slice(1).ToArray());
+                for (ushort i = 0; i < bits.Length; i++)
+                {
+                    if (bits[i])
+                        supportedSubCommands |= ((SubCommand)i + 1);
+                }
+            }
             return supportedFunctions;
         }
 
@@ -156,9 +180,22 @@ namespace ZWaveDotNet.Entities
             return supportedFunctions.Contains(function);
         }
 
+        protected bool Supports(SubCommand command)
+        {
+            return (supportedSubCommands & command) == command;
+        }
+
         public async Task<NodeProtocolInfo> GetNodeProtocolInfo(ushort nodeId, CancellationToken cancellationToken = default)
         {
-            return (NodeProtocolInfo)await flow.SendAcknowledgedResponse(Function.GetNodeProtocolInfo, cancellationToken, (byte)nodeId);
+            byte[] cmd;
+            if (WideID)
+            {
+                cmd = new byte[2];
+                BinaryPrimitives.WriteUInt16BigEndian(cmd, nodeId);
+            }
+            else
+                cmd = new byte[] { (byte)nodeId };
+            return (NodeProtocolInfo)await flow.SendAcknowledgedResponse(Function.GetNodeProtocolInfo, cancellationToken, cmd);
         }
 
         public async Task<Memory<byte>> GetRandom(byte length, CancellationToken cancellationToken = default)
@@ -415,6 +452,15 @@ namespace ZWaveDotNet.Entities
         public override string ToString()
         {
             return $"Controller {ControllerID} - LR: {SupportsLongRange}\nNodes: \n" + string.Join('\n', Nodes.Values);
+        }
+
+        public async Task<bool> Set16Bit(bool enable, CancellationToken cancellationToken = default)
+        {
+            if (!Supports(SubCommand.SetNodeIDBaseType))
+                throw new PlatformNotSupportedException("Controller does not support 16bit");
+            PayloadMessage success = (PayloadMessage)await flow.SendAcknowledgedResponse(Function.SerialAPISetup, cancellationToken, (byte)SubCommand.SetNodeIDBaseType, enable ? (byte)0x2 : (byte)0x1);
+            WideID = success.Data.Span[1] != 0;
+            return WideID;
         }
     }
 }

@@ -46,7 +46,7 @@ namespace ZWaveDotNet.CommandClasses
         internal async Task KeySet(CancellationToken cancellationToken = default)
         {
             Log.Information($"Setting Network Key on {node.ID}");
-            CommandMessage data = new CommandMessage(node.ID, endpoint, commandClass, (byte)SecurityCommand.NetworkKeySet, false, controller.NetworkKeyS0);
+            CommandMessage data = new CommandMessage(controller, node.ID, endpoint, commandClass, (byte)SecurityCommand.NetworkKeySet, false, controller.NetworkKeyS0);
             await TransmitTemp(data.Payload);
         }
 

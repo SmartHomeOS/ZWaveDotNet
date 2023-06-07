@@ -229,7 +229,7 @@ namespace ZWaveDotNet.CommandClasses
                         {
                             kexReport.Echo = true;
                             Log.Information("Responding: " + kexReport.ToString());
-                            CommandMessage reportKex = new CommandMessage(node.ID, endpoint, commandClass, (byte)Security2Command.KEXReport, false, kexReport.ToBytes());
+                            CommandMessage reportKex = new CommandMessage(controller, node.ID, endpoint, commandClass, (byte)Security2Command.KEXReport, false, kexReport.ToBytes());
                             await Transmit(reportKex.Payload, SecurityManager.RecordType.ECDH_TEMP);
                         }
                     }
@@ -246,7 +246,7 @@ namespace ZWaveDotNet.CommandClasses
                     controller.NetworkKeyS2UnAuth.CopyTo(resp, 1); //FIXME - Type hardcoded
                     AES.KeyTuple permKey = AES.CKDFExpand(controller.NetworkKeyS2UnAuth, false);
                     controller.SecurityManager.StoreKey(node.ID, SecurityManager.RecordType.S2UnAuth, permKey.KeyCCM, permKey.PString, permKey.MPAN); //FIXME - Type hardcoded
-                    CommandMessage data = new CommandMessage(node.ID, endpoint, commandClass, (byte)Security2Command.NetworkKeyReport, false, resp);
+                    CommandMessage data = new CommandMessage(controller, node.ID, endpoint, commandClass, (byte)Security2Command.NetworkKeyReport, false, resp);
                     await Transmit(data.Payload, SecurityManager.RecordType.ECDH_TEMP);
                     break;
                 case Security2Command.NetworkKeyVerify:
@@ -256,7 +256,7 @@ namespace ZWaveDotNet.CommandClasses
                     SecurityManager.NetworkKey? nk = controller.SecurityManager.GetHighestKey(node.ID);
                     if (nk != null && nk.Key != SecurityManager.RecordType.Entropy && nk.Key != SecurityManager.RecordType.ECDH_TEMP)
                         controller.SecurityManager.RevokeKey(node.ID, nk.Key);
-                    CommandMessage transferEnd = new CommandMessage(node.ID, endpoint, commandClass, (byte)Security2Command.TransferEnd, false, 0x2); //Key Verified
+                    CommandMessage transferEnd = new CommandMessage(controller, node.ID, endpoint, commandClass, (byte)Security2Command.TransferEnd, false, 0x2); //Key Verified
                     await Transmit(transferEnd.Payload, SecurityManager.RecordType.ECDH_TEMP);
                     break;
                 case Security2Command.NonceGet:

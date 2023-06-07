@@ -1,4 +1,5 @@
 ﻿using Serilog;
+using System.Buffers.Binary;
 using System.Collections.ObjectModel;
 using ZWaveDotNet.CommandClasses;
 using ZWaveDotNet.CommandClasses.Enums;
@@ -52,12 +53,16 @@ namespace ZWaveDotNet.Entities
 
         public async Task DeleteReturnRoute(CancellationToken cancellationToken)
         {
-            await controller.Flow.SendAcknowledged(Function.DeleteReturnRoute, (byte)ID );
+            await controller.Flow.SendAcknowledged(Function.DeleteReturnRoute, GetIDBytes(ID));
         }
 
         public async Task AssignReturnRoute(ushort associatedNodeId, CancellationToken cancellationToken)
         {
-            await controller.Flow.SendAcknowledged(Function.AssignReturnRoute, (byte)ID, (byte)associatedNodeId );
+            byte[] id = GetIDBytes(ID);
+            byte[] cmd = new byte[id.Length * 2];
+            Array.Copy(id, cmd, 2);
+            Array.Copy(GetIDBytes(associatedNodeId), 0, cmd, id.Length, cmd.Length);
+            await controller.Flow.SendAcknowledged(Function.AssignReturnRoute, cmd );
         }
 
         public byte EndPointCount()
@@ -242,6 +247,18 @@ namespace ZWaveDotNet.Entities
                 foreach (CommandClass cls in supportedCmds)
                     AddCommandClass(cls, true);
             }
+        }
+
+        private byte[] GetIDBytes(ushort id)
+        {
+            if (controller.WideID)
+            {
+                byte[] bytes = new byte[2];
+                BinaryPrimitives.WriteUInt16BigEndian(bytes, id);
+                return bytes;
+            }
+            else
+                return new byte[] { (byte)id };
         }
     }
 }

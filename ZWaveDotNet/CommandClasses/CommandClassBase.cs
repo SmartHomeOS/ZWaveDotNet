@@ -92,7 +92,7 @@ namespace ZWaveDotNet.CommandClasses
 
         protected async Task SendCommand(Enum command, CancellationToken token, bool supervised = false, params byte[] payload)
         {
-            CommandMessage data = new CommandMessage(node.ID, endpoint, commandClass, Convert.ToByte(command), supervised, payload);
+            CommandMessage data = new CommandMessage(controller, node.ID, endpoint, commandClass, Convert.ToByte(command), supervised, payload);
             if (data.Payload.Count > 1 && IsSecure(data.Payload[1]))
             {
                 if (controller.SecurityManager == null)
