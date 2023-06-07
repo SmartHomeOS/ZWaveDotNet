@@ -89,8 +89,8 @@ namespace TestConsole
                 }
             } while (line != null);
             fw.WriteLine();
-            fw.WriteLine($"Full Support for {full}/{total} Command Classes.");
-            fw.Write($"Partial Support for {partial}/{total} Command Classes.");
+            fw.WriteLine($"- Full Support for {full}/{total} Command Classes.");
+            fw.Write($"- Partial Support for {partial}/{total} Command Classes.");
             fw.Close();
             Log.Information("Done");
         }

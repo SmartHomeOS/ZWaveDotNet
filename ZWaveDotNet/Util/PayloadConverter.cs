@@ -6,6 +6,26 @@ namespace ZWaveDotNet.Util
 {
     public static class PayloadConverter
     {
+        public static byte[] FromUInt24(uint value)
+        {
+            //TODO - Test
+            byte[] result = new byte[3];
+            result[0] = (byte)((value & 0xFF0000) >> 16);
+            result[1] = (byte)((value & 0xFF00) >> 8);
+            result[2] = (byte)(value & 0xFF);
+            return result;
+        }
+
+        public static uint ToUInt24(Memory<byte> bytes)
+        {
+            if (bytes.Length < 3)
+                throw new ArgumentException("UInt24 requires 3 bytes");
+            if (BitConverter.IsLittleEndian)
+                return (uint)(bytes.Span[0] << 16 | bytes.Span[1] << 8 | bytes.Span[2]);
+            else
+                return (uint)(bytes.Span[2] << 16 | bytes.Span[1] << 8 | bytes.Span[0]);
+        }
+
         public static TimeSpan ToTimeSpan(byte payload)
         {
             if (payload == 0xFE || payload == 0x0)

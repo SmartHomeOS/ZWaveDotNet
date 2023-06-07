@@ -5,6 +5,7 @@ using ZWaveDotNet.Entities;
 using ZWaveDotNet.SerialAPI.Messages.Enums;
 using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.Security;
+using ZWave.CommandClasses;
 
 namespace ZWaveDotNet.CommandClasses
 {
@@ -57,30 +58,32 @@ namespace ZWaveDotNet.CommandClasses
         {
             switch (cc)
             {
-                case CommandClass.NoOperation:
-                    return new NoOperation(node, endpoint);
                 case CommandClass.Basic:
                     return new Basic(node, endpoint);
-                case CommandClass.Security0:
-                    return new Security0(node, endpoint);
-                case CommandClass.Security2:
-                    return new Security2(node, endpoint);
-                case CommandClass.Supervision:
-                    return new Supervision(node);
                 case CommandClass.CRC16:
                     return new CRC16(node, endpoint);
                 case CommandClass.MultiChannel:
                     return new MultiChannel(node, endpoint);
                 case CommandClass.MultiCommand:
                     return new MultiCommand(node, endpoint);
+                case CommandClass.NodeNaming:
+                    return new NodeNaming(node, endpoint);
+                case CommandClass.NoOperation:
+                    return new NoOperation(node, endpoint);
+                case CommandClass.Security0:
+                    return new Security0(node, endpoint);
+                case CommandClass.Security2:
+                    return new Security2(node, endpoint);
+                case CommandClass.Supervision:
+                    return new Supervision(node);
                 case CommandClass.SwitchBinary:
                     return new SwitchBinary(node, endpoint);
                 case CommandClass.TransportService:
                     return new TransportService(node, endpoint);
-                case CommandClass.NodeNaming:
-                    return new NodeNaming(node, endpoint);
                 case CommandClass.Version:
                     return new ZWave.CommandClasses.Version(node, endpoint);
+                case CommandClass.WakeUp:
+                    return new WakeUp(node, endpoint);
             }
             return new Unknown(node, endpoint, cc);
         }
@@ -141,7 +144,7 @@ namespace ZWaveDotNet.CommandClasses
             return await src.Task.WaitAsync(token);
         }
 
-        protected async Task FireEvent(CommandClassEvent? evt, ICommandClassReport report)
+        protected async Task FireEvent(CommandClassEvent? evt, ICommandClassReport? report)
         {
             if (evt != null)
                 await evt.Invoke(node, new CommandClassEventArgs(this, report));

@@ -112,7 +112,7 @@ TIME_PARAMETERS | 0 | 2 | None
 *TRANSPORT_SERVICE* | *1* | *2* | *Partial*
 USER_CODE | 0 | 2 | None
 **VERSION** | **3** | **3** | **Full**
-WAKE_UP | 0 | 3 | None
+**WAKE_UP** | **3** | **3** | **Full**
 WINDOW_COVERING | 0 | 1 | None
 ZIP | 0 | 5 | None
 ZIP_6LOWPAN | 0 | 1 | None
@@ -122,5 +122,5 @@ ZIP_ND | 0 | 1 | None
 ZIP_PORTAL | 0 | 1 | None
 ZWAVEPLUS_INFO | 0 | 2 | None
 
-Full Support for 10/121 Command Classes.
-Partial Support for 2/121 Command Classes.
+- Full Support for 11/121 Command Classes.
+- Partial Support for 2/121 Command Classes.
