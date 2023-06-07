@@ -9,7 +9,7 @@ An implementation of ZWave Plus using the 2022b public specification.
 * Support for 8/12/16 bit Node IDs (4000+ nodes) including ZWave LR
 * Support for 16-bit Command Classes
 * Support for broadcast messaging
-* Support for ZWave Plus
+* Support for ZWave Plus and DeviceTypev2
 * Node database import/export
 
 ##### Work in progress:

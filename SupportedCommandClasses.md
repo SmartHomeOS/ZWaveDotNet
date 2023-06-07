@@ -120,7 +120,7 @@ ZIP_GATEWAY | 0 | 1 | None
 ZIP_NAMING | 0 | 1 | None
 ZIP_ND | 0 | 1 | None
 ZIP_PORTAL | 0 | 1 | None
-ZWAVEPLUS_INFO | 0 | 2 | None
+**ZWAVEPLUS_INFO** | **2** | **2** | **Full**
 
-- Full Support for 11/121 Command Classes.
+- Full Support for 12/121 Command Classes.
 - Partial Support for 2/121 Command Classes.

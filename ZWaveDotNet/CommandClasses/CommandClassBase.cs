@@ -84,6 +84,8 @@ namespace ZWaveDotNet.CommandClasses
                     return new ZWave.CommandClasses.Version(node, endpoint);
                 case CommandClass.WakeUp:
                     return new WakeUp(node, endpoint);
+                case CommandClass.ZWavePlusInfo:
+                    return new ZWavePlus(node, endpoint);
             }
             return new Unknown(node, endpoint, cc);
         }
