@@ -37,7 +37,7 @@
         PowerSwitchMultiLevel,
         RemoteControlAV,
         RemoteControlSimple,
-        RepeaterSlave,
+        RepeaterEndNode,
         ResidentialHRV,
         RoutingSensorBinary,
         RoutingSensorMultiLevel,
@@ -168,9 +168,9 @@
                     return SpecificType.Unknown;
                 case GenericType.NonInteroperable:
                     return SpecificType.NotUsed;
-                case GenericType.RepeaterSlave:
+                case GenericType.RepeaterEndNode:
                     if (specificType == 1)
-                        return SpecificType.RepeaterSlave;
+                        return SpecificType.RepeaterEndNode;
                     else if (specificType == 2)
                         return SpecificType.VirtualNode;
                     return SpecificType.Unknown;
@@ -408,7 +408,7 @@
                     return 0x4;
                 case SpecificType.RemoteControlSimple:
                     return 0x6;
-                case SpecificType.RepeaterSlave:
+                case SpecificType.RepeaterEndNode:
                     return 0x1;
                 case SpecificType.ResidentialHRV:
                     return 0x1;

@@ -1,6 +1,8 @@
 ﻿using Serilog;
 using System.Buffers.Binary;
 using System.Collections.ObjectModel;
+using System.Reflection;
+using System.Text;
 using ZWaveDotNet.CommandClasses;
 using ZWaveDotNet.CommandClasses.Enums;
 using ZWaveDotNet.CommandClassReports;
@@ -226,11 +228,6 @@ namespace ZWaveDotNet.Entities
             }
         }
 
-        public override string ToString()
-        {
-            return $"Node: {ID}, CommandClasses: {string.Join(',', commandClasses.Keys)}, Security: {controller.SecurityManager!.GetHighestKey(ID)?.Key}";
-        }
-
         public async Task Interview()
         {
             if (this.commandClasses.ContainsKey(CommandClass.Security0))
@@ -254,6 +251,38 @@ namespace ZWaveDotNet.Entities
                 for (int i = 0; i < epReport.IndividualEndPoints; i++)
                     endPoints.Add(new EndPoint((byte)(i + 1), this));
             }
+
+            if (this.commandClasses.ContainsKey(CommandClass.Version))
+            {
+                ZWave.CommandClasses.Version version = (ZWave.CommandClasses.Version)commandClasses[CommandClass.Version];
+                foreach (CommandClassBase cc in commandClasses.Values)
+                {
+                    CCVersion? ccVersion = (CCVersion?)cc.GetType().GetCustomAttribute(typeof(CCVersion));
+                    if ((ccVersion == null || ccVersion.maxVersion > 1) && (cc.CommandClass >= CommandClass.Basic))
+                        cc.Version = await version.GetCommandClassVersion(cc.CommandClass);
+                }
+            }
+        }
+
+        public override string ToString()
+        {
+            return $"Node: {ID}, CommandClasses: {PrintCommandClasses()}, Security: {controller.SecurityManager!.GetHighestKey(ID)?.Key}";
+        }
+
+        private string PrintCommandClasses()
+        {
+            StringBuilder result = new StringBuilder();
+            bool separate = false;
+            foreach (CommandClassBase cc in commandClasses.Values)
+            {
+                if (separate)
+                    result.Append(", ");
+                result.Append(cc.CommandClass.ToString());
+                result.Append(':');
+                result.Append(cc.Version);
+                separate = true;
+            }
+            return result.ToString();
         }
 
         private byte[] GetIDBytes(ushort id)

@@ -12,7 +12,7 @@
         SensorNotification = 0x07,
         Thermostat = 0x08,
         WindowCovering = 0x09,
-        RepeaterSlave = 0x0F,
+        RepeaterEndNode = 0x0F,
         SwitchBinary = 0x10,
         SwitchMultiLevel = 0x11,
         SwitchRemote = 0x12,

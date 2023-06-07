@@ -39,10 +39,12 @@ namespace ZWaveDotNet.CommandClasses
             if (callbacks.ContainsKey(message.Command))
             {
                 List<TaskCompletionSource<ReportMessage>> lst = callbacks[message.Command];
-                callbacks.Remove(message.Command);
-                foreach (TaskCompletionSource<ReportMessage> callback in lst)
-                    callback.TrySetResult(message);
-                return;
+                if (lst.Count > 0)
+                {
+                    lst[0].TrySetResult(message);
+                    lst.RemoveAt(0);
+                    return;
+                }
             }
             await Handle(message);
         }
@@ -62,6 +64,8 @@ namespace ZWaveDotNet.CommandClasses
                     return new Basic(node, endpoint);
                 case CommandClass.CRC16:
                     return new CRC16(node, endpoint);
+                case CommandClass.DeviceResetLocally:
+                    return new DeviceResetLocally(node);
                 case CommandClass.MultiChannel:
                     return new MultiChannel(node, endpoint);
                 case CommandClass.MultiCommand:

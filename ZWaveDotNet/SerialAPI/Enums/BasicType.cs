@@ -5,7 +5,7 @@
         Unknown = 0x00,
         Controller = 0x01,
         StaticController = 0x02,
-        Slave = 0x03,
-        RoutingSlave = 0x04
+        EndNode = 0x03,
+        RoutingEndNode = 0x04
     }
 }

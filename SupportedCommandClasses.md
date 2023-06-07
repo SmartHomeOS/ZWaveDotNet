@@ -23,7 +23,7 @@ CONTROLLER_REPLICATION | 0 | 1 | None
 **CRC_16_ENCAP** | **1** | **1** | **Full**
 DCP_CONFIG | 0 | 1 | None
 DCP_MONITOR | 0 | 1 | None
-DEVICE_RESET_LOCALLY | 0 | 1 | None
+**DEVICE_RESET_LOCALLY** | **1** | **1** | **Full**
 DOOR_LOCK | 0 | 4 | None
 DOOR_LOCK_LOGGING | 0 | 1 | None
 ENERGY_PRODUCTION | 0 | 1 | None
@@ -122,5 +122,5 @@ ZIP_ND | 0 | 1 | None
 ZIP_PORTAL | 0 | 1 | None
 **ZWAVEPLUS_INFO** | **2** | **2** | **Full**
 
-- Full Support for 12/121 Command Classes.
+- Full Support for 13/121 Command Classes.
 - Partial Support for 2/121 Command Classes.
