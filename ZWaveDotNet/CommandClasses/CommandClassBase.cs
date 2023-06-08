@@ -63,6 +63,8 @@ namespace ZWaveDotNet.CommandClasses
             {
                 case CommandClass.Basic:
                     return new Basic(node, endpoint);
+                case CommandClass.BasicWindowCovering:
+                    return new BasicWindowCovering(node, endpoint);
                 case CommandClass.Battery:
                     return new Battery(node, endpoint);
                 case CommandClass.CRC16:
