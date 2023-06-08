@@ -48,6 +48,54 @@ namespace ZWaveDotNet.Util
                 return Encoding.Unicode.GetString(bytes.Slice(1, Math.Min(bytes.Length - 1, maxLen)).Span);
         }
 
+        public static float ToFloat(Memory<byte> payload, out byte scale)
+        {
+            byte precision = (byte)((payload.Span[0] & 0xE0) >> 5);
+            scale = (byte)((payload.Span[0] & 0x18) >> 3);
+
+            int value = 0;
+            switch ((byte)(payload.Span[0] & 0x07)) //Field size 1, 2, 4 bytes
+            {
+                case 1:
+                    value = (sbyte)payload.Span[1];
+                    break;   
+                case 2:
+                    value = BinaryPrimitives.ReadInt16BigEndian(payload.Slice(1, 2).Span);
+                    break;
+                case 4:
+                    value = BinaryPrimitives.ReadInt32BigEndian(payload.Slice(1, 4).Span);
+                    break;
+            }
+            return (float)(value / Math.Pow(10, precision));
+        }
+
+        public static float[] ToFloats(Memory<byte> payload, out byte scale)
+        {
+            byte precision = (byte)((payload.Span[0] & 0xE0) >> 5);
+            byte size = (byte)(payload.Span[0] & 0x07);
+            scale = (byte)((payload.Span[0] & 0x18) >> 3);
+
+            List<float> values = new List<float>();
+            for (int i = 1; i < payload.Length; i += size)
+            {
+                int value = 0;
+                switch (size) //Field size 1, 2, 4 bytes
+                {
+                    case 1:
+                        value = (sbyte)payload.Span[i];
+                        break;
+                    case 2:
+                        value = BinaryPrimitives.ReadInt16BigEndian(payload.Slice(i, 2).Span);
+                        break;
+                    case 4:
+                        value = BinaryPrimitives.ReadInt32BigEndian(payload.Slice(i, 4).Span);
+                        break;
+                }
+                values.Add((float)(value / Math.Pow(10, precision)));
+            }
+            return values.ToArray();
+        }
+
         public static byte GetByte(TimeSpan value)
         {
             if (value.TotalSeconds >= 1)
