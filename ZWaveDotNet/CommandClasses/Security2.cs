@@ -49,7 +49,7 @@ namespace ZWaveDotNet.CommandClasses
 
         internal async Task<Memory<byte>> KexSet(KeyExchangeReport report, CancellationToken cancellationToken = default)
         {
-            Log.Information($"Granting Keys {report.RequestedKeys}");
+            Log.Information($"Granting Keys {report.Keys}");
             ReportMessage msg = await SendReceive(Security2Command.KEXSet, Security2Command.PublicKeyReport,  cancellationToken, report.ToBytes());
             Log.Information("Received Public Key "+ MemoryUtil.Print(msg.Payload.Slice(1)));
             return msg.Payload.Slice(1);
@@ -214,12 +214,12 @@ namespace ZWaveDotNet.CommandClasses
             switch ((Security2Command)message.Command)
             {
                 case Security2Command.KEXGet:
+                    Log.Error("Unexpected KEX Get"); //FIXME - Do we need this?
                     await SendCommand(Security2Command.KEXReport, CancellationToken.None, 0x0, 0x2, 0x1, (byte)SecurityKey.S2Unauthenticated);
                     break;
                 case Security2Command.KEXSet:
                     KeyExchangeReport? kexReport = new KeyExchangeReport(message.Payload);
                     Log.Information("Kex Set Received: " + kexReport.ToString());
-                    kexReport.RequestedKeys = SecurityKey.S2Unauthenticated;
                     if (kexReport.Echo)
                     {
                         if (controller.SecurityManager == null)
@@ -242,22 +242,43 @@ namespace ZWaveDotNet.CommandClasses
                     Log.Information("Network Key Get Received");
                     byte[] resp = new byte[17];
                     SecurityKey key = (SecurityKey)message.Payload.Span[0];
+                    //TODO - Verify this was granted
                     resp[0] = (byte)key;
-                    controller.NetworkKeyS2UnAuth.CopyTo(resp, 1); //FIXME - Type hardcoded
-                    AES.KeyTuple permKey = AES.CKDFExpand(controller.NetworkKeyS2UnAuth, false);
-                    controller.SecurityManager.StoreKey(node.ID, SecurityManager.RecordType.S2UnAuth, permKey.KeyCCM, permKey.PString, permKey.MPAN); //FIXME - Type hardcoded
+                    AES.KeyTuple permKey;
+                    switch (key)
+                    {
+                        case SecurityKey.S0:
+                            controller.NetworkKeyS0.CopyTo(resp, 1);
+                            permKey = AES.CKDFExpand(controller.NetworkKeyS0, false);
+                            break;
+                        case SecurityKey.S2Unauthenticated:
+                            controller.NetworkKeyS2UnAuth.CopyTo(resp, 1);
+                            permKey = AES.CKDFExpand(controller.NetworkKeyS2UnAuth, false);
+                            break;
+                        case SecurityKey.S2Authenticated:
+                            controller.NetworkKeyS2Auth.CopyTo(resp, 1);
+                            permKey = AES.CKDFExpand(controller.NetworkKeyS2Auth, false);
+                            break;
+                        case SecurityKey.S2Access:
+                            controller.NetworkKeyS2Access.CopyTo(resp, 1);
+                            permKey = AES.CKDFExpand(controller.NetworkKeyS2Access, false);
+                            break;
+                        default:
+                            return; //Invalid Key Type - Ignore this
+                    }
+                    controller.SecurityManager.StoreKey(node.ID, SecurityManager.KeyToType(key), permKey.KeyCCM, permKey.PString, permKey.MPAN);
                     CommandMessage data = new CommandMessage(controller, node.ID, endpoint, commandClass, (byte)Security2Command.NetworkKeyReport, false, resp);
                     await Transmit(data.Payload, SecurityManager.RecordType.ECDH_TEMP);
                     break;
                 case Security2Command.NetworkKeyVerify:
                     if (controller.SecurityManager == null)
                         return;
-                    Log.Warning("Network Key Verify!");
+                    Log.Information("Network Key Verified!");
                     SecurityManager.NetworkKey? nk = controller.SecurityManager.GetHighestKey(node.ID);
                     if (nk != null && nk.Key != SecurityManager.RecordType.Entropy && nk.Key != SecurityManager.RecordType.ECDH_TEMP)
                         controller.SecurityManager.RevokeKey(node.ID, nk.Key);
                     CommandMessage transferEnd = new CommandMessage(controller, node.ID, endpoint, commandClass, (byte)Security2Command.TransferEnd, false, 0x2); //Key Verified
-                    await Transmit(transferEnd.Payload, SecurityManager.RecordType.ECDH_TEMP);
+                    await Task.Factory.StartNew(() => Transmit(transferEnd.Payload, SecurityManager.RecordType.ECDH_TEMP));
                     break;
                 case Security2Command.NonceGet:
                     //TODO - Validate sequence number
@@ -269,6 +290,36 @@ namespace ZWaveDotNet.CommandClasses
                     await SendCommand(Security2Command.NonceReport, CancellationToken.None, nonceGetReport.GetBytes());
                     break;
                 case Security2Command.TransferEnd:
+                    if (controller.SecurityManager == null)
+                        return;
+                    KeyExchangeReport? kex = controller.SecurityManager.GetRequestedKeys(node.ID);
+                    if (kex == null)
+                    {
+                        Log.Error("Transfer Complete but no keys were requested");
+                        return;
+                    }
+                    if (message.Payload.Length < 1 || message.Payload.Span[0] != 0x1)
+                    {
+                        Log.Error("Transfer Complete but key transfer failed");
+                        return;
+                    }
+
+                    if ((kex.Keys & SecurityKey.S2Unauthenticated) == SecurityKey.S2Unauthenticated)
+                    {
+                        AES.KeyTuple unauthKey = AES.CKDFExpand(controller.NetworkKeyS2UnAuth, false);
+                        controller.SecurityManager.StoreKey(node.ID, SecurityManager.RecordType.S2UnAuth, unauthKey.KeyCCM, unauthKey.PString, unauthKey.MPAN);
+                    }
+                    if((kex.Keys & SecurityKey.S2Authenticated) == SecurityKey.S2Authenticated)
+                    {
+                        AES.KeyTuple authKey = AES.CKDFExpand(controller.NetworkKeyS2Auth, false);
+                        controller.SecurityManager.StoreKey(node.ID, SecurityManager.RecordType.S2Auth, authKey.KeyCCM, authKey.PString, authKey.MPAN);
+                    }
+                    if((kex.Keys & SecurityKey.S2Access) == SecurityKey.S2Access)
+                    {
+                        AES.KeyTuple accessKey = AES.CKDFExpand(controller.NetworkKeyS2Access, false);
+                        controller.SecurityManager.StoreKey(node.ID, SecurityManager.RecordType.S2Access, accessKey.KeyCCM, accessKey.PString, accessKey.MPAN);
+                    }
+
                     Log.Warning("Transfer Complete"); //TODO - Event This
                     break;
                 case Security2Command.KEXFail:

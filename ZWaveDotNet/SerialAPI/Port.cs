@@ -1,4 +1,5 @@
 ﻿using Serilog;
+using System.Collections.Concurrent;
 using System.IO.Ports;
 using System.Threading.Channels;
 using ZWaveDotNet.SerialAPI.Enums;
@@ -9,7 +10,7 @@ namespace ZWaveDotNet.SerialAPI
     {
         private SerialPort port;
         private readonly Channel<Frame> tx = Channel.CreateUnbounded<Frame>();
-        private List<Channel<Frame>> rXChannels = new List<Channel<Frame>>();
+        private ConcurrentDictionary<Channel<Frame>, byte> rxChannels = new ConcurrentDictionary<Channel<Frame>, byte>();
 
         public Port(string path) 
         {
@@ -35,15 +36,13 @@ namespace ZWaveDotNet.SerialAPI
         public Channel<Frame> CreateReader()
         {
             Channel<Frame> reader = Channel.CreateUnbounded<Frame>();
-            lock (rXChannels)
-                rXChannels.Add(reader);
+            rxChannels.TryAdd(reader, 0);
             return reader;
         }
 
         public bool DisposeReader(Channel<Frame> reader)
         {
-            lock (rXChannels)
-                return rXChannels.Remove(reader);
+            return rxChannels.Remove(reader, out _);
         }
 
         private async Task WriteTask()
@@ -82,10 +81,11 @@ namespace ZWaveDotNet.SerialAPI
                         Log.Information("Read " + frame.ToString());
                         if (frame.Type == FrameType.SOF)
                             await QueueTX(Frame.ACK);
-                        lock (rXChannels)
-                            rXChannels.ForEach(channel => channel.Writer.TryWrite(frame));
+                        foreach (Channel<Frame> channel in rxChannels.Keys)
+                            channel.Writer.TryWrite(frame);
                     }
                 } while (port.IsOpen);
+                Log.Error("Port is closed");
             }
             catch (IOException io)
             {

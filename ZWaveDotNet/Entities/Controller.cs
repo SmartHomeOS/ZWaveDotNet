@@ -26,6 +26,7 @@ namespace ZWaveDotNet.Entities
         internal byte[] tempE;
         private Function[] supportedFunctions = new Function[0];
         private SubCommand supportedSubCommands = SubCommand.None;
+        private ushort pin;
 
         public Controller(string port, byte[] s0Key, byte[] s2unauth, byte[] s2auth, byte[] s2access)
         {
@@ -217,8 +218,9 @@ namespace ZWaveDotNet.Entities
             return random!.Data.Slice(2);
         }
 
-        public Task StartInclusion(bool fullPower = true, bool networkWide = true)
+        public Task StartInclusion(ushort pin = 0, bool fullPower = true, bool networkWide = true)
         {
+            this.pin = pin;
             return StartInclusion(new byte[4], new byte[4], fullPower, networkWide);
         }
 
@@ -367,59 +369,67 @@ namespace ZWaveDotNet.Entities
         {
             while (true)
             {
-                Message msg = await flow.GetUnsolicited();
-                if (msg is ApplicationUpdate au)
+                try
                 {
-                    if (Nodes.TryGetValue(au.NodeId, out Node? node))
-                        node.HandleApplicationUpdate(au);
-                    Log.Information(au.ToString());
-                }
-                else if (msg is APIStarted start)
-                {
-                    //TODO - event this
-                    SupportsLongRange = start.SupportsLR;
-                }
-                else if (msg is ApplicationCommand cmd)
-                {
-                    if (Nodes.TryGetValue(cmd.SourceNodeID, out Node? node))
-                        await node.HandleApplicationCommand(cmd);
-                    Log.Information(cmd.ToString());
-                }
-                else if (msg is InclusionStatus inc)
-                {
-                    Log.Information(inc.ToString());
-                    if (inc.Function == Function.AddNodeToNetwork)
+                    Message msg = await flow.GetUnsolicited();
+                    if (msg is ApplicationUpdate au)
                     {
-                        if (inc.CommandClasses.Length > 0) //We found a node
+                        if (Nodes.TryGetValue(au.NodeId, out Node? node))
+                            node.HandleApplicationUpdate(au);
+                        Log.Information(au.ToString());
+                    }
+                    else if (msg is APIStarted start)
+                    {
+                        //TODO - event this
+                        SupportsLongRange = start.SupportsLR;
+                    }
+                    else if (msg is ApplicationCommand cmd)
+                    {
+                        if (Nodes.TryGetValue(cmd.SourceNodeID, out Node? node))
+                            await node.HandleApplicationCommand(cmd);
+                        else
+                            Log.Warning("Node " + cmd.SourceNodeID + " not found");
+                        Log.Information(cmd.ToString());
+                    }
+                    else if (msg is InclusionStatus inc)
+                    {
+                        Log.Information(inc.ToString());
+                        if (inc.Function == Function.AddNodeToNetwork)
                         {
-                            NodeProtocolInfo nodeInfo = await GetNodeProtocolInfo(inc.NodeID);
-                            Node node = new Node(inc.NodeID, this, nodeInfo, inc.CommandClasses);
-                            Nodes.TryAdd(inc.NodeID, node);
-                        }
-                        if (inc.Status == InclusionExclusionStatus.InclusionProtocolComplete)
-                            await StopInclusion();
-                        else if (inc.Status == InclusionExclusionStatus.OperationComplete)
-                        {
-                            if (inc.NodeID > 0 && Nodes.TryGetValue(inc.NodeID, out Node? node))
-                            { 
-                                Log.Information("Added " + node.ToString()); //TODO - Event this
-                                if (SecurityManager != null)
+                            if (inc.CommandClasses.Length > 0) //We found a node
+                            {
+                                NodeProtocolInfo nodeInfo = await GetNodeProtocolInfo(inc.NodeID);
+                                Node node = new Node(inc.NodeID, this, nodeInfo, inc.CommandClasses);
+                                Nodes.TryAdd(inc.NodeID, node);
+                            }
+                            if (inc.Status == InclusionExclusionStatus.OperationProtocolComplete)
+                                await StopInclusion();
+                            else if (inc.Status == InclusionExclusionStatus.OperationComplete)
+                            {
+                                if (inc.NodeID > 0 && Nodes.TryGetValue(inc.NodeID, out Node? node))
                                 {
-                                    if (node.CommandClasses.ContainsKey(CommandClass.Security2))
-                                        await BootstrapS2(node);
-                                    else if (node.CommandClasses.ContainsKey(CommandClass.Security0))
-                                        await BootstrapS0(node);
+                                    Log.Information("Added " + node.ToString()); //TODO - Event this
+                                    if (SecurityManager != null)
+                                    {
+                                        if (node.CommandClasses.ContainsKey(CommandClass.Security2))
+                                            await Task.Factory.StartNew(()=>BootstrapS2(node));
+                                        else if (node.CommandClasses.ContainsKey(CommandClass.Security0))
+                                            await Task.Factory.StartNew(() => BootstrapS0(node));
+                                    }
                                 }
                             }
                         }
+                        else if (inc.Function == Function.RemoveNodeFromNetwork && inc.NodeID > 0)
+                        {
+                            if (Nodes.Remove(inc.NodeID))
+                                Log.Information($"Successfully exluded node {inc.NodeID}"); //TODO - Event This
+                            if (inc.Status == InclusionExclusionStatus.OperationComplete)
+                                await StopExclusion();
+                        }
                     }
-                    else if (inc.Function == Function.RemoveNodeFromNetwork && inc.NodeID > 0)
-                    {
-                        if (Nodes.Remove(inc.NodeID))
-                            Log.Information($"Successfully exluded node {inc.NodeID}"); //TODO - Event This
-                        if (inc.Status == InclusionExclusionStatus.OperationComplete)
-                            await StopExclusion();
-                    }
+                }catch(Exception e)
+                {
+                    Log.Error(e, "Unhandled Message Processing Exception");
                 }
                 //Log.Information(msg.ToString());
             }
@@ -436,14 +446,18 @@ namespace ZWaveDotNet.Entities
         {
             Security2 sec2 = ((Security2)node.CommandClasses[CommandClass.Security2]);
             Log.Information("Starting Secure S2 Inclusion");
-            KeyExchangeReport kep = await sec2.KexGet();
-            SecurityManager!.StoreRequestedKeys(node.ID, kep);
-            KeyExchangeReport resp = new KeyExchangeReport(false, false, SecurityKey.S2Unauthenticated);
-            Log.Information("Sending " + resp.ToString());
-            Memory<byte> pub = await sec2.KexSet(resp);
+            CancellationTokenSource TA1 = new CancellationTokenSource(10000);
+            KeyExchangeReport requestedKeys = await sec2.KexGet(TA1.Token);
+            SecurityManager!.StoreRequestedKeys(node.ID, requestedKeys);
+            Log.Information("Sending " + requestedKeys.ToString());
+            CancellationTokenSource TA2 = new CancellationTokenSource(10000);
+            Memory<byte> pub = await sec2.KexSet(requestedKeys, TA2.Token);
+            if ((requestedKeys.Keys & SecurityKey.S2Access) == SecurityKey.S2Access ||
+                (requestedKeys.Keys & SecurityKey.S2Authenticated) == SecurityKey.S2Authenticated)
+                BinaryPrimitives.WriteUInt16BigEndian(pub.Slice(0, 2).Span, pin);
             byte[] sharedSecret = SecurityManager!.CreateSharedSecret(pub);
             var prk = AES.CKDFTempExtract(sharedSecret, SecurityManager.PublicKey, pub);
-            Log.Error("Temp Key: " + MemoryUtil.Print(prk));
+            Log.Information("Temp Key: " + MemoryUtil.Print(prk));
             AES.KeyTuple ckdf = AES.CKDFExpand(prk, true);
             SecurityManager.StoreKey(node.ID, SecurityManager.RecordType.ECDH_TEMP, ckdf.KeyCCM, ckdf.PString);
             await sec2.SendPublicKey();

@@ -313,6 +313,23 @@ namespace ZWaveDotNet.Security
             }
         }
 
+        public static RecordType KeyToType(SecurityKey key)
+        {
+            switch (key)
+            {
+               case SecurityKey.S0:
+                    return RecordType.S0;
+                case SecurityKey.S2Unauthenticated:
+                    return RecordType.S2UnAuth;
+                case SecurityKey.S2Authenticated:
+                    return RecordType.S2Auth;
+                case SecurityKey.S2Access:
+                    return RecordType.S2Access;
+                default:
+                    return RecordType.Entropy;
+            }
+        }
+
         private List<NonceRecord> GetStack(ushort nodeId, bool purge = false)
         {
             if (purge && records.ContainsKey(nodeId))

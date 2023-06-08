@@ -280,6 +280,8 @@ namespace ZWaveDotNet.Entities
                 result.Append(cc.CommandClass.ToString());
                 result.Append(':');
                 result.Append(cc.Version);
+                if (cc is Unknown)
+                    result.Append('*');
                 separate = true;
             }
             return result.ToString();

@@ -3,7 +3,7 @@
 An implementation of ZWave Plus using the 2022b public specification. 
 
 **Not yet ready for use - star/follow for our first release.** 
-##### Features:
+#### Features:
 * Partial support is included for 121 command classes. Detailed [command class support is listed here](SupportedCommandClasses.md).
 * Support for Security (V0 and V2) and message encapsulation (CRC16, Transport, MultiChannel, MultiCommand and Supervision)
 * Support for 8/12/16 bit Node IDs (4000+ nodes) including ZWave LR
@@ -12,11 +12,11 @@ An implementation of ZWave Plus using the 2022b public specification.
 * Support for ZWave Plus and DeviceTypev2
 * Node database import/export
 
-##### Work in progress:
-* Security2 is working in Unauth-mode singlecast only
+#### Work in progress:
+* Security2 multipath is not implemented
 * Transport CC is unimplemented
 * Multicast is not yet exposed
 * ZWave LR inclusion is not yet exposed
-* Node interviews are only partially supported
+* Node interviews are only partially implemented
 
 Testers, Tickets, Feedback and PRs are welcome.

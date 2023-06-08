@@ -6,7 +6,7 @@
         NodeFound = 0x2,
         OperationOngoingEndNode = 0x3,
         OperationOngoingController = 0x4,
-        InclusionProtocolComplete = 0x5,
+        OperationProtocolComplete = 0x5,
         OperationComplete = 0x6
     }
 }

@@ -42,6 +42,8 @@ namespace ZWaveDotNet.CommandClasses
                 {
                     lst[0].TrySetResult(message);
                     lst.RemoveAt(0);
+                    if (lst.Count == 0)
+                        callbacks.Remove(message.Command);
                     return;
                 }
             }

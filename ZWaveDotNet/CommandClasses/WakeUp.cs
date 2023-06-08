@@ -1,4 +1,5 @@
-﻿using ZWaveDotNet.CommandClassReports;
+﻿using Serilog;
+using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
@@ -50,7 +51,10 @@ namespace ZWaveDotNet.CommandClasses
         protected override async Task Handle(ReportMessage message)
         {
             if (message.Command == (byte)WakeUpCommand.Notification)
+            {
                 await FireEvent(Awake, null);
+                Log.Information($"Node {node.ID} awake");
+            }
         }
     }
 }
