@@ -18,7 +18,7 @@ BASIC_TARIFF_INFO | 0 | 1 | None
 CENTRAL_SCENE | 0 | 3 | None
 CLIMATE_CONTROL_SCHEDULE | 0 | 1 | None
 CLOCK | 0 | 1 | None
-CONFIGURATION | 0 | 4 | None
+*CONFIGURATION* | *1* | *4* | *Full*
 CONTROLLER_REPLICATION | 0 | 1 | None
 **CRC_16_ENCAP** | **1** | **1** | **Full**
 DCP_CONFIG | 0 | 1 | None
@@ -122,5 +122,5 @@ ZIP_ND | 0 | 1 | None
 ZIP_PORTAL | 0 | 1 | None
 **ZWAVEPLUS_INFO** | **2** | **2** | **Full**
 
-- Full Support for 18/121 Command Classes.
+- Full Support for 19/121 Command Classes.
 - Partial Support for 2/121 Command Classes.
