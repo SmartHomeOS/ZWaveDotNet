@@ -1,4 +1,4 @@
-[![Build](https://github.com/jdomnitz/ZWaveDotNet/actions/workflows/dotnet.yml/badge.svg)](https://github.com/jdomnitz/ZWaveDotNet/actions/workflows/dotnet.yml)
+[![Build](https://github.com/SmartHomeOS/ZWaveDotNet/actions/workflows/dotnet.yml/badge.svg)](https://github.com/SmartHomeOS/ZWaveDotNet/actions/workflows/dotnet.yml)
 # ZWaveDotNet
 An implementation of ZWave Plus using the 2022b public specification. 
 

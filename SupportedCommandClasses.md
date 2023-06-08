@@ -30,7 +30,7 @@ ENERGY_PRODUCTION | 0 | 1 | None
 ENTRY_CONTROL | 0 | 1 | None
 FIRMWARE_UPDATE_MD | 0 | 8 | None
 GENERIC_SCHEDULE | 0 | 1 | None
-GEOGRAPHIC_LOCATION | 0 | 1 | None
+**GEOGRAPHIC_LOCATION** | **1** | **1** | **Full**
 GROUPING_NAME | 0 | 1 | None
 HAIL | 0 | 1 | None
 HRV_CONTROL | 0 | 1 | None
@@ -122,5 +122,5 @@ ZIP_ND | 0 | 1 | None
 ZIP_PORTAL | 0 | 1 | None
 **ZWAVEPLUS_INFO** | **2** | **2** | **Full**
 
-- Full Support for 15/121 Command Classes.
+- Full Support for 16/121 Command Classes.
 - Partial Support for 2/121 Command Classes.
