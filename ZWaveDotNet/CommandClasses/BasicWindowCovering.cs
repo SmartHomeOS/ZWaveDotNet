@@ -7,8 +7,6 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.BasicWindowCovering)]
     public class BasicWindowCovering : CommandClassBase
     {
-        public event CommandClassEvent? Report;
-        
         enum BasicCommand : byte
         {
             StartLevelChange = 0x01,
