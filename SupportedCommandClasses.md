@@ -47,7 +47,7 @@ IRRIGATION | 0 | 1 | None
 LANGUAGE | 0 | 1 | None
 LOCK | 0 | 1 | None
 MAILBOX | 0 | 2 | None
-MANUFACTURER_PROPRIETARY | 0 | 1 | None
+**MANUFACTURER_PROPRIETARY** | **1** | **1** | **Full**
 **MANUFACTURER_SPECIFIC** | **2** | **2** | **Full**
 METER | 0 | 6 | None
 METER_PULSE | 0 | 1 | None
@@ -122,5 +122,5 @@ ZIP_ND | 0 | 1 | None
 ZIP_PORTAL | 0 | 1 | None
 **ZWAVEPLUS_INFO** | **2** | **2** | **Full**
 
-- Full Support for 20/121 Command Classes.
+- Full Support for 21/121 Command Classes.
 - Partial Support for 2/121 Command Classes.

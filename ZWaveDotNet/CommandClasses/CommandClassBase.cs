@@ -77,6 +77,8 @@ namespace ZWaveDotNet.CommandClasses
                     return new GeographicLocation(node);
                 case CommandClass.Hail:
                     return new Hail(node, endpoint);
+                case CommandClass.ManufacturerProprietary:
+                    return new ManufacturerProprietary(node, endpoint);
                 case CommandClass.ManufacturerSpecific:
                     return new ManufacturerSpecific(node, endpoint);
                 case CommandClass.MultiChannel:
@@ -117,6 +119,11 @@ namespace ZWaveDotNet.CommandClasses
         protected async Task SendCommand(Enum command, CancellationToken token, bool supervised = false, params byte[] payload)
         {
             CommandMessage data = new CommandMessage(controller, node.ID, endpoint, commandClass, Convert.ToByte(command), supervised, payload);
+            await SendCommand(data, token);
+        }
+
+        protected async Task SendCommand(CommandMessage data, CancellationToken token)
+        { 
             if (data.Payload.Count > 1 && IsSecure(data.Payload[1]))
             {
                 if (controller.SecurityManager == null)
