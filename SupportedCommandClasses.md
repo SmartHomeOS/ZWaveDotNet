@@ -44,7 +44,7 @@ IP_ASSOCIATION | 0 | 1 | None
 IP_CONFIGURATION | 0 | 1 | None
 IR_REPEATER | 0 | 1 | None
 IRRIGATION | 0 | 1 | None
-LANGUAGE | 0 | 1 | None
+**LANGUAGE** | **1** | **1** | **Full**
 LOCK | 0 | 1 | None
 MAILBOX | 0 | 2 | None
 **MANUFACTURER_PROPRIETARY** | **1** | **1** | **Full**
@@ -122,5 +122,5 @@ ZIP_ND | 0 | 1 | None
 ZIP_PORTAL | 0 | 1 | None
 **ZWAVEPLUS_INFO** | **2** | **2** | **Full**
 
-- Full Support for 21/121 Command Classes.
+- Full Support for 22/121 Command Classes.
 - Partial Support for 2/121 Command Classes.

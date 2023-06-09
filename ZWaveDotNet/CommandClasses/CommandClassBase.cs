@@ -77,6 +77,8 @@ namespace ZWaveDotNet.CommandClasses
                     return new GeographicLocation(node);
                 case CommandClass.Hail:
                     return new Hail(node, endpoint);
+                case CommandClass.Language:
+                    return new Language(node, endpoint);
                 case CommandClass.ManufacturerProprietary:
                     return new ManufacturerProprietary(node, endpoint);
                 case CommandClass.ManufacturerSpecific:
