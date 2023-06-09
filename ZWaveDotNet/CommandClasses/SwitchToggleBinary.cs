@@ -19,13 +19,13 @@ namespace ZWaveDotNet.CommandClasses
 
         public SwitchToggleBinary(Node node, byte endpoint) : base(node, endpoint, CommandClass.SwitchToggleBinary) { }
 
-        public async Task<SwitchBinaryReport> Get(CancellationToken cancellationToken)
+        public async Task<SwitchBinaryReport> Get(CancellationToken cancellationToken = default)
         {
             var response = await SendReceive(SwitchToggleBinaryCommand.Get, SwitchToggleBinaryCommand.Report, cancellationToken);
             return new SwitchBinaryReport(response.Payload);
         }
 
-        public async Task Set(bool value, CancellationToken cancellationToken)
+        public async Task Set(bool value, CancellationToken cancellationToken = default)
         {
             await SendCommand(SwitchToggleBinaryCommand.Set, cancellationToken, value ? (byte)0xFF : (byte)0x00);
         }
