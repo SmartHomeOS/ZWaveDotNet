@@ -10,6 +10,7 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.WakeUp, 1, 3)]
     public class WakeUp : CommandClassBase
     {
+        private Queue<TaskCompletionSource> taskCompletionSources = new Queue<TaskCompletionSource>();
         public event CommandClassEvent? Awake;
 
         enum WakeUpCommand
@@ -25,24 +26,24 @@ namespace ZWaveDotNet.CommandClasses
 
         public WakeUp(Node node, byte endpoint) : base(node, endpoint, CommandClass.WakeUp) { }
 
-        public async Task<WakeUpIntervalReport> GetInterval(CancellationToken cancellationToken)
+        public async Task<WakeUpIntervalReport> GetInterval(CancellationToken cancellationToken = default)
         {
             ReportMessage message = await SendReceive(WakeUpCommand.IntervalGet, WakeUpCommand.IntervalReport, cancellationToken);
             return new WakeUpIntervalReport(message.Payload);
         }
 
-        public async Task SetInterval(TimeSpan interval, byte targetNodeID, CancellationToken cancellationToken)
+        public async Task SetInterval(TimeSpan interval, byte targetNodeID, CancellationToken cancellationToken = default)
         {
             byte[] seconds = PayloadConverter.FromUInt24((uint)interval.TotalSeconds);
             await SendCommand(WakeUpCommand.IntervalSet, cancellationToken, seconds[0], seconds[1], seconds[2], targetNodeID);
         }
 
-        public async Task NoMoreInformation(CancellationToken cancellationToken)
+        public async Task NoMoreInformation(CancellationToken cancellationToken = default)
         {
             await SendCommand(WakeUpCommand.NoMoreInformation, cancellationToken);
         }
 
-        public async Task<WakeUpIntervalCapabilitiesReport> GetIntervalCapabilities(CancellationToken cancellationToken)
+        public async Task<WakeUpIntervalCapabilitiesReport> GetIntervalCapabilities(CancellationToken cancellationToken = default)
         {
             ReportMessage message = await SendReceive(WakeUpCommand.IntervalCapabilitiesGet, WakeUpCommand.IntervalCapabilitiesReport, cancellationToken);
             return new WakeUpIntervalCapabilitiesReport(message.Payload);
@@ -52,9 +53,18 @@ namespace ZWaveDotNet.CommandClasses
         {
             if (message.Command == (byte)WakeUpCommand.Notification)
             {
+                while (taskCompletionSources.Count > 0)
+                    taskCompletionSources.Dequeue().TrySetResult();
                 await FireEvent(Awake, null);
                 Log.Information($"Node {node.ID} awake");
             }
+        }
+
+        public async Task WaitForAwake()
+        {
+            TaskCompletionSource tcs = new TaskCompletionSource();
+            taskCompletionSources.Enqueue(tcs);
+            await tcs.Task;
         }
     }
 }

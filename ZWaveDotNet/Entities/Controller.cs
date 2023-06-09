@@ -333,7 +333,10 @@ namespace ZWaveDotNet.Entities
             ControllerID = json.ID;
             foreach (NodeJSON node in json.Nodes)
             {
-                Nodes[node.ID].Deserialize(node);
+                if (Nodes.ContainsKey(node.ID))
+                    Nodes[node.ID].Deserialize(node);
+                else
+                    Log.Warning($"Node {node.ID} was skipped as it no longer exists");
             }
         }
 
@@ -348,11 +351,13 @@ namespace ZWaveDotNet.Entities
 
         public async Task<bool> ImportNodeDBAsync(string path)
         {
-            FileStream fs = new FileStream(path, FileMode.Open);
-            ControllerJSON? entity = await JsonSerializer.DeserializeAsync<ControllerJSON>(fs);
-            if (entity == null)
-                return false;
-            Deserialize(entity);
+            using (FileStream fs = new FileStream(path, FileMode.Open))
+            {
+                ControllerJSON? entity = await JsonSerializer.DeserializeAsync<ControllerJSON>(fs);
+                if (entity == null)
+                    return false;
+                Deserialize(entity);
+            }
             return true;
         }
 
@@ -362,6 +367,15 @@ namespace ZWaveDotNet.Entities
             {
                 if (n.Listening)
                     await n.Interview();
+                else
+                    await Task.Factory.StartNew(async() => {
+                        //TODO - Make sure we abort this if interview is already in progress
+                        if (n.CommandClasses.ContainsKey(CommandClass.WakeUp))
+                            await ((WakeUp)n.CommandClasses[CommandClass.WakeUp]).WaitForAwake();
+                        await n.Interview();
+                        if (n.CommandClasses.ContainsKey(CommandClass.WakeUp))
+                            await ((WakeUp)n.CommandClasses[CommandClass.WakeUp]).NoMoreInformation();
+                    }); 
             }
         }
 
@@ -386,7 +400,7 @@ namespace ZWaveDotNet.Entities
                     else if (msg is ApplicationCommand cmd)
                     {
                         if (Nodes.TryGetValue(cmd.SourceNodeID, out Node? node))
-                            await node.HandleApplicationCommand(cmd);
+                            _ = Task.Factory.StartNew(() => node.HandleApplicationCommand(cmd));
                         else
                             Log.Warning("Node " + cmd.SourceNodeID + " not found");
                         Log.Information(cmd.ToString());

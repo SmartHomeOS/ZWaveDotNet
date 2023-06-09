@@ -1,6 +1,8 @@
-﻿using System.Collections.ObjectModel;
+﻿using Serilog;
+using System.Collections.ObjectModel;
 using ZWaveDotNet.CommandClasses;
 using ZWaveDotNet.Enums;
+using ZWaveDotNet.SerialAPI;
 
 namespace ZWaveDotNet.Entities
 {
@@ -19,18 +21,27 @@ namespace ZWaveDotNet.Entities
             if (commandClasses != null)
             {
                 foreach (CommandClass cc in commandClasses)
-                {
-                    if (!this.commandClasses.ContainsKey(cc))
-                        this.commandClasses.Add(cc, CommandClassBase.Create(cc, node.Controller, node, ID));
-                }
+                    AddCommandClass(cc);
             }
-            if (!this.commandClasses.ContainsKey(CommandClass.NoOperation))
-                this.commandClasses.Add(CommandClass.NoOperation, CommandClassBase.Create(CommandClass.NoOperation, node.Controller, node, ID));
+            AddCommandClass(CommandClass.NoOperation);
+        }
+
+        internal async Task HandleReport(ReportMessage msg)
+        {
+            if (!CommandClasses.ContainsKey(msg.CommandClass))
+                AddCommandClass(msg.CommandClass);
+            await CommandClasses[msg.CommandClass].ProcessMessage(msg);
         }
 
         public ReadOnlyDictionary<CommandClass, CommandClassBase> CommandClasses
         {
             get { return new ReadOnlyDictionary<CommandClass, CommandClassBase>(commandClasses); }
+        }
+
+        private void AddCommandClass(CommandClass cls, bool secure = false)
+        {
+            if (!this.commandClasses.ContainsKey(cls))
+                this.commandClasses.Add(cls, CommandClassBase.Create(cls, node.Controller, node, ID, secure));
         }
 
         public override string ToString()

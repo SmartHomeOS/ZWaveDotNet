@@ -139,21 +139,15 @@ namespace ZWaveDotNet.Entities
         {
             if (msg.SourceEndpoint == 0)
             {
-                if (commandClasses.ContainsKey(msg.CommandClass))
-                    await commandClasses[msg.CommandClass].ProcessMessage(msg);
-                else
-                    Log.Information("Unhandled Report Message: " + msg.ToString());
+                if (!commandClasses.ContainsKey(msg.CommandClass))
+                    AddCommandClass(msg.CommandClass);
+                await commandClasses[msg.CommandClass].ProcessMessage(msg);
             }
             else
             {
                 EndPoint? ep = GetEndPoint(msg.SourceEndpoint);
                 if (ep != null)
-                {
-                    if (ep.CommandClasses.ContainsKey(msg.CommandClass))
-                        await ep.CommandClasses[msg.CommandClass].ProcessMessage(msg);
-                    else
-                        Log.Information("Unhandled Report Message: " + msg.ToString());
-                }
+                    await ep.HandleReport(msg);
             }
         }
 
@@ -230,19 +224,23 @@ namespace ZWaveDotNet.Entities
 
         public async Task Interview()
         {
-            if (this.commandClasses.ContainsKey(CommandClass.Security0))
+            if (controller.SecurityManager != null)
             {
-                Log.Information("Requesting S0 classes");
-                SupportedCommands supportedCmds = await ((Security0)commandClasses[CommandClass.Security0]).CommandsSupportedGet();
-                foreach (CommandClass cls in supportedCmds.CommandClasses)
-                    AddCommandClass(cls, true);
-            }
-            if (this.commandClasses.ContainsKey(CommandClass.Security2))
-            {
-                Log.Information("Requesting S2 classes");
-                List<CommandClass> supportedCmds = await ((Security2)commandClasses[CommandClass.Security2]).GetSupportedCommands();
-                foreach (CommandClass cls in supportedCmds)
-                    AddCommandClass(cls, true);
+                SecurityManager.NetworkKey? key = controller.SecurityManager.GetHighestKey(ID);
+                if (key != null && key.Key == SecurityManager.RecordType.S0 && this.commandClasses.ContainsKey(CommandClass.Security0))
+                {
+                    Log.Information("Requesting S0 classes for " + ID);
+                    SupportedCommands supportedCmds = await ((Security0)commandClasses[CommandClass.Security0]).CommandsSupportedGet();
+                    foreach (CommandClass cls in supportedCmds.CommandClasses)
+                        AddCommandClass(cls, true);
+                }
+                else if (key != null && this.commandClasses.ContainsKey(CommandClass.Security2))
+                {
+                    Log.Information("Requesting S2 classes for " + ID);
+                    List<CommandClass> supportedCmds = await ((Security2)commandClasses[CommandClass.Security2]).GetSupportedCommands();
+                    foreach (CommandClass cls in supportedCmds)
+                        AddCommandClass(cls, true);
+                }
             }
             if (this.commandClasses.ContainsKey(CommandClass.MultiChannel))
             {

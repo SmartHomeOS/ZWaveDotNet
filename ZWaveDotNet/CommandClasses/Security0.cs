@@ -150,6 +150,8 @@ namespace ZWaveDotNet.CommandClasses
                 case SecurityCommand.NonceGet:
                     if (controller.SecurityManager == null)
                         return;
+                    if (message.IsMulticastMethod())
+                        return;
 
                     await SendCommand(SecurityCommand.NonceReport, CancellationToken.None, controller.SecurityManager.CreateS0Nonce(node.ID));
                     break;
