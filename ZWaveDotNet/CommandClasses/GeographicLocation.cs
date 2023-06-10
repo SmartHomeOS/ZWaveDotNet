@@ -8,8 +8,6 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.GeographicLocation)]
     public class GeographicLocation : CommandClassBase
     {
-        public event CommandClassEvent? Report;
-        
         enum GeographicLocationCommand : byte
         {
             Set = 0x01,

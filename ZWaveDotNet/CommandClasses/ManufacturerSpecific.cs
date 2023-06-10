@@ -19,13 +19,13 @@ namespace ZWaveDotNet.CommandClasses
 
         public ManufacturerSpecific(Node node, byte endpoint) : base(node, endpoint, CommandClass.ManufacturerSpecific) { }
 
-        public async Task<ManufacturerSpecificReport> Get(CancellationToken cancellationToken)
+        public async Task<ManufacturerSpecificReport> Get(CancellationToken cancellationToken = default)
         {
             var response = await SendReceive(ManufacturerSpecificCommand.Get, ManufacturerSpecificCommand.Report, cancellationToken);
             return new ManufacturerSpecificReport(response.Payload);
         }
 
-        public async Task<ManufacturerSpecificDeviceReport> SpecificGet(DeviceSpecificType type, CancellationToken cancellationToken)
+        public async Task<ManufacturerSpecificDeviceReport> SpecificGet(DeviceSpecificType type, CancellationToken cancellationToken = default)
         {
             var response = await SendReceive(ManufacturerSpecificCommand.DeviceSpecificGet, ManufacturerSpecificCommand.DeviceSpecificReport, cancellationToken, (byte)type);
             return new ManufacturerSpecificDeviceReport(response.Payload);

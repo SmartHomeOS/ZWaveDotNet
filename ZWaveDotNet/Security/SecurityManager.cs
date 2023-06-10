@@ -1,5 +1,6 @@
 ﻿
 using Serilog;
+using System.Security.Cryptography;
 using ZWaveDotNet.CommandClasses.Enums;
 using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.Util;
@@ -13,17 +14,23 @@ namespace ZWaveDotNet.Security
         private Memory<byte> prngWorking;
         public enum RecordType { Entropy, ECDH_TEMP, S0, S2UnAuth, S2Auth, S2Access };
         private static readonly TimeSpan TWENTY_SEC = TimeSpan.FromSeconds(20);
-        private Dictionary<ushort, List<NonceRecord>> records = new Dictionary<ushort, List<NonceRecord>>();
+        private Dictionary<ushort, List<SpanRecord>> spanRecords = new Dictionary<ushort, List<SpanRecord>>();
         private Dictionary<ushort, List<NetworkKey>> keys = new Dictionary<ushort, List<NetworkKey>>();
         private Dictionary<ushort, KeyExchangeReport> requestedAccess = new Dictionary<ushort, KeyExchangeReport>();
+        private Dictionary<byte, MpanRecord> mpanRecords = new Dictionary<byte, MpanRecord>();
 
-        private class NonceRecord
+        private class SpanRecord
         {
             public Memory<byte> Bytes;
             public Memory<byte> Previous;
             public DateTime Expires;
             public RecordType Type;
             public byte SequenceNumber;
+        }
+        private class MpanRecord
+        {
+            public Memory<byte> Bytes;
+            public bool MOS;
         }
         public class NetworkKey
         {
@@ -56,7 +63,7 @@ namespace ZWaveDotNet.Security
             return Curve25519.GetSharedSecret(privateKey.ToArray(), publicKeyB.ToArray());
         }
 
-        public void StoreKey(ushort nodeId, RecordType type, byte[]? keyCCM, byte[]? pString, byte[]? mPAN = null)
+        public void StoreKey(ushort nodeId, RecordType type, byte[]? keyCCM, byte[]? pString, byte[]? mPAN)
         {
             List<NetworkKey> list;
             if (keys.TryGetValue(nodeId, out List<NetworkKey>? keyLst))
@@ -136,7 +143,7 @@ namespace ZWaveDotNet.Security
         {
             Log.Information($"Created SPAN ({MemoryUtil.Print(mixedEntropy)}, {MemoryUtil.Print(personalization)})");
             Memory<byte> working_state = CTR_DRBG.Instantiate(mixedEntropy, personalization);
-            NonceRecord nr = new NonceRecord()
+            SpanRecord nr = new SpanRecord()
             {
                 Bytes = working_state,
                 Previous = working_state,
@@ -144,15 +151,15 @@ namespace ZWaveDotNet.Security
                 Type = type
             };
             PurgeStack(nodeId, type);
-            List<NonceRecord> stack = GetStack(nodeId);
+            List<SpanRecord> stack = GetStack(nodeId);
             stack.Add(nr);
         }
 
-        public (Memory<byte> output, byte sequence)? NextNonce(ushort nodeId, RecordType type)
+        public (Memory<byte> output, byte sequence)? NextSpanNonce(ushort nodeId, RecordType type)
         {
-            if (records.TryGetValue(nodeId, out List<NonceRecord>? stack))
+            if (spanRecords.TryGetValue(nodeId, out List<SpanRecord>? stack))
             {
-                foreach (NonceRecord record in stack)
+                foreach (SpanRecord record in stack)
                 {
                     if (record.Type == type)
                     {
@@ -168,11 +175,11 @@ namespace ZWaveDotNet.Security
             return null;
         }
 
-        public void RevertNonce(ushort nodeId, RecordType type)
+        public void RevertSpanNonce(ushort nodeId, RecordType type)
         {
-            if (records.TryGetValue(nodeId, out List<NonceRecord>? stack))
+            if (spanRecords.TryGetValue(nodeId, out List<SpanRecord>? stack))
             {
-                foreach (NonceRecord record in stack)
+                foreach (SpanRecord record in stack)
                 {
                     if (record.Type == type)
                     {
@@ -184,11 +191,27 @@ namespace ZWaveDotNet.Security
             }
         }
 
+        public Memory<byte>? NextMpanNonce(byte groupID, RecordType type, byte[] keyMPAN)
+        {
+            if (mpanRecords.TryGetValue(groupID, out MpanRecord? record))
+            {
+                Memory<byte> result = new byte[16];
+                using (Aes aes = Aes.Create())
+                {
+                    aes.Key = keyMPAN;
+                    aes.EncryptEcb(record.Bytes.Span, result.Span, PaddingMode.None);
+                }
+                MemoryUtil.Increment(record.Bytes);
+                return result;
+            }
+            return null;
+        }
+
         public bool SpanExists(ushort nodeId, RecordType type)
         {
-            if (records.TryGetValue(nodeId, out List<NonceRecord>? stack))
+            if (spanRecords.TryGetValue(nodeId, out List<SpanRecord>? stack))
             {
-                foreach (NonceRecord record in stack)
+                foreach (SpanRecord record in stack)
                 {
                     if (record.Type == type)
                         return true;
@@ -199,9 +222,9 @@ namespace ZWaveDotNet.Security
 
         public (Memory<byte> bytes, byte sequence)? GetEntropy(ushort nodeId)
         {
-            if (records.TryGetValue(nodeId, out List<NonceRecord>? stack))
+            if (spanRecords.TryGetValue(nodeId, out List<SpanRecord>? stack))
             {
-                foreach (NonceRecord record in stack)
+                foreach (SpanRecord record in stack)
                 {
                     if (record.Type == RecordType.Entropy)
                         return (record.Bytes, record.SequenceNumber++);
@@ -212,7 +235,7 @@ namespace ZWaveDotNet.Security
 
         public int DeleteEntropy(ushort nodeId)
         {
-            if (records.TryGetValue(nodeId, out List<NonceRecord>? stack))
+            if (spanRecords.TryGetValue(nodeId, out List<SpanRecord>? stack))
                 return stack.RemoveAll(n => n.Type == RecordType.Entropy);
             
             return 0;
@@ -222,28 +245,28 @@ namespace ZWaveDotNet.Security
         {
             var result = CTR_DRBG.Generate(prngWorking, 16);
             prngWorking = result.working_state;
-            NonceRecord nr = new NonceRecord()
+            SpanRecord nr = new SpanRecord()
             {
                 Bytes = result.output,
                 Type = RecordType.Entropy,
                 SequenceNumber = (byte)new Random().Next()
             };
             DeleteEntropy(nodeId);
-            List<NonceRecord> stack = GetStack(nodeId, true);
+            List<SpanRecord> stack = GetStack(nodeId, true);
             stack.Add(nr);
             return (nr.Bytes, nr.SequenceNumber);
         }
 
         public void StoreEntropy(ushort nodeId, Memory<byte> bytes, byte sequence)
         {
-            NonceRecord nr = new NonceRecord()
+            SpanRecord nr = new SpanRecord()
             {
                 Bytes = bytes,
                 Type = RecordType.Entropy,
                 SequenceNumber = sequence
             };
             DeleteEntropy(nodeId);
-            List<NonceRecord> stack = GetStack(nodeId, true);
+            List<SpanRecord> stack = GetStack(nodeId, true);
             stack.Add(nr);
         }
 
@@ -254,32 +277,32 @@ namespace ZWaveDotNet.Security
             {
                 new Random().NextBytes(nonce);
             } while (GetS0Nonce(nodeId, nonce[0]) != null);
-            NonceRecord nr = new NonceRecord()
+            SpanRecord nr = new SpanRecord()
             {
                 Bytes = nonce,
                 Expires = DateTime.Now + TWENTY_SEC,
                 Type = RecordType.S0
             };
-            List<NonceRecord>? stack;
-            if (records.TryGetValue(nodeId, out stack))
+            List<SpanRecord>? stack;
+            if (spanRecords.TryGetValue(nodeId, out stack))
             {
                 if (stack.Count >= 4)
                     stack.RemoveAt(0);
             }
             else
             {
-                stack = new List<NonceRecord>();
-                records.Add(nodeId, stack);
+                stack = new List<SpanRecord>();
+                spanRecords.Add(nodeId, stack);
             }
             stack.Add(nr);
             return nonce;
         }
 
-        private NonceRecord? GetS0Nonce(ushort nodeId, byte nonceId)
+        private SpanRecord? GetS0Nonce(ushort nodeId, byte nonceId)
         {
-            if (records.TryGetValue(nodeId, out List<NonceRecord>? stack))
+            if (spanRecords.TryGetValue(nodeId, out List<SpanRecord>? stack))
             {
-                foreach (NonceRecord record in stack)
+                foreach (SpanRecord record in stack)
                 {
                     if (record.Bytes.Length > 0 && record.Bytes.Span[0] == nonceId)
                         return record;
@@ -290,7 +313,7 @@ namespace ZWaveDotNet.Security
 
         public Memory<byte>? ValidateS0Nonce(ushort nodeId, byte nonceId)
         {
-            NonceRecord? record = GetS0Nonce(nodeId, nonceId);
+            SpanRecord? record = GetS0Nonce(nodeId, nonceId);
             if (record == null || record!.Expires < DateTime.Now || record!.Type != RecordType.S0)
                 return null;
             return record.Bytes;
@@ -330,21 +353,21 @@ namespace ZWaveDotNet.Security
             }
         }
 
-        private List<NonceRecord> GetStack(ushort nodeId, bool purge = false)
+        private List<SpanRecord> GetStack(ushort nodeId, bool purge = false)
         {
-            if (purge && records.ContainsKey(nodeId))
-                records.Remove(nodeId);
-            else if (records.ContainsKey(nodeId))
-                return records[nodeId];
+            if (purge && spanRecords.ContainsKey(nodeId))
+                spanRecords.Remove(nodeId);
+            else if (spanRecords.ContainsKey(nodeId))
+                return spanRecords[nodeId];
 
-            List<NonceRecord> stack = new List<NonceRecord>();
-            records.Add(nodeId, stack);
+            List<SpanRecord> stack = new List<SpanRecord>();
+            spanRecords.Add(nodeId, stack);
             return stack;
         }
 
         private void PurgeStack(ushort nodeId, RecordType type)
         {
-            List<NonceRecord> stack = GetStack(nodeId);
+            List<SpanRecord> stack = GetStack(nodeId);
             stack.RemoveAll(r => r.Type == type);
         }
     }

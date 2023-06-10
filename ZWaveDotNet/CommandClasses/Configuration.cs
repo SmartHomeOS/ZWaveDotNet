@@ -28,33 +28,33 @@ namespace ZWaveDotNet.CommandClasses
 
         public Configuration(Node node, byte endpoint) : base(node, endpoint, CommandClass.Configuration) {  }
 
-        public async Task<ConfigurationReport> Get(byte parameter, CancellationToken cancellationToken)
+        public async Task<ConfigurationReport> Get(byte parameter, CancellationToken cancellationToken = default)
         {
             var response = await SendReceive(ConfigurationCommand.Get, ConfigurationCommand.Report, cancellationToken, parameter);
             return new ConfigurationReport(response.Payload);
         }
 
-        public async Task SetDefault(byte parameter, CancellationToken cancellationToken)
+        public async Task SetDefault(byte parameter, CancellationToken cancellationToken = default)
         {
             await Set(parameter, 0, 0, cancellationToken, true);
         }
 
-        public async Task Set(byte parameter, sbyte value, CancellationToken cancellationToken)
+        public async Task Set(byte parameter, sbyte value, CancellationToken cancellationToken = default)
         {
             await Set(parameter, value, 0, cancellationToken);
         }
 
-        public async Task Set(byte parameter, short value, CancellationToken cancellationToken)
+        public async Task Set(byte parameter, short value, CancellationToken cancellationToken = default)
         {
             await Set(parameter, value, 0, cancellationToken);
         }
 
-        public async Task Set(byte parameter, int value, CancellationToken cancellationToken)
+        public async Task Set(byte parameter, int value, CancellationToken cancellationToken = default)
         {
             await Set(parameter, value, 0, cancellationToken);
         }
 
-        private async Task Set(byte parameter, int value, byte size, CancellationToken cancellationToken, bool reset = false)
+        private async Task Set(byte parameter, int value, byte size, CancellationToken cancellationToken = default, bool reset = false)
         {
             if (size == 0)
             {

@@ -23,7 +23,7 @@ namespace ZWaveDotNet.CommandClasses
             return new ClockReport(response.Payload);
         }
 
-        public async Task Set(DayOfWeek dayOfWeek, byte hour, byte minute, CancellationToken cancellationToken)
+        public async Task Set(DayOfWeek dayOfWeek, byte hour, byte minute, CancellationToken cancellationToken = default)
         {
             await SendClock(dayOfWeek, hour, minute, ClockCommand.Set, cancellationToken);
         }

@@ -100,7 +100,7 @@ namespace ZWaveDotNet.CommandClasses
             else
                 Log.Information("Using Key " + networkKey.Key.ToString());
 
-            (Memory<byte> output, byte sequence)? nonce = controller.SecurityManager.NextNonce(node.ID, networkKey.Key);
+            (Memory<byte> output, byte sequence)? nonce = controller.SecurityManager.NextSpanNonce(node.ID, networkKey.Key);
             if (nonce == null)
             {
                 //We need a new Nonce
@@ -110,7 +110,7 @@ namespace ZWaveDotNet.CommandClasses
                 var entropy = controller.SecurityManager.CreateEntropy(node.ID);
                 Memory<byte> MEI = AES.CKDFMEIExpand(AES.CKDFMEIExtract(entropy.Bytes, nr.Entropy));
                 controller.SecurityManager.CreateSpan(node.ID, entropy.Sequence, MEI, networkKey.PString, networkKey.Key);
-                nonce = controller.SecurityManager.NextNonce(node.ID, networkKey.Key);
+                nonce = controller.SecurityManager.NextSpanNonce(node.ID, networkKey.Key);
                 if (nonce == null)
                 {
                     Log.Error("Unable to create new Nonce");
@@ -161,10 +161,15 @@ namespace ZWaveDotNet.CommandClasses
             Memory<byte> unencrypted = msg.Payload;
             
             msg.Payload = msg.Payload.Slice(2);
+            byte? groupId = null;
             if (unencryptedExt)
             {
-                while (processExtension(msg.Payload, msg.SourceNodeID, controller.SecurityManager, networkKey))
+                while (processExtension(msg.Payload, msg.SourceNodeID, controller.SecurityManager, networkKey, out byte? group))
+                {
                     msg.Payload = msg.Payload.Slice(msg.Payload.Span[0]);
+                    if (group != null)
+                        groupId = group;
+                }
                 msg.Payload = msg.Payload.Slice(msg.Payload.Span[0]);
             }
             unencrypted = unencrypted.Slice(0, unencrypted.Length - msg.Payload.Length);
@@ -173,7 +178,7 @@ namespace ZWaveDotNet.CommandClasses
             try
             {
                 decoded = DecryptCCM(msg.Payload,
-                                                    controller.SecurityManager.NextNonce(msg.SourceNodeID, networkKey.Key)!.Value.output,
+                                                    controller.SecurityManager.NextSpanNonce(msg.SourceNodeID, networkKey.Key)!.Value.output,
                                                     networkKey!.KeyCCM,
                                                     ad);
             }catch(Exception ex)
@@ -181,6 +186,14 @@ namespace ZWaveDotNet.CommandClasses
                 Log.Error(ex, "Failed to decode message");
                 return null;
             }
+            if (encryptedExt)
+            {
+                groupId = decoded.Span[2];
+                Memory<byte> mpan = decoded.Slice(3, 16);
+                //TODO - Process the MPAN
+                decoded = decoded.Slice(19);
+            }
+
             msg.Update(decoded);
             msg.Flags |= ReportFlags.Security;
             msg.SecurityLevel = SecurityManager.TypeToKey(networkKey.Key);
@@ -188,11 +201,12 @@ namespace ZWaveDotNet.CommandClasses
             return msg;
         }
 
-        private static bool processExtension(Memory<byte> payload, ushort nodeId, SecurityManager sm, SecurityManager.NetworkKey netKey)
+        private static bool processExtension(Memory<byte> payload, ushort nodeId, SecurityManager sm, SecurityManager.NetworkKey netKey, out byte? groupId)
         {
             byte len = payload.Span[0];
             bool more = (payload.Span[1] & 0x80) == 0x80;
             byte type = (byte)(0x3F & payload.Span[1]);
+            groupId = null;
             switch (type)
             {
                 case 0x01: //SPAN
@@ -204,6 +218,12 @@ namespace ZWaveDotNet.CommandClasses
                     Log.Warning("Senders Entropy: " + MemoryUtil.Print(sendersEntropy));
                     Log.Warning("Receivers Entropy: " + MemoryUtil.Print(result!.Value.bytes));
                     Log.Warning("Mixed Entropy: " + MemoryUtil.Print(MEI));
+                    break;
+                case 0x03: //MGRP
+                    groupId = payload.Span[2];
+                    break;
+                case 0x04: //MOS
+                    //TODO - Send MPAN
                     break;
             }
             return more;

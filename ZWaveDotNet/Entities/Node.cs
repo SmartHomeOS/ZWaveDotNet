@@ -158,6 +158,8 @@ namespace ZWaveDotNet.Entities
 
         public NodeJSON Serialize()
         {
+            if (nodeInfo == null)
+                throw new ArgumentNullException("Node Info was not provided in the node constructor");
             NodeJSON json = new NodeJSON();
             json.NodeProtocolInfo = nodeInfo;
             json.ID = ID;

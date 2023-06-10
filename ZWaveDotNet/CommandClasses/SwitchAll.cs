@@ -21,7 +21,7 @@ namespace ZWaveDotNet.CommandClasses
 
         public SwitchAll(Node node, byte endpoint) : base(node, endpoint, CommandClass.SwitchAll) {  }
 
-        public async Task<SwitchAllMode> Get(CancellationToken cancellationToken)
+        public async Task<SwitchAllMode> Get(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(SwitchAllCommand.Get, SwitchAllCommand.Report, cancellationToken);
             if (response.Payload.Length < 1)

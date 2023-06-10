@@ -473,7 +473,7 @@ namespace ZWaveDotNet.Entities
             var prk = AES.CKDFTempExtract(sharedSecret, SecurityManager.PublicKey, pub);
             Log.Information("Temp Key: " + MemoryUtil.Print(prk));
             AES.KeyTuple ckdf = AES.CKDFExpand(prk, true);
-            SecurityManager.StoreKey(node.ID, SecurityManager.RecordType.ECDH_TEMP, ckdf.KeyCCM, ckdf.PString);
+            SecurityManager.StoreKey(node.ID, SecurityManager.RecordType.ECDH_TEMP, ckdf.KeyCCM, ckdf.PString, ckdf.MPAN);
             await sec2.SendPublicKey();
         }
 
