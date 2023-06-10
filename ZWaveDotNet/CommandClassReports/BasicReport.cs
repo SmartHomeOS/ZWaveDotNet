@@ -12,7 +12,7 @@ namespace ZWaveDotNet.CommandClassReports
         public BasicReport(Memory<byte> payload)
         {
             if (payload.Length < 1)
-                throw new DataException($"The response was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
+                throw new DataException($"The Basic Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
 
             CurrentValue = payload.Span[0];
 

@@ -61,6 +61,8 @@ namespace ZWaveDotNet.CommandClasses
         {
             switch (cc)
             {
+                case CommandClass.ApplicationCapability:
+                    return new ApplicationCapability(node, endpoint);
                 case CommandClass.ApplicationStatus:
                     return new ApplicationStatus(node, endpoint);
                 case CommandClass.Basic:
