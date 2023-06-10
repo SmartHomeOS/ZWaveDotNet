@@ -101,6 +101,8 @@ namespace ZWaveDotNet.CommandClasses
                     return new NodeNaming(node, endpoint);
                 case CommandClass.NoOperation:
                     return new NoOperation(node, endpoint);
+                case CommandClass.Proprietary:
+                    return new Proprietary(node, endpoint);
                 case CommandClass.Security0:
                     return new Security0(node, endpoint);
                 case CommandClass.Security2:

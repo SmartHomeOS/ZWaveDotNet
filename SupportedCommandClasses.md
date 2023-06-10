@@ -70,7 +70,7 @@ NOTIFICATION | 0 | 8 | None
 POWERLEVEL | 0 | 1 | None
 PREPAYMENT | 0 | 1 | None
 PREPAYMENT_ENCAPSULATION | 0 | 1 | None
-PROPRIETARY | 0 | 1 | None
+**PROPRIETARY** | **1** | **1** | **Full**
 PROTECTION | 0 | 2 | None
 RATE_TBL_CONFIG | 0 | 1 | None
 RATE_TBL_MONITOR | 0 | 1 | None
@@ -122,5 +122,5 @@ ZIP_ND | 0 | 1 | None
 ZIP_PORTAL | 0 | 1 | None
 **ZWAVEPLUS_INFO** | **2** | **2** | **Full**
 
-- Full Support for 33/121 Command Classes.
+- Full Support for 34/121 Command Classes.
 - Partial Support for 2/121 Command Classes.

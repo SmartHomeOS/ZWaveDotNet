@@ -1,12 +1,13 @@
 ﻿using System.Buffers.Binary;
 using ZWaveDotNet.CommandClasses.Enums;
+using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI.Messages;
 using ZWaveDotNet.SerialAPI.Messages.Enums;
 
 namespace ZWaveDotNet.SerialAPI
 {
-    public class ReportMessage
+    public class ReportMessage : ICommandClassReport
     {
         public readonly ushort SourceNodeID;
         public readonly sbyte RSSI;
