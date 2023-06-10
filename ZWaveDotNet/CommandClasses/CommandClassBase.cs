@@ -81,6 +81,8 @@ namespace ZWaveDotNet.CommandClasses
                     return new DeviceResetLocally(node);
                 case CommandClass.GeographicLocation:
                     return new GeographicLocation(node);
+                case CommandClass.GroupingName:
+                    return new GroupingName(node, endpoint);
                 case CommandClass.Hail:
                     return new Hail(node, endpoint);
                 case CommandClass.Language:

@@ -141,8 +141,10 @@ namespace ZWaveDotNet.Util
             foreach (char c in text)
             {
                 if (c > 0x7F)
-                { 
-                    encoding = 1;
+                    encoding = Math.Max((byte)1, encoding);
+                if (c > 0xFF)
+                {
+                    encoding = 2;
                     break;
                 }
             }
@@ -150,9 +152,11 @@ namespace ZWaveDotNet.Util
             payload.Span[0] = encoding;
             if (encoding == 0)
                 limit = Encoding.ASCII.GetBytes(text, payload.Slice(1).Span);
-            else
+            else if (encoding == 1)
                 limit = Encoding.UTF8.GetBytes(text, payload.Slice(1).Span);
-            return payload.Slice(0, limit + 1);
+            else
+                limit = Encoding.Unicode.GetBytes(text, payload.Slice(1).Span);
+            return payload;
         }
 
         public static List<CommandClass> GetCommandClasses(Memory<byte> bytes)

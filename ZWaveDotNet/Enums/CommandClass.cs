@@ -34,7 +34,7 @@
         FirmwareUpdateMD = 0x7A,
         GenericSchedule = 0xA3,
         GeographicLocation = 0x8C,
-        GroupNaming = 0x7B,
+        GroupingName = 0x7B,
         Hail = 0x82,
         HRVControl = 0x39,
         HRVStatus = 0x37,
