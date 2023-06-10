@@ -65,6 +65,8 @@ namespace ZWaveDotNet.CommandClasses
                     return new ApplicationCapability(node, endpoint);
                 case CommandClass.ApplicationStatus:
                     return new ApplicationStatus(node, endpoint);
+                case CommandClass.Association:
+                    return new Association(node, endpoint);
                 case CommandClass.Basic:
                     return new Basic(node, endpoint);
                 case CommandClass.BasicWindowCovering:
