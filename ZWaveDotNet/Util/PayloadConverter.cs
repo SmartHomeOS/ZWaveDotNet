@@ -48,25 +48,30 @@ namespace ZWaveDotNet.Util
                 return Encoding.Unicode.GetString(bytes.Slice(1, Math.Min(bytes.Length - 1, maxLen)).Span);
         }
 
-        public static float ToFloat(Memory<byte> payload, out byte scale)
+        public static float ToFloat(Memory<byte> payload, out byte scale, out byte size, out byte precision)
         {
-            byte precision = (byte)((payload.Span[0] & 0xE0) >> 5);
+            precision = (byte)((payload.Span[0] & 0xE0) >> 5);
             scale = (byte)((payload.Span[0] & 0x18) >> 3);
+            size = (byte)(payload.Span[0] & 0x07);
+            return ToFloat(payload.Slice(1), size, precision);
+        }
 
+        public static float ToFloat(Memory<byte> payload, byte size, byte precision)
+        {
             int value = 0;
-            switch ((byte)(payload.Span[0] & 0x07)) //Field size 1, 2, 4 bytes
+            switch (size) //Field size 1, 2, 4 bytes
             {
                 case 1:
-                    value = (sbyte)payload.Span[1];
-                    break;   
+                    value = (sbyte)payload.Span[0];
+                    break;
                 case 2:
-                    value = BinaryPrimitives.ReadInt16BigEndian(payload.Slice(1, 2).Span);
+                    value = BinaryPrimitives.ReadInt16BigEndian(payload.Slice(0, 2).Span);
                     break;
                 case 4:
-                    value = BinaryPrimitives.ReadInt32BigEndian(payload.Slice(1, 4).Span);
+                    value = BinaryPrimitives.ReadInt32BigEndian(payload.Slice(0, 4).Span);
                     break;
             }
-            return (float)(value / Math.Pow(10, precision));
+            return (value / MathF.Pow(10, precision));
         }
 
         public static float[] ToFloats(Memory<byte> payload, out byte scale)
@@ -91,9 +96,29 @@ namespace ZWaveDotNet.Util
                         value = BinaryPrimitives.ReadInt32BigEndian(payload.Slice(i, 4).Span);
                         break;
                 }
-                values.Add((float)(value / Math.Pow(10, precision)));
+                values.Add((value / MathF.Pow(10, precision)));
             }
             return values.ToArray();
+        }
+
+        public static void WriteFloat(Memory<byte> payload, float value, byte scale)
+        {
+            //Until we have a reason not to
+            byte size = 4;
+            byte precision = 0;
+            for (byte i = 0; i < 7; i++)
+            {
+                if (value % 1 == 0)
+                    break;
+                float tst = value * MathF.Pow(10, i);
+                if (tst < Int32.MaxValue && tst > Int32.MinValue)
+                {
+                    precision = i;
+                    value = tst;
+                }
+            }
+            payload.Span[0] = (byte)((precision << 5) | ((scale & 0x3) << 3) | size);
+            BinaryPrimitives.WriteInt32BigEndian(payload.Slice(1).Span, (int)MathF.Round(value));
         }
 
         public static byte GetByte(TimeSpan value)

@@ -20,13 +20,13 @@ namespace ZWaveDotNet.CommandClasses
 
         public Battery(Node node, byte endpoint) : base(node, endpoint, CommandClass.Battery) { }
 
-        public async Task<BatteryLevelReport> GetLevel(CancellationToken cancellationToken)
+        public async Task<BatteryLevelReport> GetLevel(CancellationToken cancellationToken = default)
         {
             var response = await SendReceive(BatteryCommand.Get, BatteryCommand.Report, cancellationToken);
             return new BatteryLevelReport(response.Payload);
         }
 
-        public async Task<BatteryHealthReport> GetHealth(CancellationToken cancellationToken)
+        public async Task<BatteryHealthReport> GetHealth(CancellationToken cancellationToken = default)
         {
             var response = await SendReceive(BatteryCommand.HealthGet, BatteryCommand.HealthReport, cancellationToken);
             return new BatteryHealthReport(response.Payload);

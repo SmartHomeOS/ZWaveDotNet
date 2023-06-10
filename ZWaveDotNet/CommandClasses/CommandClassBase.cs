@@ -85,6 +85,8 @@ namespace ZWaveDotNet.CommandClasses
                     return new ManufacturerProprietary(node, endpoint);
                 case CommandClass.ManufacturerSpecific:
                     return new ManufacturerSpecific(node, endpoint);
+                case CommandClass.Meter:
+                    return new Meter(node, endpoint);
                 case CommandClass.MultiChannel:
                     return new MultiChannel(node, endpoint);
                 case CommandClass.MultiCommand:
