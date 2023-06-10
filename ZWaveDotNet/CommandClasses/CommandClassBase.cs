@@ -69,6 +69,8 @@ namespace ZWaveDotNet.CommandClasses
                     return new BasicWindowCovering(node, endpoint);
                 case CommandClass.Battery:
                     return new Battery(node, endpoint);
+                case CommandClass.Clock:
+                    return new Clock(node, endpoint);
                 case CommandClass.Configuration:
                     return new Configuration(node, endpoint);
                 case CommandClass.CRC16:
