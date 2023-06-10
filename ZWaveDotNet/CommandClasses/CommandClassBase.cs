@@ -111,6 +111,8 @@ namespace ZWaveDotNet.CommandClasses
                     return new SwitchBinary(node, endpoint);
                 case CommandClass.SwitchColor:
                     return new SwitchColor(node, endpoint);
+                case CommandClass.SwitchMultiLevel:
+                    return new SwitchMultiLevel(node, endpoint);
                 case CommandClass.SwitchToggleBinary:
                     return new SwitchToggleBinary(node, endpoint);
                 case CommandClass.SwitchToggleMultiLevel:

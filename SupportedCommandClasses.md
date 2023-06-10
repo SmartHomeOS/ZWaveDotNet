@@ -96,7 +96,7 @@ SOUND_SWITCH | 0 | 2 | None
 **SWITCH_ALL** | **1** | **1** | **Full**
 **SWITCH_BINARY** | **2** | **2** | **Full**
 **SWITCH_COLOR** | **3** | **3** | **Full**
-SWITCH_MULTILEVEL | 0 | 4 | None
+**SWITCH_MULTILEVEL** | **4** | **4** | **Full**
 **SWITCH_TOGGLE_BINARY** | **1** | **1** | **Full**
 **SWITCH_TOGGLE_MULTILEVEL** | **1** | **1** | **Full**
 TARIFF_CONFIG | 0 | 1 | None
@@ -122,5 +122,5 @@ ZIP_ND | 0 | 1 | None
 ZIP_PORTAL | 0 | 1 | None
 **ZWAVEPLUS_INFO** | **2** | **2** | **Full**
 
-- Full Support for 29/121 Command Classes.
+- Full Support for 30/121 Command Classes.
 - Partial Support for 2/121 Command Classes.
