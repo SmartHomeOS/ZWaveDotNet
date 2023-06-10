@@ -5,7 +5,7 @@ ANTITHEFT | 0 | 3 | None
 ANTITHEFT_UNLOCK | 0 | 1 | None
 **APPLICATION_CAPABILITY** | **1** | **1** | **Full**
 **APPLICATION_STATUS** | **1** | **1** | **Full**
-ASSOCIATION | 0 | 3 | None
+**ASSOCIATION** | **3** | **3** | **Full**
 ASSOCIATION_COMMAND_CONFIGURATION | 0 | 1 | None
 ASSOCIATION_GRP_INFO | 0 | 3 | None
 AUTHENTICATION | 0 | 1 | None
@@ -86,7 +86,7 @@ SCREEN_MD | 0 | 2 | None
 **SECURITY** | **1** | **1** | **Full**
 *SECURITY_2* | *1* | *1* | *Partial*
 **SENSOR_ALARM** | **1** | **1** | **Full**
-SENSOR_BINARY | 0 | 2 | None
+**SENSOR_BINARY** | **2** | **2** | **Full**
 SENSOR_CONFIGURATION | 0 | 1 | None
 SENSOR_MULTILEVEL | 0 | 11 | None
 **SILENCE_ALARM** | **1** | **1** | **Full**
@@ -122,5 +122,5 @@ ZIP_ND | 0 | 1 | None
 ZIP_PORTAL | 0 | 1 | None
 **ZWAVEPLUS_INFO** | **2** | **2** | **Full**
 
-- Full Support for 35/121 Command Classes.
+- Full Support for 37/121 Command Classes.
 - Partial Support for 2/121 Command Classes.

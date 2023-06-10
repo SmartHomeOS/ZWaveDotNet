@@ -115,6 +115,8 @@ namespace ZWaveDotNet.CommandClasses
                     return new SensorAlarm(node, endpoint);
                 case CommandClass.SilenceAlarm:
                     return new SilenceAlarm(node, endpoint);
+                case CommandClass.SensorBinary:
+                    return new SensorBinary(node, endpoint);
                 case CommandClass.Supervision:
                     return new Supervision(node);
                 case CommandClass.SwitchAll:
