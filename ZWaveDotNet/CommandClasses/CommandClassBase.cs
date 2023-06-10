@@ -103,6 +103,10 @@ namespace ZWaveDotNet.CommandClasses
                     return new Security0(node, endpoint);
                 case CommandClass.Security2:
                     return new Security2(node, endpoint);
+                case CommandClass.SensorAlarm:
+                    return new SensorAlarm(node, endpoint);
+                case CommandClass.SilenceAlarm:
+                    return new SilenceAlarm(node, endpoint);
                 case CommandClass.Supervision:
                     return new Supervision(node);
                 case CommandClass.SwitchAll:
