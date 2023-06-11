@@ -21,13 +21,13 @@ namespace ZWaveDotNet.CommandClasses
 
         public async Task<ManufacturerSpecificReport> Get(CancellationToken cancellationToken = default)
         {
-            var response = await SendReceive(ManufacturerSpecificCommand.Get, ManufacturerSpecificCommand.Report, cancellationToken);
+            ReportMessage response = await SendReceive(ManufacturerSpecificCommand.Get, ManufacturerSpecificCommand.Report, cancellationToken);
             return new ManufacturerSpecificReport(response.Payload);
         }
 
         public async Task<ManufacturerSpecificDeviceReport> SpecificGet(DeviceSpecificType type, CancellationToken cancellationToken = default)
         {
-            var response = await SendReceive(ManufacturerSpecificCommand.DeviceSpecificGet, ManufacturerSpecificCommand.DeviceSpecificReport, cancellationToken, (byte)type);
+            ReportMessage response = await SendReceive(ManufacturerSpecificCommand.DeviceSpecificGet, ManufacturerSpecificCommand.DeviceSpecificReport, cancellationToken, (byte)type);
             return new ManufacturerSpecificDeviceReport(response.Payload);
         }
 

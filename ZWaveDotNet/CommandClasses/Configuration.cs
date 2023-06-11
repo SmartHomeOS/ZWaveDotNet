@@ -30,7 +30,7 @@ namespace ZWaveDotNet.CommandClasses
 
         public async Task<ConfigurationReport> Get(byte parameter, CancellationToken cancellationToken = default)
         {
-            var response = await SendReceive(ConfigurationCommand.Get, ConfigurationCommand.Report, cancellationToken, parameter);
+            ReportMessage response = await SendReceive(ConfigurationCommand.Get, ConfigurationCommand.Report, cancellationToken, parameter);
             return new ConfigurationReport(response.Payload);
         }
 
@@ -58,7 +58,7 @@ namespace ZWaveDotNet.CommandClasses
         {
             if (size == 0)
             {
-                var response = await SendReceive(ConfigurationCommand.Get, ConfigurationCommand.Report, cancellationToken);
+                ReportMessage response = await SendReceive(ConfigurationCommand.Get, ConfigurationCommand.Report, cancellationToken);
                 size = response.Payload.Span[1];
             }
 

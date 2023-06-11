@@ -23,7 +23,7 @@ namespace ZWaveDotNet.CommandClasses
 
         public async Task<SwitchToggleMultiLevelReport> Get(CancellationToken cancellationToken = default)
         {
-            var response = await SendReceive(ToggleMultiLevelCommand.Get, ToggleMultiLevelCommand.Report, cancellationToken);
+            ReportMessage response = await SendReceive(ToggleMultiLevelCommand.Get, ToggleMultiLevelCommand.Report, cancellationToken);
             return new SwitchToggleMultiLevelReport(response.Payload);
         }
         /// <summary>

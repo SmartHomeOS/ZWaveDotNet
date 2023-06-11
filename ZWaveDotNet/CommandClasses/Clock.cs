@@ -34,6 +34,11 @@ namespace ZWaveDotNet.CommandClasses
                 await SendClock(DateTime.Now.DayOfWeek, (byte)DateTime.Now.Hour, (byte)DateTime.Now.Minute, ClockCommand.Report, CancellationToken.None);
         }
 
+        public override async Task Interview(CancellationToken cancellationToken)
+        {
+            await SendClock(DateTime.Now.DayOfWeek, (byte)DateTime.Now.Hour, (byte)DateTime.Now.Minute, ClockCommand.Report, cancellationToken);
+        }
+
         private async Task SendClock(DayOfWeek dayOfWeek, byte hour, byte minute, ClockCommand command, CancellationToken cancellationToken)
         {
             byte day = 0;

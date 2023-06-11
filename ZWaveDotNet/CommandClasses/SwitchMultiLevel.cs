@@ -1,4 +1,5 @@
-﻿using ZWaveDotNet.CommandClassReports;
+﻿using Serilog;
+using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
@@ -72,7 +73,11 @@ namespace ZWaveDotNet.CommandClasses
         protected override async Task Handle(ReportMessage message)
         {
             if (message.Command == (byte)MultiLevelCommand.Report)
-                await FireEvent(Changed, new SwitchMultiLevelReport(message.Payload));
+            {
+                SwitchMultiLevelReport report = new SwitchMultiLevelReport(message.Payload);
+                await FireEvent(Changed, report);
+                Log.Information(report.ToString());
+            }
         }
     }
 }

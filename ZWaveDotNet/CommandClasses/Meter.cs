@@ -25,7 +25,7 @@ namespace ZWaveDotNet.CommandClasses
 
         public async Task<MeterReport> Get(CancellationToken cancellationToken = default)
         {
-            var response = await SendReceive(MeterCommand.Get, MeterCommand.Report, cancellationToken);
+            ReportMessage response = await SendReceive(MeterCommand.Get, MeterCommand.Report, cancellationToken);
             return new MeterReport(response.Payload);
         }
 
@@ -36,13 +36,13 @@ namespace ZWaveDotNet.CommandClasses
                 scale2 = 1;
             byte scale = (byte)(GetScale(type, unit) << 3);
             scale |= (byte)((byte)rate << 6);
-            var response = await SendReceive(MeterCommand.Get, MeterCommand.Report, cancellationToken, scale, scale2);
+            ReportMessage response = await SendReceive(MeterCommand.Get, MeterCommand.Report, cancellationToken, scale, scale2);
             return new MeterReport(response.Payload);
         }
 
         public async Task<MeterSupportedReport> GetSupported(CancellationToken cancellationToken = default)
         {
-            var response = await SendReceive(MeterCommand.SupportedGet, MeterCommand.SupportedReport, cancellationToken);
+            ReportMessage response = await SendReceive(MeterCommand.SupportedGet, MeterCommand.SupportedReport, cancellationToken);
             return new MeterSupportedReport(response.Payload);
         }
 

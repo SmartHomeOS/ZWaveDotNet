@@ -224,7 +224,7 @@ namespace ZWaveDotNet.Entities
             }
         }
 
-        public async Task Interview()
+        public async Task Interview(CancellationToken cancellationToken)
         {
             if (controller.SecurityManager != null)
             {
@@ -232,14 +232,14 @@ namespace ZWaveDotNet.Entities
                 if (key != null && key.Key == SecurityManager.RecordType.S0 && this.commandClasses.ContainsKey(CommandClass.Security0))
                 {
                     Log.Information("Requesting S0 classes for " + ID);
-                    SupportedCommands supportedCmds = await ((Security0)commandClasses[CommandClass.Security0]).CommandsSupportedGet();
+                    SupportedCommands supportedCmds = await ((Security0)commandClasses[CommandClass.Security0]).CommandsSupportedGet(cancellationToken);
                     foreach (CommandClass cls in supportedCmds.CommandClasses)
                         AddCommandClass(cls, true);
                 }
                 else if (key != null && this.commandClasses.ContainsKey(CommandClass.Security2))
                 {
                     Log.Information("Requesting S2 classes for " + ID);
-                    List<CommandClass> supportedCmds = await ((Security2)commandClasses[CommandClass.Security2]).GetSupportedCommands();
+                    List<CommandClass> supportedCmds = await ((Security2)commandClasses[CommandClass.Security2]).GetSupportedCommands(cancellationToken);
                     foreach (CommandClass cls in supportedCmds)
                         AddCommandClass(cls, true);
                 }
@@ -247,7 +247,7 @@ namespace ZWaveDotNet.Entities
             if (this.commandClasses.ContainsKey(CommandClass.MultiChannel))
             {
                 Log.Information("Requesting MultiChannel EndPoints");
-                EndPointReport epReport = await ((MultiChannel)commandClasses[CommandClass.MultiChannel]).GetEndPoints();
+                EndPointReport epReport = await ((MultiChannel)commandClasses[CommandClass.MultiChannel]).GetEndPoints(cancellationToken);
                 for (int i = 0; i < epReport.IndividualEndPoints; i++)
                     endPoints.Add(new EndPoint((byte)(i + 1), this));
             }
@@ -259,9 +259,14 @@ namespace ZWaveDotNet.Entities
                 {
                     CCVersion? ccVersion = (CCVersion?)cc.GetType().GetCustomAttribute(typeof(CCVersion));
                     if ((ccVersion == null || ccVersion.maxVersion > 1) && (cc.CommandClass >= CommandClass.Basic))
-                        cc.Version = await version.GetCommandClassVersion(cc.CommandClass);
+                        cc.Version = await version.GetCommandClassVersion(cc.CommandClass, cancellationToken);
                 }
             }
+
+
+            Log.Information("Interviewing Command Classes");
+            foreach (CommandClassBase cc in commandClasses.Values)
+                await cc.Interview(cancellationToken);
         }
 
         public override string ToString()

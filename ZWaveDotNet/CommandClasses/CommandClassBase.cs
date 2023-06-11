@@ -181,6 +181,11 @@ namespace ZWaveDotNet.CommandClasses
             return Secure;
         }
 
+        public virtual Task Interview(CancellationToken cancellationToken)
+        {
+            return Task.CompletedTask;
+        }
+
         protected async Task<ReportMessage> SendReceive(Enum command, Enum response, CancellationToken token, params byte[] payload)
         {
             return await SendReceive(command, response, token, false, payload);

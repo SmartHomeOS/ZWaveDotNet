@@ -1,4 +1,5 @@
-﻿using ZWaveDotNet.CommandClassReports;
+﻿using Serilog;
+using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
@@ -43,6 +44,7 @@ namespace ZWaveDotNet.CommandClasses
         protected override async Task Handle(ReportMessage message)
         {
             SwitchBinaryReport report = new SwitchBinaryReport(message.Payload);
+            Log.Information(report.ToString());
             await FireEvent(SwitchReport, report);
         }
     }

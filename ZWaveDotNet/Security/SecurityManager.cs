@@ -15,9 +15,11 @@ namespace ZWaveDotNet.Security
         public enum RecordType { Entropy, ECDH_TEMP, S0, S2UnAuth, S2Auth, S2Access };
         private static readonly TimeSpan TWENTY_SEC = TimeSpan.FromSeconds(20);
         private Dictionary<ushort, List<SpanRecord>> spanRecords = new Dictionary<ushort, List<SpanRecord>>();
+        private Dictionary<byte, MpanRecord> mpanRecords = new Dictionary<byte, MpanRecord>();
         private Dictionary<ushort, List<NetworkKey>> keys = new Dictionary<ushort, List<NetworkKey>>();
         private Dictionary<ushort, KeyExchangeReport> requestedAccess = new Dictionary<ushort, KeyExchangeReport>();
-        private Dictionary<byte, MpanRecord> mpanRecords = new Dictionary<byte, MpanRecord>();
+        private Dictionary<ushort, List<byte>> sequenceCache = new Dictionary<ushort, List<byte>>();
+        
 
         private class SpanRecord
         {
@@ -153,6 +155,21 @@ namespace ZWaveDotNet.Security
             PurgeStack(nodeId, type);
             List<SpanRecord> stack = GetStack(nodeId);
             stack.Add(nr);
+        }
+
+        public bool IsSequenceNew(ushort nodeId, byte sequence)
+        {
+            if (sequenceCache.TryGetValue(nodeId, out List<byte>? sequences))
+            {
+                if (sequences.Contains(sequence))
+                    return false;
+                sequences.Add(sequence);
+                if (sequences.Count > 10)
+                    sequences.RemoveAt(0);
+                return true;
+            }
+            sequenceCache.Add(nodeId, new List<byte>(new byte[] { sequence }));
+            return true;
         }
 
         public (Memory<byte> output, byte sequence)? NextSpanNonce(ushort nodeId, RecordType type)
@@ -369,6 +386,8 @@ namespace ZWaveDotNet.Security
         {
             List<SpanRecord> stack = GetStack(nodeId);
             stack.RemoveAll(r => r.Type == type);
+            if (sequenceCache.ContainsKey(nodeId))
+                sequenceCache.Remove(nodeId);
         }
     }
 }

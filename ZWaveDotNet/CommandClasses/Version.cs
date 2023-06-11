@@ -42,7 +42,7 @@ namespace ZWaveDotNet.CommandClasses
 
         public async Task<byte> GetCommandClassVersion(CommandClass @class, CancellationToken cancellationToken = default)
         {
-            var response = await SendReceive(VersionCommand.CommandClassGet, VersionCommand.CommandClassReport, cancellationToken, (byte)@class);
+            ReportMessage response = await SendReceive(VersionCommand.CommandClassGet, VersionCommand.CommandClassReport, cancellationToken, (byte)@class);
             if (response.Payload.Length < 2)
                 throw new InvalidDataException("No version returned");
             return response.Payload.Span[1];

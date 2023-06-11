@@ -21,7 +21,7 @@ namespace ZWaveDotNet.CommandClasses
 
         public async Task<SwitchBinaryReport> Get(CancellationToken cancellationToken = default)
         {
-            var response = await SendReceive(SwitchToggleBinaryCommand.Get, SwitchToggleBinaryCommand.Report, cancellationToken);
+            ReportMessage response = await SendReceive(SwitchToggleBinaryCommand.Get, SwitchToggleBinaryCommand.Report, cancellationToken);
             return new SwitchBinaryReport(response.Payload);
         }
 

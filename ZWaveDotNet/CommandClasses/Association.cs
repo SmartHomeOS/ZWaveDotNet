@@ -1,4 +1,5 @@
-﻿using ZWaveDotNet.CommandClassReports;
+﻿using Serilog;
+using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
@@ -8,6 +9,7 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.Association, 1, 3)]
     public class Association : CommandClassBase
     {
+        public const byte LIFELINE_GROUP = 0x1;
         enum AssociationCommand
         {
             Set = 0x01,
@@ -23,7 +25,7 @@ namespace ZWaveDotNet.CommandClasses
 
         public async Task<AssociationReport> Get(byte groupID, CancellationToken cancellationToken)
         {
-            var response = await SendReceive(AssociationCommand.Get, AssociationCommand.Report, cancellationToken, groupID);
+            ReportMessage response = await SendReceive(AssociationCommand.Get, AssociationCommand.Report, cancellationToken, groupID);
             return new AssociationReport(response.Payload);
         }
 
@@ -33,22 +35,26 @@ namespace ZWaveDotNet.CommandClasses
             return response.Payload.Span[0];
         }
 
-        public async Task Add(byte groupID, CancellationToken cancellationToken, params byte[] nodes)
+        public async Task Add(byte groupID, CancellationToken cancellationToken, params byte[] nodeIDs)
         {
-            var payload = new byte[] { groupID }.Concat(nodes).ToArray();
-            await SendCommand(AssociationCommand.Set, cancellationToken, payload);
+            await SendCommand(AssociationCommand.Set, cancellationToken, nodeIDs.Prepend(groupID).ToArray());
         }
 
-        public async Task Remove(byte groupID, CancellationToken cancellationToken, params byte[] nodes)
+        public async Task Remove(byte groupID, CancellationToken cancellationToken, params byte[] nodeIDs)
         {
-            var payload = new byte[] { groupID }.Concat(nodes).ToArray();
-            await SendCommand(AssociationCommand.Remove, cancellationToken, payload);
+            await SendCommand(AssociationCommand.Remove, cancellationToken, nodeIDs.Prepend(groupID).ToArray());
         }
 
         public async Task<AssociationGroupsReport> GetGroups(CancellationToken cancellationToken)
         {
-            var response = await SendReceive(AssociationCommand.GroupingsGet, AssociationCommand.GroupingsReport, cancellationToken);
+            ReportMessage response = await SendReceive(AssociationCommand.GroupingsGet, AssociationCommand.GroupingsReport, cancellationToken);
             return new AssociationGroupsReport(response.Payload);
+        }
+
+        public override async Task Interview(CancellationToken cancellationToken)
+        {
+            await Add(LIFELINE_GROUP, cancellationToken, (byte)controller.ControllerID);
+            Log.Information("Assigned Lifeline Group");
         }
 
         protected override Task Handle(ReportMessage message)

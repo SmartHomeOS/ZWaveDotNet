@@ -1,19 +1,20 @@
 ﻿using Serilog;
 using TestConsole;
 using ZWaveDotNet.CommandClasses;
+using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 
 Log.Logger = new LoggerConfiguration().WriteTo.Console().CreateLogger();
 
-CCParser.Generate(); return;
+//CCParser.Generate(); return;
 
 //Randomly Generated Test Keys - Change this before using locally
 byte[] testKey = new byte[] { 0x76, 0xF7, 0xF9, 0x43, 0x4B, 0x90, 0x1B, 0x83, 0xB0, 0x4D, 0x90, 0xAD, 0x92, 0x14, 0x13, 0xEC };
 byte[] testKey2 = new byte[] { 0x76, 0xF7, 0xF9, 0x43, 0x4B, 0x90, 0x1B, 0x83, 0xB0, 0x4D, 0x90, 0xAD, 0x92, 0x14, 0x13, 0xED };
+byte[] testKey3 = new byte[] { 0x76, 0xF7, 0xF9, 0x43, 0x4B, 0x90, 0x1B, 0x83, 0xB0, 0x4D, 0x90, 0xAD, 0x92, 0x14, 0x13, 0xEE };
 
-//Randomly Generated Test Type
-Controller controller = new Controller("COM4", testKey, testKey, testKey2, testKey2);
+Controller controller = new Controller("COM4", testKey, testKey, testKey2, testKey3);
 await controller.Reset();
 await controller.Start();
 
@@ -94,6 +95,8 @@ while (true)
     else if (cmd == "m")
     {
         //TODO - Multicast
+        MeterReport r = await ((Meter)controller.Nodes[77].CommandClasses[CommandClass.Meter]).Get(ZWaveDotNet.CommandClassReports.Enums.MeterType.Electric, Units.Watts, ZWaveDotNet.CommandClassReports.Enums.RateType.Unspecified);
+        Console.WriteLine(r.ToString());
     }
     else if (cmd == "6")
     {

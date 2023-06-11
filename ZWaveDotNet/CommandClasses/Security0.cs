@@ -12,9 +12,8 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.Security0)]
     public class Security0 : CommandClassBase
     {
-        private static readonly byte[] EMPTY_IV = new byte[]{ 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
-
-        public enum SecurityCommand
+        private TaskCompletionSource keyVerified = new TaskCompletionSource();
+        public enum Security0Command
         {
             CommandsSupportedGet =	0x02,
             CommandsSupportedReport = 0x03,
@@ -33,32 +32,32 @@ namespace ZWaveDotNet.CommandClasses
 
         public async Task<SupportedCommands> CommandsSupportedGet(CancellationToken cancellationToken = default)
         {
-            ReportMessage msg = await SendReceive(SecurityCommand.CommandsSupportedGet, SecurityCommand.CommandsSupportedReport, cancellationToken);
+            ReportMessage msg = await SendReceive(Security0Command.CommandsSupportedGet, Security0Command.CommandsSupportedReport, cancellationToken);
             return new SupportedCommands(msg.Payload);
         }
 
         internal async Task SchemeGet(CancellationToken cancellationToken = default)
         {
             Log.Debug("Requesting Scheme");
-            await SendCommand(SecurityCommand.SchemeGet, cancellationToken, (byte)0x0);
+            await SendCommand(Security0Command.SchemeGet, cancellationToken, (byte)0x0);
         }
 
         internal async Task KeySet(CancellationToken cancellationToken = default)
         {
             Log.Information($"Setting Network Key on {node.ID}");
-            CommandMessage data = new CommandMessage(controller, node.ID, endpoint, commandClass, (byte)SecurityCommand.NetworkKeySet, false, controller.NetworkKeyS0);
+            CommandMessage data = new CommandMessage(controller, node.ID, endpoint, commandClass, (byte)Security0Command.NetworkKeySet, false, controller.NetworkKeyS0);
             await TransmitTemp(data.Payload);
         }
 
         protected async Task<ReportMessage> GetNonce(CancellationToken cancellationToken)
         {
             Log.Information("Fetching Nonce");
-            return await SendReceive(SecurityCommand.NonceGet, SecurityCommand.NonceReport, cancellationToken);
+            return await SendReceive(Security0Command.NonceGet, Security0Command.NonceReport, cancellationToken);
         }
 
         public static bool IsEncapsulated(ReportMessage msg)
         {
-            return msg.CommandClass == CommandClass.Security0 && (msg.Command == (byte)SecurityCommand.MessageEncap || msg.Command == (byte)SecurityCommand.MessageEncapNonceGet);
+            return msg.CommandClass == CommandClass.Security0 && (msg.Command == (byte)Security0Command.MessageEncap || msg.Command == (byte)Security0Command.MessageEncapNonceGet);
         }
 
         public async Task TransmitTemp(List<byte> payload, CancellationToken cancellationToken = default)
@@ -71,7 +70,7 @@ namespace ZWaveDotNet.CommandClasses
             new Random().NextBytes(sendersNonce);
             payload.Insert(0, (byte)0x0); //Sequenced = False
             byte[] encrypted = EncryptDecryptPayload(payload.ToArray(), sendersNonce, receiversNonce, controller.tempE);
-            byte[] mac = AES.ComputeMAC(controller.ControllerID, node.ID, (byte)SecurityCommand.MessageEncap, sendersNonce, receiversNonce, encrypted, controller.tempA);
+            byte[] mac = AES.ComputeMAC(controller.ControllerID, node.ID, (byte)Security0Command.MessageEncap, sendersNonce, receiversNonce, encrypted, controller.tempA);
 
             byte[] securePayload = new byte[17 + encrypted.Length];
             Array.Copy(sendersNonce, 0, securePayload, 0, 8);
@@ -79,7 +78,7 @@ namespace ZWaveDotNet.CommandClasses
             securePayload[8 + encrypted.Length] = receiversNonce[0];
             Array.Copy(mac, 0, securePayload, 9 + encrypted.Length, 8);
 
-            await SendCommand(SecurityCommand.MessageEncap, cancellationToken, securePayload);
+            await SendCommand(Security0Command.MessageEncap, cancellationToken, securePayload);
         }
 
         public async Task Encapsulate(List<byte> payload, CancellationToken cancellationToken)
@@ -92,7 +91,7 @@ namespace ZWaveDotNet.CommandClasses
             new Random().NextBytes(sendersNonce);
             payload.Insert(0, (byte)0x0); //Sequenced = False
             byte[] encrypted = EncryptDecryptPayload(payload.ToArray(), sendersNonce, receiversNonce, controller.EncryptionKey);
-            byte[] mac = AES.ComputeMAC(controller.ControllerID, node.ID, (byte)SecurityCommand.MessageEncap, sendersNonce, receiversNonce, encrypted, controller.AuthenticationKey);
+            byte[] mac = AES.ComputeMAC(controller.ControllerID, node.ID, (byte)Security0Command.MessageEncap, sendersNonce, receiversNonce, encrypted, controller.AuthenticationKey);
 
             byte[] securePayload = new byte[17 + encrypted.Length];
             Array.Copy(sendersNonce, 0, securePayload, 0, 8);
@@ -102,7 +101,7 @@ namespace ZWaveDotNet.CommandClasses
 
             payload.Clear();
             payload.Add((byte)commandClass);
-            payload.Add((byte)SecurityCommand.MessageEncap);
+            payload.Add((byte)Security0Command.MessageEncap);
             payload.AddRange(securePayload);
         }
 
@@ -140,20 +139,20 @@ namespace ZWaveDotNet.CommandClasses
 
         protected override async Task Handle(ReportMessage message)
         {
-            switch ((SecurityCommand)message.Command)
+            switch ((Security0Command)message.Command)
             {
-                case SecurityCommand.NetworkKeyVerify:
-                    Log.Information("Success - Key Verified"); //TODO - Event this
+                case Security0Command.NetworkKeyVerify:
+                    keyVerified.TrySetResult();
                     if (controller.SecurityManager != null)
                         controller.SecurityManager.StoreKey(node.ID, SecurityManager.RecordType.S0, null, null, null);
                     break;
-                case SecurityCommand.NonceGet:
+                case Security0Command.NonceGet:
                     if (controller.SecurityManager == null)
                         return;
                     if (message.IsMulticastMethod())
                         return;
 
-                    await SendCommand(SecurityCommand.NonceReport, CancellationToken.None, controller.SecurityManager.CreateS0Nonce(node.ID));
+                    await SendCommand(Security0Command.NonceReport, CancellationToken.None, controller.SecurityManager.CreateS0Nonce(node.ID));
                     break;
             }
         }
@@ -182,9 +181,15 @@ namespace ZWaveDotNet.CommandClasses
             return output;
         }
 
+        public async Task WaitForKeyVerified(CancellationToken cancellationToken)
+        {
+            keyVerified = new TaskCompletionSource();
+            await keyVerified.Task.WaitAsync(cancellationToken);
+        }
+
         protected override bool IsSecure(byte command)
         {
-            return command == (byte)SecurityCommand.CommandsSupportedGet;
+            return command == (byte)Security0Command.CommandsSupportedGet;
         }
     }
 }

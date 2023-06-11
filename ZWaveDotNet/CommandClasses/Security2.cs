@@ -1,4 +1,5 @@
 ﻿using Serilog;
+using System.Security;
 using System.Security.Cryptography;
 using ZWaveDotNet.CommandClasses.Enums;
 using ZWaveDotNet.CommandClassReports;
@@ -13,6 +14,10 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.Security2, 1, 1, false)]
     public class Security2 : CommandClassBase
     {
+        public event CommandClassEvent? BootstrapComplete;
+        public event CommandClassEvent? SecurityError;
+        TaskCompletionSource bootstrapComplete = new TaskCompletionSource();
+
         public enum Security2Command
         {
             NonceGet = 0x01,
@@ -159,7 +164,11 @@ namespace ZWaveDotNet.CommandClasses
             bool unencryptedExt = (msg.Payload.Span[1] & 0x1) == 0x1;
             bool encryptedExt = (msg.Payload.Span[1] & 0x2) == 0x2;
             Memory<byte> unencrypted = msg.Payload;
-            
+            if (!controller.SecurityManager.IsSequenceNew(msg.SourceNodeID, sequence))
+            {
+                Log.Error("Duplicate S2 Message Skipped");
+                return null; //Duplicate Message
+            }
             msg.Payload = msg.Payload.Slice(2);
             byte? groupId = null;
             if (unencryptedExt)
@@ -340,40 +349,48 @@ namespace ZWaveDotNet.CommandClasses
                         controller.SecurityManager.StoreKey(node.ID, SecurityManager.RecordType.S2Access, accessKey.KeyCCM, accessKey.PString, accessKey.MPAN);
                     }
 
-                    Log.Warning("Transfer Complete"); //TODO - Event This
+                    Log.Information("Transfer Complete");
+                    await FireEvent(BootstrapComplete, null);
+                    bootstrapComplete.TrySetResult();
                     break;
                 case Security2Command.KEXFail:
-                    //TODO - Event This
+                    ErrorReport errorMessage;
                     switch (message.Payload.Span[0])
                     {
                         case 0x1:
-                            Log.Error("Key Failure");
+                            errorMessage = new ErrorReport(0x1, "Key Failure");
                             break;
                         case 0x2:
-                            Log.Error("Scheme Failure");
+                            errorMessage = new ErrorReport(0x2, "Scheme Failure");
                             break;
                         case 0x3:
-                            Log.Error("Curve Failure");
+                            errorMessage = new ErrorReport(0x3, "Curve Failure");
                             break;
                         case 0x5:
-                            Log.Error("Decryption Failure");
+                            errorMessage = new ErrorReport(0x5, "Decryption Failure");
                             break;
                         case 0x6:
-                            Log.Error("Key Cancel");
+                            errorMessage = new ErrorReport(0x6, "Key Cancel");
                             break;
                         case 0x7:
-                            Log.Error("Auth Failure");
+                            errorMessage = new ErrorReport(0x7, "Auth Failure");
                             break;
                         case 0x8:
-                            Log.Error("Key Get Failure");
+                            errorMessage = new ErrorReport(0x8, "Key Get Failure");
                             break;
                         case 0x9:
-                            Log.Error("Key Verify");
+                            errorMessage = new ErrorReport(0x9, "Key Verify");
                             break;
                         case 0xA:
-                            Log.Error("Key Report");
+                            errorMessage = new ErrorReport(0xA, "Key Report");
+                            break;
+                        default:
+                            errorMessage = new ErrorReport(message.Payload.Span[0], "Unknown Key Exchange Failure");
                             break;
                     }
+                    Log.Error("Key Exchange Failure " +  errorMessage);
+                    await FireEvent(SecurityError, errorMessage);
+                    bootstrapComplete.TrySetException(new SecurityException(errorMessage.ErrorMessage));
                     break;
             }
         }
@@ -390,6 +407,12 @@ namespace ZWaveDotNet.CommandClasses
                     return true;
             }
             return false;
+        }
+
+        public async Task WaitForBootstrap(CancellationToken cancellationToken)
+        {
+            bootstrapComplete = new TaskCompletionSource();
+            await bootstrapComplete.Task.WaitAsync(cancellationToken);
         }
 
         public static Memory<byte> EncryptCCM(Memory<byte> plaintext, Memory<byte> nonce, Memory<byte> key, AdditionalAuthData ad)

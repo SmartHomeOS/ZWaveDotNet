@@ -97,7 +97,7 @@ namespace ZWaveDotNet.CommandClassReports
 
         public override string ToString()
         {
-            return $"Type:{Type}, Value:\"{Value} {Unit}\"";
+            return $"Type:{Type}, Value:\"{Value} {Unit}\", Last:\"{LastValue} {Unit}\"";
         }
     }
 }

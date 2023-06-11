@@ -364,19 +364,22 @@ namespace ZWaveDotNet.Entities
         public async Task InterviewNodes()
         {
             foreach (Node n in Nodes.Values)
-            {
-                if (n.Listening)
-                    await n.Interview();
-                else
-                    await Task.Factory.StartNew(async() => {
-                        //TODO - Make sure we abort this if interview is already in progress
-                        if (n.CommandClasses.ContainsKey(CommandClass.WakeUp))
-                            await ((WakeUp)n.CommandClasses[CommandClass.WakeUp]).WaitForAwake();
-                        await n.Interview();
-                        if (n.CommandClasses.ContainsKey(CommandClass.WakeUp))
-                            await ((WakeUp)n.CommandClasses[CommandClass.WakeUp]).NoMoreInformation();
-                    }); 
-            }
+                await InterviewNode(n);
+        }
+
+        private async Task InterviewNode(Node node)
+        {
+            if (node.Listening)
+                await node.Interview(new CancellationTokenSource(60000).Token);
+            else
+                await Task.Factory.StartNew(async () => {
+                //TODO - Make sure we abort this if interview is already in progress
+                if (node.CommandClasses.ContainsKey(CommandClass.WakeUp))
+                    await ((WakeUp)node.CommandClasses[CommandClass.WakeUp]).WaitForAwake();
+                await node.Interview(new CancellationTokenSource(60000).Token);
+                if (node.CommandClasses.ContainsKey(CommandClass.WakeUp))
+                    await ((WakeUp)node.CommandClasses[CommandClass.WakeUp]).NoMoreInformation();
+            });
         }
 
         private async Task EventLoop()
@@ -426,7 +429,7 @@ namespace ZWaveDotNet.Entities
                                     if (SecurityManager != null)
                                     {
                                         if (node.CommandClasses.ContainsKey(CommandClass.Security2))
-                                            await Task.Factory.StartNew(()=>BootstrapS2(node));
+                                            await Task.Factory.StartNew(() => BootstrapS2(node));
                                         else if (node.CommandClasses.ContainsKey(CommandClass.Security0))
                                             await Task.Factory.StartNew(() => BootstrapS0(node));
                                     }
@@ -449,32 +452,56 @@ namespace ZWaveDotNet.Entities
             }
         }
 
-        private async Task BootstrapS0(Node node)
+        private async Task<bool> BootstrapS0(Node node)
         {
             Log.Information("Starting Secure(0-Legacy) Inclusion");
-            await((Security0)node.CommandClasses[CommandClass.Security0]).SchemeGet();
-            await((Security0)node.CommandClasses[CommandClass.Security0]).KeySet();
+            CancellationTokenSource cts = new CancellationTokenSource(30000);
+            try
+            {
+                await ((Security0)node.CommandClasses[CommandClass.Security0]).SchemeGet(cts.Token);
+                await ((Security0)node.CommandClasses[CommandClass.Security0]).KeySet(cts.Token);
+                await ((Security0)node.CommandClasses[CommandClass.Security0]).WaitForKeyVerified(cts.Token);
+            }
+            catch(Exception e)
+            {
+                Log.Error(e, "Error in S0 Bootstrapping");
+                return false;
+            }
+            await InterviewNode(node);
+            return true;
         }
 
-        private async Task BootstrapS2(Node node)
+        private async Task<bool> BootstrapS2(Node node)
         {
-            Security2 sec2 = ((Security2)node.CommandClasses[CommandClass.Security2]);
-            Log.Information("Starting Secure S2 Inclusion");
-            CancellationTokenSource TA1 = new CancellationTokenSource(10000);
-            KeyExchangeReport requestedKeys = await sec2.KexGet(TA1.Token);
-            SecurityManager!.StoreRequestedKeys(node.ID, requestedKeys);
-            Log.Information("Sending " + requestedKeys.ToString());
-            CancellationTokenSource TA2 = new CancellationTokenSource(10000);
-            Memory<byte> pub = await sec2.KexSet(requestedKeys, TA2.Token);
-            if ((requestedKeys.Keys & SecurityKey.S2Access) == SecurityKey.S2Access ||
-                (requestedKeys.Keys & SecurityKey.S2Authenticated) == SecurityKey.S2Authenticated)
-                BinaryPrimitives.WriteUInt16BigEndian(pub.Slice(0, 2).Span, pin);
-            byte[] sharedSecret = SecurityManager!.CreateSharedSecret(pub);
-            var prk = AES.CKDFTempExtract(sharedSecret, SecurityManager.PublicKey, pub);
-            Log.Information("Temp Key: " + MemoryUtil.Print(prk));
-            AES.KeyTuple ckdf = AES.CKDFExpand(prk, true);
-            SecurityManager.StoreKey(node.ID, SecurityManager.RecordType.ECDH_TEMP, ckdf.KeyCCM, ckdf.PString, ckdf.MPAN);
-            await sec2.SendPublicKey();
+            try
+            {
+                Security2 sec2 = ((Security2)node.CommandClasses[CommandClass.Security2]);
+                Log.Information("Starting Secure S2 Inclusion");
+                CancellationTokenSource TA1 = new CancellationTokenSource(10000);
+                KeyExchangeReport requestedKeys = await sec2.KexGet(TA1.Token);
+                SecurityManager!.StoreRequestedKeys(node.ID, requestedKeys);
+                Log.Information("Sending " + requestedKeys.ToString());
+                CancellationTokenSource TA2 = new CancellationTokenSource(10000);
+                Memory<byte> pub = await sec2.KexSet(requestedKeys, TA2.Token);
+                if ((requestedKeys.Keys & SecurityKey.S2Access) == SecurityKey.S2Access ||
+                    (requestedKeys.Keys & SecurityKey.S2Authenticated) == SecurityKey.S2Authenticated)
+                    BinaryPrimitives.WriteUInt16BigEndian(pub.Slice(0, 2).Span, pin);
+                byte[] sharedSecret = SecurityManager!.CreateSharedSecret(pub);
+                var prk = AES.CKDFTempExtract(sharedSecret, SecurityManager.PublicKey, pub);
+                Log.Information("Temp Key: " + MemoryUtil.Print(prk));
+                AES.KeyTuple ckdf = AES.CKDFExpand(prk, true);
+                SecurityManager.StoreKey(node.ID, SecurityManager.RecordType.ECDH_TEMP, ckdf.KeyCCM, ckdf.PString, ckdf.MPAN);
+                await sec2.SendPublicKey();
+                CancellationTokenSource cts = new CancellationTokenSource(30000);
+                await sec2.WaitForBootstrap(cts.Token);
+            }
+            catch(Exception e)
+            {
+                Log.Error(e, "Error in S2 Bootstrapping");
+                return false;
+            }
+            await InterviewNode(node);
+            return true;
         }
 
         public override string ToString()
