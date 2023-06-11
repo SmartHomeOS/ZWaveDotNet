@@ -12,7 +12,7 @@ AUTHENTICATION | 0 | 1 | None
 AUTHENTICATION_MEDIA_WRITE | 0 | 1 | None
 BARRIER_OPERATOR | 0 | 1 | None
 **BASIC** | **2** | **2** | **Full**
-BASIC_TARIFF_INFO | 0 | 1 | None
+**BASIC_TARIFF_INFO** | **1** | **1** | **Full**
 **BASIC_WINDOW_COVERING** | **1** | **1** | **Full**
 **BATTERY** | **3** | **3** | **Full**
 CENTRAL_SCENE | 0 | 3 | None
@@ -122,5 +122,5 @@ ZIP_ND | 0 | 1 | None
 ZIP_PORTAL | 0 | 1 | None
 **ZWAVEPLUS_INFO** | **2** | **2** | **Full**
 
-- Full Support for 40/121 Command Classes.
+- Full Support for 41/121 Command Classes.
 - Partial Support for 2/121 Command Classes.

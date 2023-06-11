@@ -77,6 +77,8 @@ namespace ZWaveDotNet.CommandClasses
                     return new Association(node, endpoint);
                 case CommandClass.Basic:
                     return new Basic(node, endpoint);
+                case CommandClass.BasicTariff:
+                    return new BasicTariff(node, endpoint);
                 case CommandClass.BasicWindowCovering:
                     return new BasicWindowCovering(node, endpoint);
                 case CommandClass.Battery:
