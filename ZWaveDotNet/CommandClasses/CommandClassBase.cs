@@ -107,6 +107,8 @@ namespace ZWaveDotNet.CommandClasses
                     return new Meter(node, endpoint);
                 case CommandClass.MeterPulse:
                     return new MeterPulse(node, endpoint);
+                case CommandClass.MTPWindowCovering:
+                    return new MTPWindowCovering(node, endpoint);
                 case CommandClass.MultiChannel:
                     return new MultiChannel(node, endpoint);
                 case CommandClass.MultiCommand:
@@ -151,6 +153,8 @@ namespace ZWaveDotNet.CommandClasses
                     return new Version(node, endpoint);
                 case CommandClass.WakeUp:
                     return new WakeUp(node, endpoint);
+                case CommandClass.WindowCovering:
+                    return new WindowCovering(node, endpoint);
                 case CommandClass.ZWavePlusInfo:
                     return new ZWavePlus(node, endpoint);
             }
