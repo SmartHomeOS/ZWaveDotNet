@@ -1,5 +1,6 @@
 ﻿using Serilog;
 using System.Reflection;
+using ZWaveDotNet.CommandClasses;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 
@@ -14,8 +15,10 @@ namespace TestConsole
             foreach (Type t in GetTypesWithHelpAttribute(Assembly.GetAssembly(typeof(CCVersion))!))
             { 
                 CCVersion? cc = (CCVersion?)t.GetCustomAttribute(typeof(CCVersion));
-                if (cc != null)
+                if (cc != null && t != typeof(Notification))
                     attrs.Add(cc.commandClass, cc);
+                else if (cc != null)
+                    attrs.Add(CommandClass.Mark, cc);
             }
 
             try
@@ -45,6 +48,8 @@ namespace TestConsole
                         if (attrs.ContainsKey(cc))
                         {
                             CCVersion ccv = attrs[cc];
+                            if (cc == CommandClass.Alarm && parts[2] != "2")
+                                ccv = attrs[CommandClass.Mark]; //Hack for notification cc
                             bool complete = ccv.complete && int.TryParse(parts[2], out int result) && ccv.maxVersion == result;
                             if (complete)
                                 fw.Write("**");

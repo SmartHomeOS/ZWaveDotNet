@@ -47,10 +47,14 @@ namespace ZWaveDotNet.Entities
             AddCommandClass(CommandClass.NoOperation);
         }
 
-        private void AddCommandClass(CommandClass cls, bool secure = false)
+        private bool AddCommandClass(CommandClass cls, bool secure = false, byte version = 1)
         {
             if (!this.commandClasses.ContainsKey(cls))
-                this.commandClasses.Add(cls, CommandClassBase.Create(cls, controller, this, 0, secure));
+            {
+                this.commandClasses.Add(cls, CommandClassBase.Create(cls, controller, this, 0, secure, version));
+                return true;
+            }
+            return false;
         }
 
         public async Task DeleteReturnRoute(CancellationToken cancellationToken)
@@ -87,7 +91,7 @@ namespace ZWaveDotNet.Entities
                 foreach (CommandClass cc in NIF.CommandClasses)
                 {
                     if (!commandClasses.ContainsKey(cc))
-                        commandClasses.Add(cc, CommandClassBase.Create(cc, controller, this, 0));
+                        commandClasses.Add(cc, CommandClassBase.Create(cc, controller, this, 0, 1));
                 }
             }
         }
@@ -191,9 +195,7 @@ namespace ZWaveDotNet.Entities
             {
                 if (!commandClasses.ContainsKey(cc.CommandClass))
                 {
-                    CommandClassBase ccb = CommandClassBase.Create(cc.CommandClass, controller, this, 0);
-                    ccb.Secure = cc.Secure;
-                    ccb.Version = cc.Version;
+                    CommandClassBase ccb = CommandClassBase.Create(cc.CommandClass, controller, this, 0, cc.Secure, cc.Version);
                     commandClasses.Add(cc.CommandClass, ccb);
                 }
             }
@@ -261,6 +263,13 @@ namespace ZWaveDotNet.Entities
                     if ((ccVersion == null || ccVersion.maxVersion > 1) && (cc.CommandClass >= CommandClass.Basic))
                         cc.Version = await version.GetCommandClassVersion(cc.CommandClass, cancellationToken);
                 }
+
+                //Thanks ZWave for making things difficult
+                if (this.commandClasses.TryGetValue(CommandClass.Alarm, out CommandClassBase? ccb) && ccb.Version > 3)
+                {
+                    commandClasses.Remove(CommandClass.Alarm);
+                    AddCommandClass(CommandClass.Notification, ccb.Secure, ccb.Version);
+                }
             }
 
 
@@ -282,7 +291,10 @@ namespace ZWaveDotNet.Entities
             {
                 if (separate)
                     result.Append(", ");
-                result.Append(cc.CommandClass.ToString());
+                if (cc is Notification)
+                    result.Append(nameof(Notification));
+                else
+                    result.Append(cc.CommandClass.ToString());
                 result.Append(':');
                 result.Append(cc.Version);
                 if (cc is Unknown)

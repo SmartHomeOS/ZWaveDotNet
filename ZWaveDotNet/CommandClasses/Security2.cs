@@ -186,8 +186,14 @@ namespace ZWaveDotNet.CommandClasses
             Memory<byte> decoded;
             try
             {
+                var nonce = controller.SecurityManager.NextSpanNonce(msg.SourceNodeID, networkKey.Key);
+                if (nonce == null)
+                {
+                    Log.Error("No Nonce for Received Message");
+                    return null; //TODO - New SPAN?
+                }
                 decoded = DecryptCCM(msg.Payload,
-                                                    controller.SecurityManager.NextSpanNonce(msg.SourceNodeID, networkKey.Key)!.Value.output,
+                                                    nonce!.Value.output,
                                                     networkKey!.KeyCCM,
                                                     ad);
             }catch(Exception ex)

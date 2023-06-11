@@ -32,7 +32,7 @@ namespace ZWaveDotNet.CommandClassReports
                 ushort secs = BinaryPrimitives.ReadUInt16BigEndian(payload.Slice(2 + size, 2).Span);
                 if (secs != 0xFFFF && secs != 0)
                 {
-                    LastValue = PayloadConverter.ToFloat(payload.Slice(4 + size), scale, precision);
+                    LastValue = PayloadConverter.ToFloat(payload.Slice(4 + size), size, precision);
                     if (payload.Length > (2 * size) + 4)
                         scale2 = payload.Span[4 + (2* size)];
                 }

@@ -1,6 +1,6 @@
 Command Class | Max Supported Version | Max Spec Version | Support
 --------------|-------------------|---------------|---------
-ALARM | 0 | 2 | None
+**ALARM** | **2** | **2** | **Full**
 ANTITHEFT | 0 | 3 | None
 ANTITHEFT_UNLOCK | 0 | 1 | None
 **APPLICATION_CAPABILITY** | **1** | **1** | **Full**
@@ -66,7 +66,7 @@ NETWORK_MANAGEMENT_PROXY | 0 | 4 | None
 **NO_OPERATION** | **1** | **1** | **Full**
 **NODE_NAMING** | **1** | **1** | **Full**
 NODE_PROVISIONING | 0 | 1 | None
-NOTIFICATION | 0 | 8 | None
+**NOTIFICATION** | **8** | **8** | **Full**
 POWERLEVEL | 0 | 1 | None
 PREPAYMENT | 0 | 1 | None
 PREPAYMENT_ENCAPSULATION | 0 | 1 | None
@@ -122,5 +122,5 @@ ZIP_ND | 0 | 1 | None
 ZIP_PORTAL | 0 | 1 | None
 **ZWAVEPLUS_INFO** | **2** | **2** | **Full**
 
-- Full Support for 37/121 Command Classes.
+- Full Support for 39/121 Command Classes.
 - Partial Support for 2/121 Command Classes.

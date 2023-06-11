@@ -5,6 +5,7 @@ using ZWaveDotNet.Entities;
 using ZWaveDotNet.SerialAPI.Messages.Enums;
 using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.Security;
+using Serilog;
 
 namespace ZWaveDotNet.CommandClasses
 {
@@ -50,17 +51,24 @@ namespace ZWaveDotNet.CommandClasses
             await Handle(message);
         }
 
-        public static CommandClassBase Create(CommandClass cc, Controller controller, Node node, byte endpoint, bool secure)
+        public static CommandClassBase Create(CommandClass cc, Controller controller, Node node, byte endpoint, bool secure, byte version)
         {
-            CommandClassBase instance = Create(cc, controller, node, endpoint);
+            CommandClassBase instance = Create(cc, controller, node, endpoint, version);
             instance.Secure = secure;
+            instance.Version = version;
             return instance;
         }
 
-        public static CommandClassBase Create(CommandClass cc, Controller controller, Node node, byte endpoint)
+        public static CommandClassBase Create(CommandClass cc, Controller controller, Node node, byte endpoint, byte version)
         {
             switch (cc)
             {
+                case CommandClass.Alarm:
+                    Log.Error("Creating Alarm v" + version);
+                    if (version < 3)
+                        return new Alarm(node, endpoint);
+                    else
+                        return new Notification(node, endpoint);
                 case CommandClass.ApplicationCapability:
                     return new ApplicationCapability(node, endpoint);
                 case CommandClass.ApplicationStatus:
@@ -105,6 +113,8 @@ namespace ZWaveDotNet.CommandClasses
                     return new NodeNaming(node, endpoint);
                 case CommandClass.NoOperation:
                     return new NoOperation(node, endpoint);
+                //case CommandClass.Notification:
+                    //Covered in Alarm
                 case CommandClass.Proprietary:
                     return new Proprietary(node, endpoint);
                 case CommandClass.Security0:

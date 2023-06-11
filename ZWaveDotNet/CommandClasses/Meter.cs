@@ -1,4 +1,5 @@
-﻿using ZWaveDotNet.CommandClassReports;
+﻿using Serilog;
+using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
@@ -73,7 +74,11 @@ namespace ZWaveDotNet.CommandClasses
         protected override async Task Handle(ReportMessage message)
         {
             if (message.Command == (byte)MeterCommand.Report)
-                await FireEvent(Update, new MeterReport(message.Payload));
+            {
+                MeterReport report = new MeterReport(message.Payload);
+                await FireEvent(Update, report);
+                Log.Information(report.ToString());
+            }
         }
 
         private byte GetScale(MeterType type, Units unit)
