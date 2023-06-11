@@ -108,7 +108,7 @@ THERMOSTAT_OPERATING_STATE | 0 | 2 | None
 THERMOSTAT_SETBACK | 0 | 1 | None
 THERMOSTAT_SETPOINT | 0 | 3 | None
 TIME | 0 | 2 | None
-TIME_PARAMETERS | 0 | 2 | None
+**TIME_PARAMETERS** | **1** | **1** | **Full**
 *TRANSPORT_SERVICE* | *1* | *2* | *Partial*
 USER_CODE | 0 | 2 | None
 **VERSION** | **3** | **3** | **Full**
@@ -122,5 +122,5 @@ ZIP_ND | 0 | 1 | None
 ZIP_PORTAL | 0 | 1 | None
 **ZWAVEPLUS_INFO** | **2** | **2** | **Full**
 
-- Full Support for 39/121 Command Classes.
+- Full Support for 40/121 Command Classes.
 - Partial Support for 2/121 Command Classes.
