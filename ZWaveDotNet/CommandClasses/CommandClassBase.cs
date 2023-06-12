@@ -64,7 +64,6 @@ namespace ZWaveDotNet.CommandClasses
             switch (cc)
             {
                 case CommandClass.Alarm:
-                    Log.Error("Creating Alarm v" + version);
                     if (version < 3)
                         return new Alarm(node, endpoint);
                     else
@@ -131,6 +130,8 @@ namespace ZWaveDotNet.CommandClasses
                     return new SilenceAlarm(node, endpoint);
                 case CommandClass.SensorBinary:
                     return new SensorBinary(node, endpoint);
+                case CommandClass.SensorMultiLevel:
+                    return new SensorMultiLevel(node, endpoint);
                 case CommandClass.Supervision:
                     return new Supervision(node);
                 case CommandClass.SwitchAll:

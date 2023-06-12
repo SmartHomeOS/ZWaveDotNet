@@ -54,7 +54,7 @@ MAILBOX | 0 | 2 | None
 METER_TBL_CONFIG | 0 | 1 | None
 METER_TBL_MONITOR | 0 | 3 | None
 METER_TBL_PUSH | 0 | 1 | None
-MTP_WINDOW_COVERING | 0 | 1 | None
+**MTP_WINDOW_COVERING** | **1** | **1** | **Full**
 **MULTI_CHANNEL** | **4** | **4** | **Full**
 MULTI_CHANNEL_ASSOCIATION | 0 | 4 | None
 **MULTI_CMD** | **1** | **1** | **Full**
@@ -88,7 +88,7 @@ SCREEN_MD | 0 | 2 | None
 **SENSOR_ALARM** | **1** | **1** | **Full**
 **SENSOR_BINARY** | **2** | **2** | **Full**
 SENSOR_CONFIGURATION | 0 | 1 | None
-SENSOR_MULTILEVEL | 0 | 11 | None
+**SENSOR_MULTILEVEL** | **11** | **11** | **Full**
 **SILENCE_ALARM** | **1** | **1** | **Full**
 SIMPLE_AV_CONTROL | 0 | 4 | None
 SOUND_SWITCH | 0 | 2 | None
@@ -113,7 +113,7 @@ TIME | 0 | 2 | None
 USER_CODE | 0 | 2 | None
 **VERSION** | **3** | **3** | **Full**
 **WAKE_UP** | **3** | **3** | **Full**
-WINDOW_COVERING | 0 | 1 | None
+**WINDOW_COVERING** | **1** | **1** | **Full**
 ZIP | 0 | 5 | None
 ZIP_6LOWPAN | 0 | 1 | None
 ZIP_GATEWAY | 0 | 1 | None
@@ -122,5 +122,5 @@ ZIP_ND | 0 | 1 | None
 ZIP_PORTAL | 0 | 1 | None
 **ZWAVEPLUS_INFO** | **2** | **2** | **Full**
 
-- Full Support for 41/121 Command Classes.
+- Full Support for 44/121 Command Classes.
 - Partial Support for 2/121 Command Classes.
