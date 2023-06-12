@@ -71,6 +71,18 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(Security2Command.PublicKeyReport, cancellationToken, resp);
         }
 
+        internal async Task SendNonceReport(bool SOS, bool MOS, CancellationToken cancellationToken = default)
+        {
+            if (controller.SecurityManager == null)
+                return;
+            if (MOS)
+                throw new NotImplementedException("MOS Not Implemented"); //TODO - Multicast
+            var entropy = controller.SecurityManager.CreateEntropy(node.ID);
+            NonceReport nonceGetReport = new NonceReport(entropy.Sequence, SOS, MOS, entropy.Bytes);
+            Log.Information("Declaring SPAN out of sync");
+            await SendCommand(Security2Command.NonceReport, CancellationToken.None, nonceGetReport.GetBytes());
+        }
+
         public static bool IsEncapsulated(ReportMessage msg)
         {
             return msg.CommandClass == CommandClass.Security2 && msg.Command == (byte)Security2Command.MessageEncap;
@@ -190,7 +202,14 @@ namespace ZWaveDotNet.CommandClasses
                 if (nonce == null)
                 {
                     Log.Error("No Nonce for Received Message");
-                    return null; //TODO - New SPAN?
+                    try
+                    {
+                        ((Security2)controller.Nodes[msg.SourceNodeID].CommandClasses[CommandClass.Security2]).SendNonceReport(true, false, new CancellationTokenSource(10000).Token).Wait();
+                    }catch(Exception)
+                    {
+                        Log.Error("Failed to send SOS");
+                    }
+                    return null;
                 }
                 decoded = DecryptCCM(msg.Payload,
                                                     nonce!.Value.output,
@@ -320,9 +339,7 @@ namespace ZWaveDotNet.CommandClasses
                     if (controller.SecurityManager == null)
                         return;
                     Log.Warning("Creating new Nonce");
-                    var entropy = controller.SecurityManager.CreateEntropy(node.ID);
-                    NonceReport nonceGetReport = new NonceReport(entropy.Sequence, true, false, entropy.Bytes);
-                    await SendCommand(Security2Command.NonceReport, CancellationToken.None, nonceGetReport.GetBytes());
+                    await SendNonceReport(true, false, CancellationToken.None);
                     break;
                 case Security2Command.TransferEnd:
                     if (controller.SecurityManager == null)
