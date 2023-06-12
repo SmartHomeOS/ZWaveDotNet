@@ -96,6 +96,8 @@ namespace ZWaveDotNet.CommandClasses
                     return new GroupingName(node, endpoint);
                 case CommandClass.Hail:
                     return new Hail(node, endpoint);
+                case CommandClass.Indicator:
+                    return new Indicator(node, endpoint);
                 case CommandClass.Language:
                     return new Language(node, endpoint);
                 case CommandClass.ManufacturerProprietary:

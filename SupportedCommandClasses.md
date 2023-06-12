@@ -39,7 +39,7 @@ HUMIDITY_CONTROL_MODE | 0 | 2 | None
 HUMIDITY_CONTROL_OPERATING_STATE | 0 | 1 | None
 HUMIDITY_CONTROL_SETPOINT | 0 | 2 | None
 INCLUSION_CONTROLLER | 0 | 1 | None
-INDICATOR | 0 | 4 | None
+**INDICATOR** | **4** | **4** | **Full**
 IP_ASSOCIATION | 0 | 1 | None
 IP_CONFIGURATION | 0 | 1 | None
 IR_REPEATER | 0 | 1 | None
@@ -122,5 +122,5 @@ ZIP_ND | 0 | 1 | None
 ZIP_PORTAL | 0 | 1 | None
 **ZWAVEPLUS_INFO** | **2** | **2** | **Full**
 
-- Full Support for 44/121 Command Classes.
+- Full Support for 45/121 Command Classes.
 - Partial Support for 2/121 Command Classes.
