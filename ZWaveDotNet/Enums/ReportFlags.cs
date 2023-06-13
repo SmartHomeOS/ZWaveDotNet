@@ -10,5 +10,6 @@
         SupervisedWithProgress = 0x08,
         EnhancedChecksum = 0x10,
         Security = 0x20,
+        Transport = 0x40,
     }
 }

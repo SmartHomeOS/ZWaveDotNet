@@ -14,6 +14,8 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.Security2, 1, 1, false)]
     public class Security2 : CommandClassBase
     {
+        private const byte KEY_VERIFIED = 0x2;
+        private const byte TRANSFER_COMPLETE = 0x1;
         public event CommandClassEvent? BootstrapComplete;
         public event CommandClassEvent? SecurityError;
         TaskCompletionSource bootstrapComplete = new TaskCompletionSource();
@@ -81,6 +83,21 @@ namespace ZWaveDotNet.CommandClasses
             NonceReport nonceGetReport = new NonceReport(entropy.Sequence, SOS, MOS, entropy.Bytes);
             Log.Information("Declaring SPAN out of sync");
             await SendCommand(Security2Command.NonceReport, CancellationToken.None, nonceGetReport.GetBytes());
+        }
+
+        internal async Task KexFail(KexFailType type, CancellationToken cancellationToken = default)
+        {
+            Log.Information($"Sending KEX Failure {type}");
+            if (controller.SecurityManager != null)
+                controller.SecurityManager.GetRequestedKeys(node.ID, true);
+            if (type == KexFailType.KEX_FAIL_AUTH || type == KexFailType.KEX_FAIL_DECRYPT || type == KexFailType.KEX_FAIL_KEY_VERIFY || type == KexFailType.KEX_FAIL_KEY_GET)
+            {
+                CommandMessage reportKex = new CommandMessage(controller, node.ID, endpoint, commandClass, (byte)Security2Command.KEXFail, false, (byte)type);
+                await Transmit(reportKex.Payload, SecurityManager.RecordType.ECDH_TEMP);
+            }
+            else
+                await SendCommand(Security2Command.KEXFail, cancellationToken, (byte)type);
+            bootstrapComplete.TrySetException(new SecurityException(type.ToString()));
         }
 
         public static bool IsEncapsulated(ReportMessage msg)
@@ -276,14 +293,16 @@ namespace ZWaveDotNet.CommandClasses
                     Log.Information("Kex Set Received: " + kexReport.ToString());
                     if (kexReport.Echo)
                     {
+                        //kexReport is the granted keys
+                        //TODO - Send KexFail if attempting to get more keys than we granted
                         if (controller.SecurityManager == null)
                             return;
-                        kexReport = controller.SecurityManager.GetRequestedKeys(node.ID);
-                        if (kexReport != null)
+                        KeyExchangeReport? requestedKeys = controller.SecurityManager.GetRequestedKeys(node.ID);
+                        if (requestedKeys != null)
                         {
-                            kexReport.Echo = true;
-                            Log.Information("Responding: " + kexReport.ToString());
-                            CommandMessage reportKex = new CommandMessage(controller, node.ID, endpoint, commandClass, (byte)Security2Command.KEXReport, false, kexReport.ToBytes());
+                            requestedKeys.Echo = true;
+                            Log.Information("Responding: " + requestedKeys.ToString());
+                            CommandMessage reportKex = new CommandMessage(controller, node.ID, endpoint, commandClass, (byte)Security2Command.KEXReport, false, requestedKeys.ToBytes());
                             await Transmit(reportKex.Payload, SecurityManager.RecordType.ECDH_TEMP);
                         }
                     }
@@ -293,6 +312,11 @@ namespace ZWaveDotNet.CommandClasses
                 case Security2Command.NetworkKeyGet:
                     if (controller.SecurityManager == null)
                         return;
+                    if (message.SecurityLevel != SecurityKey.None || (message.Flags & ReportFlags.Security) != ReportFlags.Security)
+                    {
+                        Log.Information("Network Key Get Received without proper security");
+                        return; //Request must be secured by the ECDH Temp Key
+                    }
                     Log.Information("Network Key Get Received");
                     byte[] resp = new byte[17];
                     SecurityKey key = (SecurityKey)message.Payload.Span[0];
@@ -328,10 +352,13 @@ namespace ZWaveDotNet.CommandClasses
                     if (controller.SecurityManager == null)
                         return;
                     Log.Information("Network Key Verified!");
-                    SecurityManager.NetworkKey? nk = controller.SecurityManager.GetHighestKey(node.ID);
-                    if (nk != null && nk.Key != SecurityManager.RecordType.Entropy && nk.Key != SecurityManager.RecordType.ECDH_TEMP)
-                        controller.SecurityManager.RevokeKey(node.ID, nk.Key);
-                    CommandMessage transferEnd = new CommandMessage(controller, node.ID, endpoint, commandClass, (byte)Security2Command.TransferEnd, false, 0x2); //Key Verified
+                    if (message.SecurityLevel == SecurityKey.None || (message.Flags & ReportFlags.Security) != ReportFlags.Security)
+                    {
+                        Log.Information("Network Key Verify Received without proper security");
+                        return; //Verify must be secured by the ECDH Temp Key
+                    }
+                    controller.SecurityManager.RevokeKey(node.ID, SecurityManager.KeyToType(message.SecurityLevel));
+                    CommandMessage transferEnd = new CommandMessage(controller, node.ID, endpoint, commandClass, (byte)Security2Command.TransferEnd, false, KEY_VERIFIED);
                     await Task.Factory.StartNew(() => Transmit(transferEnd.Payload, SecurityManager.RecordType.ECDH_TEMP));
                     break;
                 case Security2Command.NonceGet:
@@ -344,18 +371,24 @@ namespace ZWaveDotNet.CommandClasses
                 case Security2Command.TransferEnd:
                     if (controller.SecurityManager == null)
                         return;
-                    KeyExchangeReport? kex = controller.SecurityManager.GetRequestedKeys(node.ID);
+                    if (message.SecurityLevel != SecurityKey.None || (message.Flags & ReportFlags.Security) != ReportFlags.Security)
+                    {
+                        Log.Information("Transfer End Received without proper security");
+                        return; //Transfer End must be secured by the ECDH Temp Key
+                    }
+                    KeyExchangeReport? kex = controller.SecurityManager.GetRequestedKeys(node.ID, true);
                     if (kex == null)
                     {
                         Log.Error("Transfer Complete but no keys were requested");
                         return;
                     }
-                    if (message.Payload.Length < 1 || message.Payload.Span[0] != 0x1)
+                    if (message.Payload.Length < 1 || message.Payload.Span[0] != TRANSFER_COMPLETE)
                     {
                         Log.Error("Transfer Complete but key transfer failed");
                         return;
                     }
 
+                    controller.SecurityManager.RevokeKey(node.ID, SecurityManager.RecordType.ECDH_TEMP);
                     if ((kex.Keys & SecurityKey.S2Unauthenticated) == SecurityKey.S2Unauthenticated)
                     {
                         AES.KeyTuple unauthKey = AES.CKDFExpand(controller.NetworkKeyS2UnAuth, false);
@@ -377,40 +410,7 @@ namespace ZWaveDotNet.CommandClasses
                     bootstrapComplete.TrySetResult();
                     break;
                 case Security2Command.KEXFail:
-                    ErrorReport errorMessage;
-                    switch (message.Payload.Span[0])
-                    {
-                        case 0x1:
-                            errorMessage = new ErrorReport(0x1, "Key Failure");
-                            break;
-                        case 0x2:
-                            errorMessage = new ErrorReport(0x2, "Scheme Failure");
-                            break;
-                        case 0x3:
-                            errorMessage = new ErrorReport(0x3, "Curve Failure");
-                            break;
-                        case 0x5:
-                            errorMessage = new ErrorReport(0x5, "Decryption Failure");
-                            break;
-                        case 0x6:
-                            errorMessage = new ErrorReport(0x6, "Key Cancel");
-                            break;
-                        case 0x7:
-                            errorMessage = new ErrorReport(0x7, "Auth Failure");
-                            break;
-                        case 0x8:
-                            errorMessage = new ErrorReport(0x8, "Key Get Failure");
-                            break;
-                        case 0x9:
-                            errorMessage = new ErrorReport(0x9, "Key Verify");
-                            break;
-                        case 0xA:
-                            errorMessage = new ErrorReport(0xA, "Key Report");
-                            break;
-                        default:
-                            errorMessage = new ErrorReport(message.Payload.Span[0], "Unknown Key Exchange Failure");
-                            break;
-                    }
+                    ErrorReport errorMessage = new ErrorReport(message.Payload.Span[0], ((KexFailType)message.Payload.Span[0]).ToString());
                     Log.Error("Key Exchange Failure " +  errorMessage);
                     await FireEvent(SecurityError, errorMessage);
                     bootstrapComplete.TrySetException(new SecurityException(errorMessage.ErrorMessage));

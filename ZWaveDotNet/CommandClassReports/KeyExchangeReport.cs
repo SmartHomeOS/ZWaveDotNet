@@ -6,6 +6,8 @@ namespace ZWaveDotNet.CommandClassReports
     {
         public bool Echo;
         public bool ClientSideAuth;
+        public bool Scheme1;
+        public bool Curve25519;
         public SecurityKey Keys;
         public KeyExchangeReport(Memory<byte> payload)
         {
@@ -13,6 +15,8 @@ namespace ZWaveDotNet.CommandClassReports
                 throw new ArgumentException("Invalid KEX Report");
             Echo = (payload.Span[0] & 0x1) == 0x1;
             ClientSideAuth = (payload.Span[0] & 0x2) == 0x2;
+            Scheme1 = (payload.Span[1] & 0x2) == 0x2;
+            Curve25519 = (payload.Span[2] & 0x1) == 0x1;
             Keys = (SecurityKey)payload.Span[3];
         }
 
@@ -21,6 +25,8 @@ namespace ZWaveDotNet.CommandClassReports
             Echo = echo;
             ClientSideAuth = csa;
             Keys = requestedKeys;
+            Scheme1 = true;
+            Curve25519 = true;
         }
 
         public byte[] ToBytes()
@@ -30,15 +36,17 @@ namespace ZWaveDotNet.CommandClassReports
                 ret[0] = 0x1;
             if (ClientSideAuth)
                 ret[0] |= 0x2;
-            ret[1] = 0x2; //KEX Scheme 1 (Only Option)
-            ret[2] = 0x1; //ECDH Curve25519
+            if (Scheme1)
+                ret[1] = 0x2; //KEX Scheme 1 (Only Option)
+            if (Curve25519)
+                ret[2] = 0x1; //ECDH Curve25519
             ret[3] = (byte)Keys;
             return ret;
         }
 
         public override string ToString()
         {
-            return $"Key Exchange Report (Echo {Echo}, ClientSideAuth {ClientSideAuth}, Keys {Keys}";
+            return $"Key Exchange Report (Echo {Echo}, ClientSideAuth {ClientSideAuth}, Keys {Keys}, Valid {Curve25519&Scheme1}";
         }
     }
 }

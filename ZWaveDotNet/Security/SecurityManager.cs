@@ -24,7 +24,6 @@ namespace ZWaveDotNet.Security
         private class SpanRecord
         {
             public Memory<byte> Bytes;
-            public Memory<byte> Previous;
             public DateTime Expires;
             public RecordType Type;
             public byte SequenceNumber;
@@ -134,9 +133,11 @@ namespace ZWaveDotNet.Security
             requestedAccess[nodeId] = request;
         }
 
-        public KeyExchangeReport? GetRequestedKeys(ushort nodeId)
+        public KeyExchangeReport? GetRequestedKeys(ushort nodeId, bool remove = false)
         {
-            if (requestedAccess.ContainsKey(nodeId))
+            if (remove && requestedAccess.Remove(nodeId, out KeyExchangeReport? report))
+                return report;
+            else if (requestedAccess.ContainsKey(nodeId))
                 return requestedAccess[nodeId];
             return null;
         }
@@ -148,7 +149,6 @@ namespace ZWaveDotNet.Security
             SpanRecord nr = new SpanRecord()
             {
                 Bytes = working_state,
-                Previous = working_state,
                 SequenceNumber = ++sequence,
                 Type = type
             };
@@ -183,29 +183,12 @@ namespace ZWaveDotNet.Security
                         Log.Warning("Generating Next Nonce");
                         var result = CTR_DRBG.Generate(record.Bytes, 13);
                         record.SequenceNumber++;
-                        record.Previous = record.Bytes;
                         record.Bytes = result.working_state;
                         return (result.output, record.SequenceNumber);
                     }
                 }
             }
             return null;
-        }
-
-        public void RevertSpanNonce(ushort nodeId, RecordType type)
-        {
-            if (spanRecords.TryGetValue(nodeId, out List<SpanRecord>? stack))
-            {
-                foreach (SpanRecord record in stack)
-                {
-                    if (record.Type == type)
-                    {
-                        Log.Warning("Reverting Nonce");
-                        record.SequenceNumber--;
-                        record.Bytes = record.Previous;
-                    }
-                }
-            }
         }
 
         public Memory<byte>? NextMpanNonce(byte groupID, RecordType type, byte[] keyMPAN)

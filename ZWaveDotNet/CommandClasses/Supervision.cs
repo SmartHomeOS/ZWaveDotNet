@@ -56,9 +56,12 @@ namespace ZWaveDotNet.CommandClasses
 
         protected override async Task Handle(ReportMessage message)
         {
-            SupervisionReport report = new SupervisionReport(message.Payload);
-            Log.Information(report.ToString());
-            await FireEvent(StatusReport, report);
+            if (message.Command == (byte)SupervisionCommand.Report)
+            {
+                SupervisionReport report = new SupervisionReport(message.Payload);
+                Log.Information(report.ToString());
+                await FireEvent(StatusReport, report);
+            }
         }
     }
 }

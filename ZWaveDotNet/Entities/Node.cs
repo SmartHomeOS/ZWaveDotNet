@@ -49,9 +49,9 @@ namespace ZWaveDotNet.Entities
 
         private bool AddCommandClass(CommandClass cls, bool secure = false, byte version = 1)
         {
-            if (!this.commandClasses.ContainsKey(cls))
+            if (!commandClasses.ContainsKey(cls))
             {
-                this.commandClasses.Add(cls, CommandClassBase.Create(cls, controller, this, 0, secure, version));
+                commandClasses.Add(cls, CommandClassBase.Create(cls, controller, this, 0, secure, version));
                 return true;
             }
             return false;
@@ -108,7 +108,7 @@ namespace ZWaveDotNet.Entities
             {
                 if (TransportService.IsEncapsulated(msg))
                 {
-                    msg = TransportService.Process(msg);
+                    msg = TransportService.Process(msg, controller);
                     if (msg == null)
                         return; //Not Complete Yet
                 }
@@ -231,19 +231,27 @@ namespace ZWaveDotNet.Entities
             if (controller.SecurityManager != null)
             {
                 SecurityManager.NetworkKey? key = controller.SecurityManager.GetHighestKey(ID);
-                if (key != null && key.Key == SecurityManager.RecordType.S0 && this.commandClasses.ContainsKey(CommandClass.Security0))
+                if (key != null && key.Key == SecurityManager.RecordType.S0 && commandClasses.ContainsKey(CommandClass.Security0))
                 {
                     Log.Information("Requesting S0 classes for " + ID);
                     SupportedCommands supportedCmds = await ((Security0)commandClasses[CommandClass.Security0]).CommandsSupportedGet(cancellationToken);
+                    Log.Information($"Received {string.Join(',', supportedCmds.CommandClasses)}");
                     foreach (CommandClass cls in supportedCmds.CommandClasses)
-                        AddCommandClass(cls, true);
+                    {
+                        if (!AddCommandClass(cls, true))
+                            commandClasses[cls].Secure = true;
+                    }
                 }
-                else if (key != null && this.commandClasses.ContainsKey(CommandClass.Security2))
+                else if (key != null && commandClasses.ContainsKey(CommandClass.Security2))
                 {
                     Log.Information("Requesting S2 classes for " + ID);
                     List<CommandClass> supportedCmds = await ((Security2)commandClasses[CommandClass.Security2]).GetSupportedCommands(cancellationToken);
+                    Log.Information($"Received {string.Join(',', supportedCmds)}");
                     foreach (CommandClass cls in supportedCmds)
-                        AddCommandClass(cls, true);
+                    {
+                        if (!AddCommandClass(cls, true))
+                            commandClasses[cls].Secure = true;
+                    }
                 }
             }
             if (this.commandClasses.ContainsKey(CommandClass.MultiChannel))

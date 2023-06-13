@@ -40,7 +40,7 @@ namespace ZWaveDotNet.CommandClasses
             for (int i = 0; i < list.Length; i++)
             {
                 byte len = payload.Span[0];
-                list[i] = new ReportMessage(msg.SourceNodeID, payload.Slice(1, len), msg.RSSI);
+                list[i] = new ReportMessage(msg.SourceNodeID, msg.SourceEndpoint, payload.Slice(1, len), msg.RSSI);
                 list[i].Flags = msg.Flags;
                 if ((len + 2) < payload.Length)
                     payload = payload.Slice(len + 1);

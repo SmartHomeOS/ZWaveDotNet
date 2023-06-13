@@ -22,7 +22,7 @@ namespace ZWaveDotNet.SerialAPI
         public byte SessionID;
         internal SecurityKey SecurityLevel;
 
-        public ReportMessage(ApplicationCommand cmd) : this(cmd.SourceNodeID, cmd.Data, cmd.RSSI)
+        public ReportMessage(ApplicationCommand cmd) : this(cmd.SourceNodeID, 0, cmd.Data, cmd.RSSI)
         {
             if ((cmd.Status & ReceiveStatus.Multicast) == ReceiveStatus.Multicast)
                 Flags |= ReportFlags.Multicast;
@@ -30,7 +30,7 @@ namespace ZWaveDotNet.SerialAPI
                 Flags |= ReportFlags.Broadcast;
         }
 
-        public ReportMessage(ushort sourceNodeId, Memory<byte> data, sbyte rssi)
+        public ReportMessage(ushort sourceNodeId, byte sourceEndpoint, Memory<byte> data, sbyte rssi)
         {
             SourceNodeID = sourceNodeId;
             RSSI = rssi;

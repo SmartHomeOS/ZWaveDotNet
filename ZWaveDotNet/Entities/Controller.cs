@@ -21,12 +21,17 @@ namespace ZWaveDotNet.Entities
     {
         public Dictionary<ushort, Node> Nodes = new Dictionary<ushort, Node>();
 
+        public event EventHandler<ApplicationUpdateEventArgs> SmartStartNodeAvailable;
+        public event EventHandler<ApplicationUpdateEventArgs> NodeInfoUpdated;
+
         private Flow flow;
         internal byte[] tempA;
         internal byte[] tempE;
         private Function[] supportedFunctions = new Function[0];
         private SubCommand supportedSubCommands = SubCommand.None;
         private ushort pin;
+        private InclusionStrategy currentStrategy = InclusionStrategy.PreferS2;
+        private List<Memory<byte>> provisionList = new List<Memory<byte>>();
 
         public Controller(string port, byte[] s0Key, byte[] s2unauth, byte[] s2auth, byte[] s2access)
         {
@@ -218,24 +223,39 @@ namespace ZWaveDotNet.Entities
             return random!.Data.Slice(2);
         }
 
-        public Task StartInclusion(ushort pin = 0, bool fullPower = true, bool networkWide = true)
+        public void AddSmartStartNode(Memory<byte> DSK)
         {
-            this.pin = pin;
-            return StartInclusion(new byte[4], new byte[4], fullPower, networkWide);
+            if (DSK.Length != 16)
+                throw new ArgumentException("Invalid DSK");
+            provisionList.Add(DSK);
+        }
+        public void AddSmartStartNode(string QRcode)
+        {
+            QRParser parser = new QRParser(QRcode);
+            AddSmartStartNode(parser.DSK);
         }
 
-        public async Task StartInclusion(byte[] NWIHomeID, byte[] AuthHomeID, bool fullPower = true, bool networkWide = true)
+        public async Task StartInclusion(InclusionStrategy strategy, ushort pin = 0, bool fullPower = true, bool networkWide = true)
         {
-            //TODO - Smart Start if NWI and Auth set
+            this.currentStrategy = strategy;
+            this.pin = pin;
             AddRemoveNodeMode mode = AddRemoveNodeMode.AnyNode;
             if (fullPower)
                 mode |= AddRemoveNodeMode.UseNormalPower;
             if (networkWide)
                 mode |= AddRemoveNodeMode.UseNetworkWide;
+            await flow.SendAcknowledged(Function.AddNodeToNetwork, (byte)mode, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0);
+        }
+
+        private async Task AddNodeToNetwork(byte[] NWIHomeID, byte[] AuthHomeID, bool longRange)
+        {
+            AddRemoveNodeMode mode = AddRemoveNodeMode.SmartStartIncludeNode | AddRemoveNodeMode.UseNetworkWide | AddRemoveNodeMode.UseNormalPower;
+            if (longRange)
+                mode |= AddRemoveNodeMode.IncludeLongRange;
             await flow.SendAcknowledged(Function.AddNodeToNetwork, (byte)mode, 0x1, NWIHomeID[0], NWIHomeID[1], NWIHomeID[2], NWIHomeID[3], AuthHomeID[0], AuthHomeID[1], AuthHomeID[2], AuthHomeID[3]);
         }
 
-        public async Task StartSmartStartInclusion(bool fullPower = true, bool networkWide = true)
+        public async Task StartSmartStartInclusion(InclusionStrategy strategy = InclusionStrategy.PreferS2, bool fullPower = true, bool networkWide = true)
         {
             AddRemoveNodeMode mode = AddRemoveNodeMode.SmartStartListen;
             if (fullPower)
@@ -391,8 +411,40 @@ namespace ZWaveDotNet.Entities
                     Message msg = await flow.GetUnsolicited();
                     if (msg is ApplicationUpdate au)
                     {
-                        if (Nodes.TryGetValue(au.NodeId, out Node? node))
-                            node.HandleApplicationUpdate(au);
+                        if (msg is SmartStartPrime prime)
+                        {
+                            Log.Information("Got Smart Start Prime: " + MemoryUtil.Print(prime.HomeID));
+                            foreach (Memory<byte> dsk in provisionList)
+                            {
+                                byte[] nwiHomeId = new byte[4];
+                                dsk.Slice(8, 4).CopyTo(nwiHomeId);
+                                nwiHomeId[0] |= 0xC0;
+                                nwiHomeId[3] &= 0xFE;
+                                if (Enumerable.SequenceEqual(nwiHomeId, prime.HomeID))
+                                {
+                                    Log.Information("We found a provisioned SmartStart Node");
+                                    bool LR = (prime.UpdateType == ApplicationUpdate.ApplicationUpdateType.SmartStartHomeIdReceivedLR);
+                                    byte[] authHomeId = new byte[4];
+                                    dsk.Slice(12, 4).CopyTo(authHomeId);
+                                    authHomeId[0] &= 0x3F;
+                                    authHomeId[3] |= 0x1;
+                                    this.pin = BinaryPrimitives.ReadUInt16BigEndian(dsk.Slice(0, 2).Span);
+                                    await AddNodeToNetwork(nwiHomeId, authHomeId, LR);
+                                }
+                            }
+                        }
+                        else if (msg is SmartStartNodeInformationUpdate ssniu)
+                        {
+                            if (SmartStartNodeAvailable != null)
+                                SmartStartNodeAvailable.Invoke(this, new ApplicationUpdateEventArgs(ssniu));
+                        }
+                        else
+                        {
+                            if (Nodes.TryGetValue(au.NodeId, out Node? node))
+                                node.HandleApplicationUpdate(au);
+                            if (au is NodeInformationUpdate niu && NodeInfoUpdated != null)
+                                NodeInfoUpdated.Invoke(this, new ApplicationUpdateEventArgs(niu));
+                        }
                         Log.Information(au.ToString());
                     }
                     else if (msg is APIStarted start)
@@ -428,10 +480,12 @@ namespace ZWaveDotNet.Entities
                                     Log.Information("Added " + node.ToString()); //TODO - Event this
                                     if (SecurityManager != null)
                                     {
-                                        if (node.CommandClasses.ContainsKey(CommandClass.Security2))
+                                        if ((currentStrategy == InclusionStrategy.S2Only || currentStrategy == InclusionStrategy.PreferS2) && node.CommandClasses.ContainsKey(CommandClass.Security2))
                                             await Task.Factory.StartNew(() => BootstrapS2(node));
-                                        else if (node.CommandClasses.ContainsKey(CommandClass.Security0))
+                                        else if ((currentStrategy == InclusionStrategy.PreferS2 || currentStrategy == InclusionStrategy.LegacyS0Only) && node.CommandClasses.ContainsKey(CommandClass.Security0))
                                             await Task.Factory.StartNew(() => BootstrapS0(node));
+                                        else
+                                            await Task.Factory.StartNew(() => InterviewNode(node));
                                     }
                                 }
                             }
@@ -473,12 +527,22 @@ namespace ZWaveDotNet.Entities
 
         private async Task<bool> BootstrapS2(Node node)
         {
+            Security2 sec2 = ((Security2)node.CommandClasses[CommandClass.Security2]);
+            Log.Information("Starting Secure S2 Inclusion");
             try
             {
-                Security2 sec2 = ((Security2)node.CommandClasses[CommandClass.Security2]);
-                Log.Information("Starting Secure S2 Inclusion");
                 CancellationTokenSource TA1 = new CancellationTokenSource(10000);
                 KeyExchangeReport requestedKeys = await sec2.KexGet(TA1.Token);
+                if (!requestedKeys.Curve25519)
+                {
+                    await sec2.KexFail(KexFailType.KEX_FAIL_KEX_CURVES);
+                    return false;
+                }
+                if (!requestedKeys.Scheme1)
+                {
+                    await sec2.KexFail(KexFailType.KEX_FAIL_KEX_SCHEME);
+                    return false;
+                }
                 SecurityManager!.StoreRequestedKeys(node.ID, requestedKeys);
                 Log.Information("Sending " + requestedKeys.ToString());
                 CancellationTokenSource TA2 = new CancellationTokenSource(10000);
@@ -498,6 +562,8 @@ namespace ZWaveDotNet.Entities
             catch(Exception e)
             {
                 Log.Error(e, "Error in S2 Bootstrapping");
+                CancellationTokenSource cts = new CancellationTokenSource(5000);
+                await sec2.KexFail(KexFailType.KEX_FAIL_CANCEL, cts.Token);
                 return false;
             }
             await InterviewNode(node);

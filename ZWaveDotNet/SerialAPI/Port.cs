@@ -52,7 +52,7 @@ namespace ZWaveDotNet.SerialAPI
                 while (await tx.Reader.WaitToReadAsync())
                 {
                     var frame = await tx.Reader.ReadAsync();
-                    Log.Information("Wrote " + frame.ToString());
+                    Log.Debug("Wrote " + frame.ToString());
                     await frame.WriteBytes(port.BaseStream);
                 }
             }
@@ -74,11 +74,11 @@ namespace ZWaveDotNet.SerialAPI
                     {
                         port.DiscardInBuffer();
                         await QueueTX(Frame.NAK);
-                        Log.Information("Invalid Frame");
+                        Log.Debug("Invalid Frame");
                     }
                     else
                     {
-                        Log.Information("Read " + frame.ToString());
+                        Log.Debug("Read " + frame.ToString());
                         if (frame.Type == FrameType.SOF)
                             await QueueTX(Frame.ACK);
                         foreach (Channel<Frame> channel in rxChannels.Keys)
