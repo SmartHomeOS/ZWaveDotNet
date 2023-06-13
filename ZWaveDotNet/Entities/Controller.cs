@@ -21,24 +21,26 @@ namespace ZWaveDotNet.Entities
     {
         public Dictionary<ushort, Node> Nodes = new Dictionary<ushort, Node>();
 
-        public event EventHandler<ApplicationUpdateEventArgs> SmartStartNodeAvailable;
-        public event EventHandler<ApplicationUpdateEventArgs> NodeInfoUpdated;
+        public event EventHandler<ApplicationUpdateEventArgs>? SmartStartNodeAvailable;
+        public event EventHandler<ApplicationUpdateEventArgs>? NodeInfoUpdated;
+        public event EventHandler? SecurityBootstrapComplete;
+        public event EventHandler? NodeReady;
 
-        private Flow flow;
+        private readonly Flow flow;
         internal byte[] tempA;
         internal byte[] tempE;
-        private Function[] supportedFunctions = new Function[0];
+        private Function[] supportedFunctions = Array.Empty<Function>();
         private SubCommand supportedSubCommands = SubCommand.None;
         private ushort pin;
         private InclusionStrategy currentStrategy = InclusionStrategy.PreferS2;
-        private List<Memory<byte>> provisionList = new List<Memory<byte>>();
+        private readonly List<Memory<byte>> provisionList = new List<Memory<byte>>();
 
         public Controller(string port, byte[] s0Key, byte[] s2unauth, byte[] s2auth, byte[] s2access)
         {
             if (string.IsNullOrEmpty(port))
                 throw new ArgumentNullException(nameof(port));
             if (s0Key == null || s0Key.Length != 16)
-                throw new ArgumentException(nameof(s0Key));
+                throw new ArgumentException("16 byte s0 key required", nameof(s0Key));
             using (Aes aes = Aes.Create())
             {
                 aes.Key = Enumerable.Repeat((byte)0x0, 16).ToArray();
@@ -53,7 +55,12 @@ namespace ZWaveDotNet.Entities
             NetworkKeyS2Auth = s2auth;
             NetworkKeyS2Access = s2access;
             flow = new Flow(port);
-            BroadcastNode = new Node(Node.BROADCAST_ID, this, null, new CommandClass[] { CommandClass.Basic, CommandClass.SwitchAll });
+            BroadcastNode = new Node(Node.BROADCAST_ID, this, null, new CommandClass[] 
+            { 
+                CommandClass.Basic, CommandClass.BasicWindowCovering, CommandClass.GeographicLocation, CommandClass.Language,CommandClass.SceneActivation,
+                CommandClass.SwitchAll, CommandClass.SwitchBinary, CommandClass.SwitchColor, CommandClass.SwitchMultiLevel, CommandClass.SwitchToggleBinary, 
+                CommandClass.SwitchToggleMultiLevel, CommandClass.WindowCovering //TODO - Barrier Operator
+            });
         }
 
         public ushort ControllerID { get; private set; }
@@ -79,15 +86,14 @@ namespace ZWaveDotNet.Entities
 
         public async ValueTask Start(CancellationToken cancellationToken = default)
         {
-            SecurityManager = new SecurityManager(await GetRandom(32));
+            SecurityManager = new SecurityManager(await GetRandom(32, cancellationToken));
             await Task.Factory.StartNew(EventLoop);
 
             //See what the controller supports
             await GetSupportedFunctions(cancellationToken);
 
             //Encap Configuration
-            PayloadMessage? networkIds = await flow.SendAcknowledgedResponse(Function.MemoryGetId, cancellationToken) as PayloadMessage;
-            if (networkIds != null && networkIds.Data.Length > 4)
+            if (await flow.SendAcknowledgedResponse(Function.MemoryGetId, cancellationToken) is PayloadMessage networkIds && networkIds.Data.Length > 4)
             {
                 HomeID = BinaryPrimitives.ReadUInt32BigEndian(networkIds.Data.Slice(0, 4).Span);
                 if (networkIds.Data.Span.Length == 5)
@@ -97,14 +103,13 @@ namespace ZWaveDotNet.Entities
             }
 
             //Begin the interview
-            InitData? init = await flow.SendAcknowledgedResponse(Function.GetSerialAPIInitData, cancellationToken) as InitData;
-            if (init != null)
+            if (await flow.SendAcknowledgedResponse(Function.GetSerialAPIInitData, cancellationToken) is InitData init)
             {
                 foreach (ushort id in init.NodeIDs)
                 {
                     if (id != ControllerID && !Nodes.ContainsKey(id))
                     {
-                        NodeProtocolInfo nodeInfo = await GetNodeProtocolInfo(id);
+                        NodeProtocolInfo nodeInfo = await GetNodeProtocolInfo(id, cancellationToken);
                         Nodes.Add(id, new Node(id, this, nodeInfo));
                         byte[] cmd;
                         if (WideID)
@@ -128,7 +133,7 @@ namespace ZWaveDotNet.Entities
                     {
                         NodeProtocolInfo? nodeInfo = null;
                         if (WideID)
-                            nodeInfo = await GetNodeProtocolInfo(id);
+                            nodeInfo = await GetNodeProtocolInfo(id, cancellationToken);
                         Nodes.Add(id, new Node(id, this, nodeInfo));
                         byte[] bytes = new byte[2];
                         BinaryPrimitives.WriteUInt16BigEndian(bytes, id);
@@ -257,6 +262,7 @@ namespace ZWaveDotNet.Entities
 
         public async Task StartSmartStartInclusion(InclusionStrategy strategy = InclusionStrategy.PreferS2, bool fullPower = true, bool networkWide = true)
         {
+            this.currentStrategy = strategy;
             AddRemoveNodeMode mode = AddRemoveNodeMode.SmartStartListen;
             if (fullPower)
                 mode |= AddRemoveNodeMode.UseNormalPower;
@@ -334,10 +340,12 @@ namespace ZWaveDotNet.Entities
 
         private ControllerJSON Serialize()
         {
-            ControllerJSON json = new ControllerJSON();
-            json.HomeID = HomeID;
-            json.ID = ControllerID;
-            json.Nodes = new NodeJSON[Nodes.Count];
+            ControllerJSON json = new ControllerJSON
+            {
+                HomeID = HomeID,
+                ID = ControllerID,
+                Nodes = new NodeJSON[Nodes.Count]
+            };
             int i = 0;
             foreach (Node node in Nodes.Values)
             {
@@ -387,7 +395,7 @@ namespace ZWaveDotNet.Entities
                 await InterviewNode(n);
         }
 
-        private async Task InterviewNode(Node node)
+        private static async Task InterviewNode(Node node)
         {
             if (node.Listening)
                 await node.Interview(new CancellationTokenSource(60000).Token);
@@ -435,8 +443,7 @@ namespace ZWaveDotNet.Entities
                         }
                         else if (msg is SmartStartNodeInformationUpdate ssniu)
                         {
-                            if (SmartStartNodeAvailable != null)
-                                SmartStartNodeAvailable.Invoke(this, new ApplicationUpdateEventArgs(ssniu));
+                            SmartStartNodeAvailable?.Invoke(this, new ApplicationUpdateEventArgs(ssniu));
                         }
                         else
                         {
@@ -485,7 +492,7 @@ namespace ZWaveDotNet.Entities
                                         else if ((currentStrategy == InclusionStrategy.PreferS2 || currentStrategy == InclusionStrategy.LegacyS0Only) && node.CommandClasses.ContainsKey(CommandClass.Security0))
                                             await Task.Factory.StartNew(() => BootstrapS0(node));
                                         else
-                                            await Task.Factory.StartNew(() => InterviewNode(node));
+                                            await Task.Factory.StartNew(() => BootstrapUnsecure(node));
                                     }
                                 }
                             }
@@ -506,6 +513,14 @@ namespace ZWaveDotNet.Entities
             }
         }
 
+        public async Task<bool> BootstrapUnsecure(Node node)
+        {
+            Log.Information("Included without Security. Moving to interview");
+            await InterviewNode(node);
+            NodeReady?.Invoke(node, new EventArgs());
+            return true;
+        }
+
         private async Task<bool> BootstrapS0(Node node)
         {
             Log.Information("Starting Secure(0-Legacy) Inclusion");
@@ -515,6 +530,7 @@ namespace ZWaveDotNet.Entities
                 await ((Security0)node.CommandClasses[CommandClass.Security0]).SchemeGet(cts.Token);
                 await ((Security0)node.CommandClasses[CommandClass.Security0]).KeySet(cts.Token);
                 await ((Security0)node.CommandClasses[CommandClass.Security0]).WaitForKeyVerified(cts.Token);
+                SecurityBootstrapComplete?.Invoke(node, new EventArgs());
             }
             catch(Exception e)
             {
@@ -522,6 +538,7 @@ namespace ZWaveDotNet.Entities
                 return false;
             }
             await InterviewNode(node);
+            NodeReady?.Invoke(node, new EventArgs());
             return true;
         }
 
@@ -558,6 +575,7 @@ namespace ZWaveDotNet.Entities
                 await sec2.SendPublicKey();
                 CancellationTokenSource cts = new CancellationTokenSource(30000);
                 await sec2.WaitForBootstrap(cts.Token);
+                SecurityBootstrapComplete?.Invoke(node, new EventArgs());
             }
             catch(Exception e)
             {
@@ -567,6 +585,7 @@ namespace ZWaveDotNet.Entities
                 return false;
             }
             await InterviewNode(node);
+            NodeReady?.Invoke(node, new EventArgs());
             return true;
         }
 

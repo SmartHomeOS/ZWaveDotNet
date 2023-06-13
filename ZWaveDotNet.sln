@@ -3,11 +3,16 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.33424.131
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZWaveDotNet", "ZWaveDotNet\ZWaveDotNet.csproj", "{E229C185-B91A-42D9-97D8-8E185840A2B1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZWaveDotNet", "ZWaveDotNet\ZWaveDotNet.csproj", "{E229C185-B91A-42D9-97D8-8E185840A2B1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleConsole", "TestConsole\ExampleConsole.csproj", "{7743E81C-95FE-4B24-B45C-427E72DC6398}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ExampleConsole", "TestConsole\ExampleConsole.csproj", "{7743E81C-95FE-4B24-B45C-427E72DC6398}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTests", "UnitTests\UnitTests.csproj", "{D592F434-6E21-4941-A19A-44B79A9DBB0D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UnitTests", "UnitTests\UnitTests.csproj", "{D592F434-6E21-4941-A19A-44B79A9DBB0D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{2AF09DEE-8146-4B0E-A92A-2C3640A33CF0}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
