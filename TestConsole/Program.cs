@@ -1,8 +1,10 @@
 ﻿using Serilog;
 using TestConsole;
 using ZWaveDotNet.CommandClasses;
+using ZWaveDotNet.CommandClasses.Enums;
 using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.Entities;
+using ZWaveDotNet.Entities.Enums;
 using ZWaveDotNet.Enums;
 
 Log.Logger = new LoggerConfiguration().WriteTo.Console().CreateLogger();
@@ -25,7 +27,7 @@ while (true)
     if (cmd == "i")
     {
         inc = true;
-        await controller.StartInclusion(60301);
+        await controller.StartInclusion(InclusionStrategy.PreferS2, 60301);
     }
     else if (cmd == "s")
     {
@@ -48,16 +50,6 @@ while (true)
     {
         await controller.ExportNodeDB("nodes.db");
         Console.WriteLine("Nodes Exported");
-    }
-    else if (cmd == "n")
-    {
-        try {
-            Console.WriteLine("Location: " + await ((NodeNaming)controller.Nodes[4].CommandClasses[CommandClass.NodeNaming]).GetLocation());
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine("Error: " + e.Message);
-        }
     }
     else if (cmd == "b")
     {
@@ -95,11 +87,22 @@ while (true)
     else if (cmd == "m")
     {
         //TODO - Multicast
-        MeterReport r = await ((Meter)controller.Nodes[77].CommandClasses[CommandClass.Meter]).Get(ZWaveDotNet.CommandClassReports.Enums.MeterType.Electric, Units.Watts, ZWaveDotNet.CommandClassReports.Enums.RateType.Unspecified);
+        var r = await ((Indicator)controller.Nodes[77].CommandClasses[CommandClass.Indicator]).GetSupported(IndicatorID.Any);
         Console.WriteLine(r.ToString());
+        var p = new(IndicatorID,IndicatorProperty,byte)[] { 
+            (IndicatorID.NodeIdentify, IndicatorProperty.OnOffPeriod, 0x8), 
+            (IndicatorID.NodeIdentify, IndicatorProperty.OnOffCycle, 0x3),
+            (IndicatorID.NodeIdentify, IndicatorProperty.CycleOnTime, 0x6)};
+        await ((Indicator)controller.Nodes[77].CommandClasses[CommandClass.Indicator]).Set(CancellationToken.None, p);
+        await ((Meter)controller.Nodes[77].CommandClasses[CommandClass.Meter]).Get(ZWaveDotNet.CommandClassReports.Enums.MeterType.Electric, Units.Watts, ZWaveDotNet.CommandClassReports.Enums.RateType.Unspecified);
     }
     else if (cmd == "6")
     {
         await controller.Set16Bit(true);
+    }
+    else if (cmd == "d")
+    {
+        controller.AddSmartStartNode("900137018003603010528717339523073023528614374102011500100409601792022000786440331638700256");
+        await controller.StartSmartStartInclusion(InclusionStrategy.PreferS2);
     }
 }
