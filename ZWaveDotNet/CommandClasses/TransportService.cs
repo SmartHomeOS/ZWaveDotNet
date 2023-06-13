@@ -1,4 +1,5 @@
 ﻿using Serilog;
+using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
@@ -129,10 +130,10 @@ namespace ZWaveDotNet.CommandClasses
             return (nodeId << 8) | sessionId;
         }
 
-        protected override Task Handle(ReportMessage message)
+        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             //No Reports
-            return Task.CompletedTask;
+            return SupervisionStatus.NoSupport;
         }
     }
 }

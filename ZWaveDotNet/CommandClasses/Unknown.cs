@@ -1,4 +1,5 @@
 ﻿using Serilog;
+using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
@@ -11,10 +12,10 @@ namespace ZWaveDotNet.CommandClasses
         {
         }
 
-        protected override Task Handle(ReportMessage message)
+        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             Log.Information("Unknown Report Received: " + message.ToString());
-            return Task.CompletedTask;
+            return SupervisionStatus.NoSupport;
         }
     }
 }

@@ -1,4 +1,6 @@
-﻿using ZWaveDotNet.CommandClassReports;
+﻿using Serilog;
+using ZWaveDotNet.CommandClassReports;
+using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
@@ -32,10 +34,16 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(BasicCommand.Set, cancellationToken, value);
         }
 
-        protected override async Task Handle(ReportMessage message)
+        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
-            BasicReport rpt = new BasicReport(message.Payload);
-            await FireEvent(Report, rpt);
+            if (message.Command == (byte)BasicCommand.Report)
+            {
+                BasicReport rpt = new BasicReport(message.Payload);
+                await FireEvent(Report, rpt);
+                Log.Information("Basic Report: " + rpt.ToString());
+                return SupervisionStatus.Success;
+            }
+            return SupervisionStatus.NoSupport;
         }
     }
 }

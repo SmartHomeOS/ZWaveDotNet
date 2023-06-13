@@ -1,5 +1,6 @@
 ﻿using Serilog;
 using ZWaveDotNet.CommandClassReports;
+using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
@@ -41,11 +42,16 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(SwitchBinaryCommand.Set, cancellationToken, value ? (byte)0xFF : (byte)0x00, time);
         }
 
-        protected override async Task Handle(ReportMessage message)
+        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
-            SwitchBinaryReport report = new SwitchBinaryReport(message.Payload);
-            Log.Information(report.ToString());
-            await FireEvent(SwitchReport, report);
+            if (message.Command == (byte)SwitchBinaryCommand.Report)
+            {
+                SwitchBinaryReport report = new SwitchBinaryReport(message.Payload);
+                Log.Information(report.ToString());
+                await FireEvent(SwitchReport, report);
+                return SupervisionStatus.Success;
+            }
+            return SupervisionStatus.NoSupport;
         }
     }
 }

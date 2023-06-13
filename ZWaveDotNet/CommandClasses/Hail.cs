@@ -1,4 +1,5 @@
-﻿using ZWaveDotNet.Entities;
+﻿using ZWaveDotNet.CommandClassReports.Enums;
+using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
 
@@ -22,9 +23,10 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(HailCommand.Hail, cancellationToken);
         }
 
-        protected override async Task Handle(ReportMessage message)
+        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             await FireEvent(Hailed, null);
+            return SupervisionStatus.Success;
         }
     }
 }

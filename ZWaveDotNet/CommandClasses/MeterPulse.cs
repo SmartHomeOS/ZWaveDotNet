@@ -1,4 +1,5 @@
 ﻿using ZWaveDotNet.CommandClassReports;
+using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
@@ -27,10 +28,14 @@ namespace ZWaveDotNet.CommandClasses
             return new MeterPulseReport(response.Payload);
         }
 
-        protected override async Task Handle(ReportMessage message)
+        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
-            if (message.Command == (byte) MeterPulseCommand.Report)
+            if (message.Command == (byte)MeterPulseCommand.Report)
+            {
                 await FireEvent(Report, new MeterPulseReport(message.Payload));
+                return SupervisionStatus.Success;
+            }
+            return SupervisionStatus.NoSupport;
         }
     }
 }

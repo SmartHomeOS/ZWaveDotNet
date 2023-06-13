@@ -31,10 +31,10 @@ namespace ZWaveDotNet.CommandClasses
             return new ManufacturerSpecificDeviceReport(response.Payload);
         }
 
-        protected override Task Handle(ReportMessage message)
+        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             //Nothing to do here
-            return Task.CompletedTask;
+            return SupervisionStatus.NoSupport;
         }
     }
 }

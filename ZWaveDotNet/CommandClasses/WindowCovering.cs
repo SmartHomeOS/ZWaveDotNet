@@ -92,10 +92,15 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(WindowCoveringCommand.StopLevelChange, cancellationToken, (byte)parameter);
         }
 
-        protected override async Task Handle(ReportMessage message)
+        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
-            BasicReport rpt = new BasicReport(message.Payload);
-            await FireEvent(Report, rpt);
+            if (message.Command == (byte)WindowCoveringCommand.Report)
+            {
+                WindowCoveringReport rpt = new WindowCoveringReport(message.Payload);
+                await FireEvent(Report, rpt);
+                return SupervisionStatus.Success;
+            }
+            return SupervisionStatus.NoSupport;
         }
     }
 }

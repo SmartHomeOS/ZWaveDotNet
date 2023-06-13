@@ -2,6 +2,7 @@
 using System.Security.Cryptography;
 using ZWaveDotNet.CommandClasses.Enums;
 using ZWaveDotNet.CommandClassReports;
+using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.Security;
@@ -137,7 +138,7 @@ namespace ZWaveDotNet.CommandClasses
             return msg;
         }
 
-        protected override async Task Handle(ReportMessage message)
+        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             switch ((Security0Command)message.Command)
             {
@@ -145,16 +146,17 @@ namespace ZWaveDotNet.CommandClasses
                     keyVerified.TrySetResult();
                     if (controller.SecurityManager != null)
                         controller.SecurityManager.StoreKey(node.ID, SecurityManager.RecordType.S0, null, null, null);
-                    break;
+                    return SupervisionStatus.Success;
                 case Security0Command.NonceGet:
                     if (controller.SecurityManager == null)
-                        return;
+                        return SupervisionStatus.Fail;
                     if (message.IsMulticastMethod())
-                        return;
+                        return SupervisionStatus.Fail;
 
                     await SendCommand(Security0Command.NonceReport, CancellationToken.None, controller.SecurityManager.CreateS0Nonce(node.ID));
-                    break;
+                    return SupervisionStatus.Success;
             }
+            return SupervisionStatus.NoSupport;
         }
 
         private static byte[] EncryptDecryptPayload(Memory<byte> plaintext, byte[] sendersNonce, Memory<byte> receiversNonce, byte[] key)

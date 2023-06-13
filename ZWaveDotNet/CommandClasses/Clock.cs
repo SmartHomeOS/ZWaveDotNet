@@ -1,4 +1,5 @@
 ﻿using ZWaveDotNet.CommandClassReports;
+using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
@@ -28,10 +29,14 @@ namespace ZWaveDotNet.CommandClasses
             await SendClock(dayOfWeek, hour, minute, ClockCommand.Set, cancellationToken);
         }
 
-        protected override async Task Handle(ReportMessage message)
+        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)ClockCommand.Get)
+            {
                 await SendClock(DateTime.Now.DayOfWeek, (byte)DateTime.Now.Hour, (byte)DateTime.Now.Minute, ClockCommand.Report, CancellationToken.None);
+                return SupervisionStatus.Success;
+            }
+            return SupervisionStatus.NoSupport;
         }
 
         public override async Task Interview(CancellationToken cancellationToken)

@@ -1,6 +1,8 @@
 ﻿using ZWaveDotNet.Entities;
 using ZWaveDotNet.SerialAPI;
 using ZWaveDotNet.Enums;
+using Serilog;
+using ZWaveDotNet.CommandClassReports.Enums;
 
 namespace ZWaveDotNet.CommandClasses
 {
@@ -15,10 +17,15 @@ namespace ZWaveDotNet.CommandClasses
 
         public DeviceResetLocally(Node node) : base(node, 0, CommandClass.DeviceResetLocally) { }
 
-        protected override async Task Handle(ReportMessage message)
+        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)ResetLocallyCommand.Notification)
+            {
                 await FireEvent(DeviceReset, null);
+                Log.Information("Device Reset Locally");
+                return SupervisionStatus.Success;
+            }
+            return SupervisionStatus.NoSupport;
         }
     }
 }

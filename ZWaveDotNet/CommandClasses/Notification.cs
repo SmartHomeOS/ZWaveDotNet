@@ -62,16 +62,16 @@ namespace ZWaveDotNet.CommandClasses
             return states.ToArray();
         }
 
-        protected override async Task Handle(ReportMessage message)
+        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)NotificationCommand.Report)
             {
                 NotificationReport report = new NotificationReport(message.Payload);
                 await FireEvent(Updated, report);
                 Log.Information(report.ToString());
+                return SupervisionStatus.Success;
             }
-            else
-                Log.Error("Unexpected Command " + message.ToString());
+            return SupervisionStatus.NoSupport;
         }
     }
 }

@@ -3,6 +3,7 @@ using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
 using ZWaveDotNet.SerialAPI.Messages.Enums;
 using ZWaveDotNet.SerialAPI.Messages;
+using ZWaveDotNet.CommandClassReports.Enums;
 
 namespace ZWaveDotNet.CommandClasses
 {
@@ -20,10 +21,10 @@ namespace ZWaveDotNet.CommandClasses
                 throw new Exception("Transmission Failure " + dc.Status.ToString());
         }
 
-        protected override Task Handle(ReportMessage message)
+        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             //Ignore This
-            return Task.CompletedTask;
+            return SupervisionStatus.NoSupport;
         }
     }
 }

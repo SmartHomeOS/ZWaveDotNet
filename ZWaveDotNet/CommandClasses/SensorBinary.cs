@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using ZWaveDotNet.CommandClasses.Enums;
 using ZWaveDotNet.CommandClassReports;
+using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
@@ -41,10 +42,14 @@ namespace ZWaveDotNet.CommandClasses
             return types.ToArray();
         }
 
-        protected override async Task Handle(ReportMessage message)
+        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)SensorBinaryCommand.Report)
+            {
                 await FireEvent(Updated, new SensorBinaryReport(message.Payload));
+                return SupervisionStatus.Success;
+            }
+            return SupervisionStatus.NoSupport;
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using ZWaveDotNet.CommandClasses;
+using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
 
@@ -25,11 +26,11 @@ namespace ZWaveDotNet.Entities
             AddCommandClass(CommandClass.NoOperation);
         }
 
-        internal async Task HandleReport(ReportMessage msg)
+        internal async Task<SupervisionStatus> HandleReport(ReportMessage msg)
         {
             if (!CommandClasses.ContainsKey(msg.CommandClass))
                 AddCommandClass(msg.CommandClass);
-            await CommandClasses[msg.CommandClass].ProcessMessage(msg);
+            return await CommandClasses[msg.CommandClass].ProcessMessage(msg);
         }
 
         public ReadOnlyDictionary<CommandClass, CommandClassBase> CommandClasses

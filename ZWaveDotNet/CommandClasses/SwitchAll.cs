@@ -1,5 +1,6 @@
 ﻿using System.Data;
 using ZWaveDotNet.CommandClasses.Enums;
+using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
@@ -45,10 +46,10 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(SwitchAllCommand.Off, cancellationToken);
         }
 
-        protected override Task Handle(ReportMessage message)
+        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             //None
-            return Task.CompletedTask;
+            return SupervisionStatus.NoSupport;
         }
     }
 }

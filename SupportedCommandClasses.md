@@ -15,7 +15,7 @@ BARRIER_OPERATOR | 0 | 1 | None
 **BASIC_TARIFF_INFO** | **1** | **1** | **Full**
 **BASIC_WINDOW_COVERING** | **1** | **1** | **Full**
 **BATTERY** | **3** | **3** | **Full**
-CENTRAL_SCENE | 0 | 3 | None
+**CENTRAL_SCENE** | **3** | **3** | **Full**
 CLIMATE_CONTROL_SCHEDULE | 0 | 1 | None
 **CLOCK** | **1** | **1** | **Full**
 *CONFIGURATION* | *1* | *4* | *Full*
@@ -109,7 +109,7 @@ THERMOSTAT_SETBACK | 0 | 1 | None
 THERMOSTAT_SETPOINT | 0 | 3 | None
 TIME | 0 | 2 | None
 **TIME_PARAMETERS** | **1** | **1** | **Full**
-*TRANSPORT_SERVICE* | *1* | *2* | *Partial*
+*TRANSPORT_SERVICE* | *2* | *2* | *Partial*
 USER_CODE | 0 | 2 | None
 **VERSION** | **3** | **3** | **Full**
 **WAKE_UP** | **3** | **3** | **Full**
@@ -122,5 +122,5 @@ ZIP_ND | 0 | 1 | None
 ZIP_PORTAL | 0 | 1 | None
 **ZWAVEPLUS_INFO** | **2** | **2** | **Full**
 
-- Full Support for 45/121 Command Classes.
+- Full Support for 46/121 Command Classes.
 - Partial Support for 2/121 Command Classes.

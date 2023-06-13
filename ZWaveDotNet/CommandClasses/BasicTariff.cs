@@ -1,5 +1,6 @@
 ﻿using Serilog;
 using ZWaveDotNet.CommandClassReports;
+using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
@@ -28,14 +29,16 @@ namespace ZWaveDotNet.CommandClasses
             return new BasicTariffReport(response.Payload);
         }
 
-        protected override async Task Handle(ReportMessage message)
+        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)BasicTariffCommand.Report)
             {
                 BasicTariffReport rpt = new BasicTariffReport(message.Payload);
                 await FireEvent(Report, rpt);
                 Log.Information(rpt.ToString());
+                return SupervisionStatus.Success;
             }
+            return SupervisionStatus.NoSupport;
         }
     }
 }

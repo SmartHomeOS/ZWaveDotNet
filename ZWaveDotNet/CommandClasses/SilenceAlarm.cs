@@ -1,5 +1,6 @@
 ﻿using System.Buffers.Binary;
 using ZWaveDotNet.CommandClasses.Enums;
+using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
@@ -30,10 +31,10 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(AlarmSilenceCommand.Set, cancellationToken, payload);
         }
 
-        protected override Task Handle(ReportMessage message)
+        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             //Not Needed
-            return Task.CompletedTask;
+            return SupervisionStatus.NoSupport;
         }
     }
 }

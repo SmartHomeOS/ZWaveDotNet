@@ -71,14 +71,16 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(MeterCommand.Reset, cancellationToken, payload);
         }
 
-        protected override async Task Handle(ReportMessage message)
+        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)MeterCommand.Report)
             {
                 MeterReport report = new MeterReport(message.Payload);
                 await FireEvent(Update, report);
                 Log.Information(report.ToString());
+                return SupervisionStatus.Success;
             }
+            return SupervisionStatus.NoSupport;
         }
 
         private byte GetScale(MeterType type, Units unit)

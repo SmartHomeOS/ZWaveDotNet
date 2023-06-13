@@ -73,10 +73,14 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(SwitchColorCommand.StopLevelChange, cancellationToken, (byte)component);
         }
 
-        protected override async Task Handle(ReportMessage message)
+        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)SwitchColorCommand.Report)
+            {
                 await FireEvent(ColorChange, new SwitchColorReport(message.Payload));
+                return SupervisionStatus.Success;
+            }
+            return SupervisionStatus.NoSupport;
         }
     }
 }

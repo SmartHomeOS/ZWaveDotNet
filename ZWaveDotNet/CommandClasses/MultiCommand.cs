@@ -1,4 +1,5 @@
-﻿using ZWaveDotNet.Entities;
+﻿using ZWaveDotNet.CommandClassReports.Enums;
+using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
 
@@ -48,10 +49,10 @@ namespace ZWaveDotNet.CommandClasses
             return list;
         }
 
-        protected override Task Handle(ReportMessage message)
+        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             //No Reports
-            return Task.CompletedTask;
+            return SupervisionStatus.NoSupport;
         }
     }
 }

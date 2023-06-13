@@ -1,5 +1,6 @@
 ﻿using Serilog;
 using ZWaveDotNet.CommandClassReports;
+using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
@@ -20,6 +21,12 @@ namespace ZWaveDotNet.CommandClasses
         private static byte sessionId;
 
         public Supervision(Node node) : base(node, 0, CommandClass.Supervision) {  }
+
+        public async Task Report(byte sessionId, SupervisionStatus status, CancellationToken cancellationToken = default)
+        {
+            Log.Information($"Confirmed Supervised Command {sessionId} - Status {status}");
+            await SendCommand(SupervisionCommand.Report, cancellationToken, sessionId, (byte)status, 0x0);
+        }
 
         public static bool IsEncapsulated(ReportMessage msg)
         {
@@ -54,14 +61,16 @@ namespace ZWaveDotNet.CommandClasses
             msg.Update(msg.Payload.Slice(2));
         }
 
-        protected override async Task Handle(ReportMessage message)
+        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)SupervisionCommand.Report)
             {
                 SupervisionReport report = new SupervisionReport(message.Payload);
                 Log.Information(report.ToString());
                 await FireEvent(StatusReport, report);
+                return SupervisionStatus.Success;
             }
+            return SupervisionStatus.NoSupport;
         }
     }
 }

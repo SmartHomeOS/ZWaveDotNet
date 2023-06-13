@@ -6,6 +6,7 @@ using System.Text;
 using ZWaveDotNet.CommandClasses;
 using ZWaveDotNet.CommandClasses.Enums;
 using ZWaveDotNet.CommandClassReports;
+using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.Security;
 using ZWaveDotNet.SerialAPI;
@@ -131,28 +132,47 @@ namespace ZWaveDotNet.Entities
                 Supervision.Unwrap(msg);
             if (MultiCommand.IsEncapsulated(msg))
             {
+                bool supervised = (msg.Flags & ReportFlags.SupervisedOnce) == ReportFlags.SupervisedOnce;
                 ReportMessage[] msgs = MultiCommand.Unwrap(msg);
+                SupervisionStatus status = SupervisionStatus.Success;
                 foreach (ReportMessage r in msgs)
-                    await HandleReport(r);
+                {
+                    SupervisionStatus cmdStatus = await HandleReport(r);
+                    if (cmdStatus == SupervisionStatus.Fail)
+                        status = cmdStatus;
+                    else if (cmdStatus == SupervisionStatus.NoSupport && status != SupervisionStatus.Fail)
+                        status = cmdStatus;
+                    else if (cmdStatus == SupervisionStatus.Working && status == SupervisionStatus.Success)
+                        status = cmdStatus;
+                }
+                if (supervised && commandClasses.TryGetValue(CommandClass.Supervision, out CommandClassBase? supervision))
+                    await ((Supervision)supervision).Report(msg.SessionID, status);
             }
             else
-                await HandleReport(msg);
+            {
+                SupervisionStatus status = await HandleReport(msg);
+                if (status == SupervisionStatus.NoSupport)
+                    Log.Warning("No Support for " + msg.ToString());
+                if ((msg.Flags & ReportFlags.SupervisedOnce) == ReportFlags.SupervisedOnce && commandClasses.TryGetValue(CommandClass.Supervision, out CommandClassBase? supervision))
+                    await ((Supervision)supervision).Report(msg.SessionID, status);
+            }
         }
 
-        private async Task HandleReport(ReportMessage msg)
+        private async Task<SupervisionStatus> HandleReport(ReportMessage msg)
         {
             if (msg.SourceEndpoint == 0)
             {
                 if (!commandClasses.ContainsKey(msg.CommandClass))
                     AddCommandClass(msg.CommandClass);
-                await commandClasses[msg.CommandClass].ProcessMessage(msg);
+                return await commandClasses[msg.CommandClass].ProcessMessage(msg);
             }
             else
             {
                 EndPoint? ep = GetEndPoint(msg.SourceEndpoint);
                 if (ep != null)
-                    await ep.HandleReport(msg);
+                    return await ep.HandleReport(msg);
             }
+            return SupervisionStatus.NoSupport;
         }
 
         public ReadOnlyDictionary<CommandClass, CommandClassBase> CommandClasses

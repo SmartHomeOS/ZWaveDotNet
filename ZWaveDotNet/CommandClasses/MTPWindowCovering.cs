@@ -1,5 +1,6 @@
 ﻿using Serilog;
 using ZWaveDotNet.CommandClassReports;
+using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
@@ -39,14 +40,16 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(MTPWindowCommand.Set, cancellationToken, (value < 100) ? value : (byte)0xFF);
         }
 
-        protected override async Task Handle(ReportMessage message)
+        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)MTPWindowCommand.Report)
             {
                 MTPWindowCoveringReport rpt = new MTPWindowCoveringReport(message.Payload);
                 await FireEvent(PositionChanged, rpt);
                 Log.Information(rpt.ToString());
+                return SupervisionStatus.Success;
             }
+            return SupervisionStatus.NoSupport;
         }
     }
 }

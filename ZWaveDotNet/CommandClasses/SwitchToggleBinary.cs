@@ -1,4 +1,5 @@
 ﻿using ZWaveDotNet.CommandClassReports;
+using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
@@ -30,10 +31,14 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(SwitchToggleBinaryCommand.Set, cancellationToken, value ? (byte)0xFF : (byte)0x00);
         }
 
-        protected override async Task Handle(ReportMessage message)
+        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)SwitchToggleBinaryCommand.Report)
-               await FireEvent(Updated, new SwitchBinaryReport(message.Payload));
+            {
+                await FireEvent(Updated, new SwitchBinaryReport(message.Payload));
+                return SupervisionStatus.Success;
+            }
+            return SupervisionStatus.NoSupport;
         }
     }
 }

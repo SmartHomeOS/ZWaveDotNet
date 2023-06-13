@@ -1,5 +1,6 @@
 ﻿using System.Buffers.Binary;
 using System.Data;
+using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
@@ -51,10 +52,10 @@ namespace ZWaveDotNet.CommandClasses
             await Set(DateTime.UtcNow, cancellationToken);
         }
 
-        protected override Task Handle(ReportMessage message)
+        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             //Not Used
-            return Task.CompletedTask;
+            return SupervisionStatus.NoSupport;
         }
     }
 }

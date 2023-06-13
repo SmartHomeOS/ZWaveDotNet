@@ -1,4 +1,6 @@
-﻿using ZWaveDotNet.CommandClassReports;
+﻿using Serilog;
+using ZWaveDotNet.CommandClassReports;
+using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
@@ -56,10 +58,16 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(ToggleMultiLevelCommand.StopLevelChange, cancellationToken);
         }
 
-        protected override async Task Handle(ReportMessage message)
+        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)ToggleMultiLevelCommand.Report)
-                await FireEvent(Changed, new SwitchToggleMultiLevelReport(message.Payload));
+            {
+                SwitchToggleMultiLevelReport report = new SwitchToggleMultiLevelReport(message.Payload);
+                await FireEvent(Changed, report);
+                Log.Information("Switch Toggle Multi Level Report: " + report.ToString());
+                return SupervisionStatus.Success;
+            }
+            return SupervisionStatus.NoSupport;
         }
     }
 }

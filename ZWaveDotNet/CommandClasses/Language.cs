@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using System.Text;
+using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
@@ -34,10 +35,10 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(LanguageCommand.Set, cancellationToken, payload);
         }
 
-        protected override Task Handle(ReportMessage message)
+        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             //Not Needed
-            return Task.CompletedTask;
+            return SupervisionStatus.NoSupport;
         }
     }
 }

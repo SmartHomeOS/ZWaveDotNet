@@ -1,4 +1,6 @@
-﻿using ZWaveDotNet.CommandClassReports;
+﻿using Serilog;
+using ZWaveDotNet.CommandClassReports;
+using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
@@ -32,10 +34,16 @@ namespace ZWaveDotNet.CommandClasses
             return new BatteryHealthReport(response.Payload);
         }
 
-        protected override async Task Handle(ReportMessage message)
+        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)BatteryCommand.Report)
-                await FireEvent(Status, new BatteryLevelReport(message.Payload));
+            {
+                BatteryLevelReport report = new BatteryLevelReport(message.Payload);
+                await FireEvent(Status, report);
+                Log.Information("Battery Update: " + report.ToString());
+                return SupervisionStatus.Success;
+            }
+            return SupervisionStatus.NoSupport;
         }
     }
 }

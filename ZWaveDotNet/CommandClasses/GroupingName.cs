@@ -1,4 +1,5 @@
-﻿using ZWaveDotNet.Entities;
+﻿using ZWaveDotNet.CommandClassReports.Enums;
+using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
 using ZWaveDotNet.Util;
@@ -31,10 +32,10 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(GroupNameCommand.SetName, cancellationToken, (byte[]) payload.ToArray().Prepend(group));
         }
 
-        protected override Task Handle(ReportMessage message)
+        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             //No unsolicited message
-            return Task.CompletedTask;
+            return SupervisionStatus.NoSupport;
         }
     }
 }

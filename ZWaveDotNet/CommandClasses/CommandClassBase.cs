@@ -6,6 +6,7 @@ using ZWaveDotNet.SerialAPI.Messages.Enums;
 using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.Security;
 using Serilog;
+using ZWaveDotNet.CommandClassReports.Enums;
 
 namespace ZWaveDotNet.CommandClasses
 {
@@ -32,9 +33,9 @@ namespace ZWaveDotNet.CommandClasses
         public byte EndPoint { get { return endpoint; } }
         public CommandClass CommandClass { get { return commandClass; } }
 
-        protected abstract Task Handle(ReportMessage message);
+        protected abstract Task<SupervisionStatus> Handle(ReportMessage message);
 
-        public async Task ProcessMessage(ReportMessage message)
+        public async Task<SupervisionStatus> ProcessMessage(ReportMessage message)
         {
             if (callbacks.ContainsKey(message.Command))
             {
@@ -45,10 +46,10 @@ namespace ZWaveDotNet.CommandClasses
                     lst.RemoveAt(0);
                     if (lst.Count == 0)
                         callbacks.Remove(message.Command);
-                    return;
+                    return SupervisionStatus.Success;
                 }
             }
-            await Handle(message);
+            return await Handle(message);
         }
 
         public static CommandClassBase Create(CommandClass cc, Controller controller, Node node, byte endpoint, bool secure, byte version)
@@ -82,6 +83,8 @@ namespace ZWaveDotNet.CommandClasses
                     return new BasicWindowCovering(node, endpoint);
                 case CommandClass.Battery:
                     return new Battery(node, endpoint);
+                case CommandClass.CentralScene:
+                    return new CentralScene(node, endpoint);
                 case CommandClass.Clock:
                     return new Clock(node, endpoint);
                 case CommandClass.Configuration:

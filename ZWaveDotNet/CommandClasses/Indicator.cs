@@ -3,6 +3,7 @@ using System.Data;
 using System.Text;
 using ZWaveDotNet.CommandClasses.Enums;
 using ZWaveDotNet.CommandClassReports;
+using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
@@ -13,7 +14,7 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.Indicator, 4)]
     public class Indicator : CommandClassBase
     {
-        public event CommandClassEvent? Report;
+        //public event CommandClassEvent? Report;
         
         enum IndicatorCommand : byte
         {
@@ -118,10 +119,10 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(IndicatorCommand.Set, cancellationToken, payload);
         }
 
-        protected override Task Handle(ReportMessage message)
+        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             Log.Error("Unexpected Indicator Report Received: " + message.ToString());
-            return Task.CompletedTask;
+            return SupervisionStatus.NoSupport;
         }
     }
 }
