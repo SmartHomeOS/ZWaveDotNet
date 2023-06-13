@@ -100,9 +100,4 @@ while (true)
     {
         await controller.Set16Bit(true);
     }
-    else if (cmd == "d")
-    {
-        controller.AddSmartStartNode("900137018003603010528717339523073023528614374102011500100409601792022000786440331638700256");
-        await controller.StartSmartStartInclusion(InclusionStrategy.PreferS2);
-    }
 }
