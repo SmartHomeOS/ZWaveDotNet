@@ -5,7 +5,6 @@ using ZWaveDotNet.Entities;
 using ZWaveDotNet.SerialAPI.Messages.Enums;
 using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.Security;
-using Serilog;
 using ZWaveDotNet.CommandClassReports.Enums;
 
 namespace ZWaveDotNet.CommandClasses
@@ -125,6 +124,8 @@ namespace ZWaveDotNet.CommandClasses
                     //Covered in Alarm
                 case CommandClass.Proprietary:
                     return new Proprietary(node, endpoint);
+                case CommandClass.SceneActivation:
+                    return new SceneActivation(node, endpoint);
                 case CommandClass.Security0:
                     return new Security0(node, endpoint);
                 case CommandClass.Security2:

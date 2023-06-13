@@ -76,7 +76,7 @@ RATE_TBL_CONFIG | 0 | 1 | None
 RATE_TBL_MONITOR | 0 | 1 | None
 REMOTE_ASSOCIATION | 0 | 1 | None
 REMOTE_ASSOCIATION_ACTIVATE | 0 | 1 | None
-SCENE_ACTIVATION | 0 | 1 | None
+**SCENE_ACTIVATION** | **1** | **1** | **Full**
 SCENE_ACTUATOR_CONF | 0 | 1 | None
 SCENE_CONTROLLER_CONF | 0 | 1 | None
 SCHEDULE | 0 | 4 | None
@@ -122,5 +122,5 @@ ZIP_ND | 0 | 1 | None
 ZIP_PORTAL | 0 | 1 | None
 **ZWAVEPLUS_INFO** | **2** | **2** | **Full**
 
-- Full Support for 46/121 Command Classes.
+- Full Support for 47/121 Command Classes.
 - Partial Support for 2/121 Command Classes.

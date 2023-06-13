@@ -3,15 +3,15 @@
 An implementation of ZWave Plus using the 2022b public specification. 
 
 **Not yet ready for use - star/follow for our first release.** 
-#### Features:
-* Partial support is included for 121 command classes. [Full and partial command class support is listed here](SupportedCommandClasses.md).
-* Support for Security (V0 and V2) and message encapsulation (CRC16, MultiChannel, MultiCommand, Transport and Supervision)
-* Support for 8/12/16 bit Node IDs (4000+ nodes) including ZWave LR
-* Support for 16-bit Command Classes
+### Features:
+* Support is included for 50+ command classes. [Full and partial command class support is listed here](SupportedCommandClasses.md).
+* Support for security (V0 and V2) and message encapsulation (CRC16, MultiChannel, MultiCommand, Transport and Supervision)
+* Support for 8/12/16 bit node IDs (4000+ nodes per controller) including ZWave LR
+* Support for extended command classes (16-bit)
 * Support for broadcast messaging
-* Support for ZWave Plus and DeviceTypev2
+* Support for ZWave Plus and Device Type v2
 * Node database import/export
-* SmartStart and SmartStart for ZWave LR Devices
+* SmartStart inclusion and SmartStart for ZWave long range (LR) devices
 
 #### Work in progress:
 * Multicast is not yet exposed
