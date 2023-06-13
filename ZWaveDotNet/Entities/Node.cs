@@ -180,6 +180,14 @@ namespace ZWaveDotNet.Entities
             get { return new ReadOnlyDictionary<CommandClass, CommandClassBase>(commandClasses); }
         }
 
+        public T? GetCommandClass<T>() where T : CommandClassBase
+        {
+            CommandClass commandClass = ((CCVersion)typeof(T).GetCustomAttribute(typeof(CCVersion))!).commandClass;
+            if (commandClasses.TryGetValue(commandClass, out CommandClassBase? ccb))
+                return (T)ccb;
+            return null;
+        }
+
         public NodeJSON Serialize()
         {
             if (nodeInfo == null)

@@ -347,6 +347,7 @@ namespace ZWaveDotNet.Entities
             {
                 HomeID = HomeID,
                 ID = ControllerID,
+                DbVersion = 1,
                 Nodes = new NodeJSON[Nodes.Count]
             };
             int i = 0;
@@ -360,8 +361,10 @@ namespace ZWaveDotNet.Entities
 
         private void Deserialize(ControllerJSON json)
         {
-            HomeID = json.HomeID;
-            ControllerID = json.ID;
+            if (HomeID != json.HomeID || ControllerID != json.ID)
+                throw new InvalidDataException("Node DB is for a different network");
+            if (json.DbVersion != 0x1)
+                throw new InvalidDataException($"Unsupported Node DB Version {json.DbVersion}");
             foreach (NodeJSON node in json.Nodes)
             {
                 if (Nodes.ContainsKey(node.ID))

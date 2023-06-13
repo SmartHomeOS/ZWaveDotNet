@@ -109,7 +109,7 @@ namespace ZWaveDotNet.CommandClasses
                     msg.Payload.Slice(0, msg.Payload.Length - 2).CopyTo(buff.Slice(datagramOffset));
                     segments[key].Add(new Range(datagramOffset, datagramOffset + msg.Payload.Length - 2));
                     Log.Warning("Subsequent Fragment Loaded");
-                    if (datagramOffset + msg.Payload.Length == datagramLen)
+                    if (datagramOffset + msg.Payload.Length == datagramLen - 1)
                     {
                         Log.Warning("Transport Complete");
                         //TODO - Request anything we missed
