@@ -41,7 +41,7 @@ namespace ZWaveDotNet.Security
         /// <param name="key">[out] 32 random bytes</param>
         public static void ClampPrivateKeyInline(byte[] key)
         {
-            if (key == null) throw new ArgumentNullException("key");
+            if (key == null) throw new ArgumentNullException(nameof(key));
             if (key.Length != 32) throw new ArgumentException(string.Format("key must be 32 bytes long (but was {0} bytes long)", key.Length));
 
             key[31] &= 0x7F;
@@ -55,8 +55,8 @@ namespace ZWaveDotNet.Security
         /// <param name="rawKey">[out] 32 random bytes</param>
         public static byte[] ClampPrivateKey(byte[] rawKey)
         {
-            if (rawKey == null) throw new ArgumentNullException("rawKey");
-            if (rawKey.Length != 32) throw new ArgumentException(string.Format("rawKey must be 32 bytes long (but was {0} bytes long)", rawKey.Length), "rawKey");
+            if (rawKey == null) throw new ArgumentNullException(nameof(rawKey));
+            if (rawKey.Length != 32) throw new ArgumentException(string.Format("rawKey must be 32 bytes long (but was {0} bytes long)", rawKey.Length), nameof(rawKey));
 
             var res = new byte[32];
             Array.Copy(rawKey, res, 32);
@@ -77,14 +77,14 @@ namespace ZWaveDotNet.Security
         /// <remarks>WARNING: if signingKey is not NULL, this function has data-dependent timing</remarks>
         public static void KeyGenInline(byte[] publicKey, byte[] signingKey, byte[] privateKey)
         {
-            if (publicKey == null) throw new ArgumentNullException("publicKey");
-            if (publicKey.Length != 32) throw new ArgumentException(string.Format("publicKey must be 32 bytes long (but was {0} bytes long)", publicKey.Length), "publicKey");
+            if (publicKey == null) throw new ArgumentNullException(nameof(publicKey));
+            if (publicKey.Length != 32) throw new ArgumentException(string.Format("publicKey must be 32 bytes long (but was {0} bytes long)", publicKey.Length), nameof(publicKey));
 
-            if (signingKey == null) throw new ArgumentNullException("signingKey");
-            if (signingKey.Length != 32) throw new ArgumentException(string.Format("signingKey must be 32 bytes long (but was {0} bytes long)", signingKey.Length), "signingKey");
+            if (signingKey == null) throw new ArgumentNullException(nameof(signingKey));
+            if (signingKey.Length != 32) throw new ArgumentException(string.Format("signingKey must be 32 bytes long (but was {0} bytes long)", signingKey.Length), nameof(signingKey));
 
-            if (privateKey == null) throw new ArgumentNullException("privateKey");
-            if (privateKey.Length != 32) throw new ArgumentException(string.Format("privateKey must be 32 bytes long (but was {0} bytes long)", privateKey.Length), "privateKey");
+            if (privateKey == null) throw new ArgumentNullException(nameof(privateKey));
+            if (privateKey.Length != 32) throw new ArgumentException(string.Format("privateKey must be 32 bytes long (but was {0} bytes long)", privateKey.Length), nameof(privateKey));
 
             RandomNumberGenerator.Create().GetBytes(privateKey);
             ClampPrivateKeyInline(privateKey);
@@ -781,15 +781,15 @@ namespace ZWaveDotNet.Security
         /// </summary>
         static void Core(byte[]? publicKey, byte[]? signingKey, byte[]? privateKey, byte[]? peerPublicKey)
         {
-            if (publicKey == null) throw new ArgumentNullException("publicKey");
-            if (publicKey.Length != 32) throw new ArgumentException(string.Format("publicKey must be 32 bytes long (but was {0} bytes long)", publicKey.Length), "publicKey");
+            if (publicKey == null) throw new ArgumentNullException(nameof(publicKey));
+            if (publicKey.Length != 32) throw new ArgumentException(string.Format("publicKey must be 32 bytes long (but was {0} bytes long)", publicKey.Length), nameof(publicKey));
 
-            if (signingKey != null && signingKey.Length != 32) throw new ArgumentException(string.Format("signingKey must be null or 32 bytes long (but was {0} bytes long)", signingKey.Length), "signingKey");
+            if (signingKey != null && signingKey.Length != 32) throw new ArgumentException(string.Format("signingKey must be null or 32 bytes long (but was {0} bytes long)", signingKey.Length), nameof(signingKey));
 
-            if (privateKey == null) throw new ArgumentNullException("privateKey");
-            if (privateKey.Length != 32) throw new ArgumentException(string.Format("privateKey must be 32 bytes long (but was {0} bytes long)", privateKey.Length), "privateKey");
+            if (privateKey == null) throw new ArgumentNullException(nameof(privateKey));
+            if (privateKey.Length != 32) throw new ArgumentException(string.Format("privateKey must be 32 bytes long (but was {0} bytes long)", privateKey.Length), nameof(privateKey));
 
-            if (peerPublicKey != null && peerPublicKey.Length != 32) throw new ArgumentException(string.Format("peerPublicKey must be null or 32 bytes long (but was {0} bytes long)", peerPublicKey.Length), "peerPublicKey");
+            if (peerPublicKey != null && peerPublicKey.Length != 32) throw new ArgumentException(string.Format("peerPublicKey must be null or 32 bytes long (but was {0} bytes long)", peerPublicKey.Length), nameof(peerPublicKey));
 
             Long10
                 dx = new Long10(),

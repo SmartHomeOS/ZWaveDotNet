@@ -4,7 +4,7 @@
     {
         NA = 0x0,
         StaticController = 0x1,
-        Controller = 0x2,
+        PortableController = 0x2,
         EnhancedEndNode = 0x3,
         EndNode = 0x4,
         Installer = 0x5,

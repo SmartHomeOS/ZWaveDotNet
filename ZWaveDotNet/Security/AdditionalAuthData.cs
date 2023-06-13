@@ -5,11 +5,11 @@ namespace ZWaveDotNet.Security
 {
     public class AdditionalAuthData
     {
-        ushort sender;
-        ushort destination;
-        uint homeId;
-        ushort messageLen;
-        Memory<byte> extensionData;
+        private readonly ushort sender;
+        private readonly ushort destination;
+        private readonly uint homeId;
+        private readonly ushort messageLen;
+        private readonly Memory<byte> extensionData;
 
         public AdditionalAuthData(Node node, Controller controller, bool sending, int messageLen, Memory<byte> extensionData)
         {

@@ -42,7 +42,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
             }
             else
             {
-                NodeIDs = new ushort[0];
+                NodeIDs = Array.Empty<ushort>();
                 ChipType = payload.Span[3];
                 ChipVersion = payload.Span[4];
             }

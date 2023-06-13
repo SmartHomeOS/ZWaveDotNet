@@ -91,7 +91,7 @@ namespace ZWaveDotNet.SerialAPI
             return buffer;
         }
 
-        public async Task WriteBytes(Stream stream)
+        public async Task WriteBytes(Stream stream, CancellationToken cancellationToken = default)
         {
             if (Type == FrameType.SOF)
             {
@@ -103,7 +103,7 @@ namespace ZWaveDotNet.SerialAPI
                 //Add checksum 
                 payload.Add(payload.Skip(1).Aggregate((byte)0xFF, (total, next) => total ^= next));
 
-                await stream.WriteAsync(payload.ToArray(), 0, payload.Count);
+                await stream.WriteAsync(payload.ToArray(), 0, payload.Count, cancellationToken);
             }
             else
                 stream.WriteByte((byte)Type);

@@ -41,7 +41,7 @@ namespace ZWaveDotNet.Entities
         private void AddCommandClass(CommandClass cls, bool secure = false)
         {
             if (!this.commandClasses.ContainsKey(cls))
-                this.commandClasses.Add(cls, CommandClassBase.Create(cls, node.Controller, node, ID, secure, 1)); //TODO
+                this.commandClasses.Add(cls, CommandClassBase.Create(cls, node, ID, secure, 1)); //TODO
         }
 
         public override string ToString()

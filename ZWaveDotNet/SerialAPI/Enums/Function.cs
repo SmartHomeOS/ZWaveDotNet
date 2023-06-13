@@ -115,7 +115,7 @@
         DisableWatchdog = 0xb7,
         KickWatchdog = 0xb8,
         GetPowerLevel = 0xba,
-        TypeLibrary = 0xbd,
+        GetLibraryType = 0xbd,
         SendTestFrame = 0xbe,
         GetProtocolStatus = 0xbf,
         SetPromiscuousMode = 0xd0,

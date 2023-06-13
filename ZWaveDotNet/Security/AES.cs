@@ -84,7 +84,7 @@ namespace ZWaveDotNet.Security
                 T4 = ComputeCMAC(PRK_PNK, buffer);
             }
             else
-                T4 = new byte[0];
+                T4 = Array.Empty<byte>();
             Array.Copy(T2, buffer, BLOCK_SIZE);
             Array.Copy(T3, 0, buffer, BLOCK_SIZE, BLOCK_SIZE);
             return new KeyTuple(T1, buffer, T4);

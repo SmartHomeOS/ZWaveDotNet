@@ -1,4 +1,5 @@
 ﻿using System.Buffers.Binary;
+using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.SerialAPI.Enums;
 using ZWaveDotNet.SerialAPI.Messages.Enums;
@@ -13,11 +14,11 @@ namespace ZWaveDotNet.SerialAPI.Messages
         public List<byte> Data;
         public readonly TransmitOptions Options;
         public readonly byte SessionID;
+        private readonly Controller controller;
 
         private static byte callbackID = 1;
-        private Controller controller;
 
-        public DataMessage(Controller controller, ushort nodeId, List<byte> data, bool callback) : base(controller.IsBridge ? Function.SendDataBridge : Function.SendData)
+        public DataMessage(Controller controller, ushort nodeId, List<byte> data, bool callback) : base(controller.ControllerType == LibraryType.BridgeController ? Function.SendDataBridge : Function.SendData)
         {
             SourceNodeID = controller.ControllerID;
             DestinationNodeID = nodeId;

@@ -52,24 +52,24 @@ namespace ZWaveDotNet.Entities
         {
             if (!commandClasses.ContainsKey(cls))
             {
-                commandClasses.Add(cls, CommandClassBase.Create(cls, controller, this, 0, secure, version));
+                commandClasses.Add(cls, CommandClassBase.Create(cls, this, 0, secure, version));
                 return true;
             }
             return false;
         }
 
-        public async Task DeleteReturnRoute(CancellationToken cancellationToken)
+        public async Task DeleteReturnRoute(CancellationToken cancellationToken = default)
         {
-            await controller.Flow.SendAcknowledged(Function.DeleteReturnRoute, GetIDBytes(ID));
+            await controller.Flow.SendAcknowledged(Function.DeleteReturnRoute, cancellationToken, GetIDBytes(ID));
         }
 
-        public async Task AssignReturnRoute(ushort associatedNodeId, CancellationToken cancellationToken)
+        public async Task AssignReturnRoute(ushort associatedNodeId, CancellationToken cancellationToken = default)
         {
             byte[] id = GetIDBytes(ID);
             byte[] cmd = new byte[id.Length * 2];
             Array.Copy(id, cmd, 2);
             Array.Copy(GetIDBytes(associatedNodeId), 0, cmd, id.Length, cmd.Length);
-            await controller.Flow.SendAcknowledged(Function.AssignReturnRoute, cmd );
+            await controller.Flow.SendAcknowledged(Function.AssignReturnRoute, cancellationToken, cmd );
         }
 
         public byte EndPointCount()
@@ -92,7 +92,7 @@ namespace ZWaveDotNet.Entities
                 foreach (CommandClass cc in NIF.CommandClasses)
                 {
                     if (!commandClasses.ContainsKey(cc))
-                        commandClasses.Add(cc, CommandClassBase.Create(cc, controller, this, 0, 1));
+                        commandClasses.Add(cc, CommandClassBase.Create(cc, this, 0, 1));
                 }
             }
         }
@@ -184,10 +184,12 @@ namespace ZWaveDotNet.Entities
         {
             if (nodeInfo == null)
                 throw new ArgumentNullException("Node Info was not provided in the node constructor");
-            NodeJSON json = new NodeJSON();
-            json.NodeProtocolInfo = nodeInfo;
-            json.ID = ID;
-            json.CommandClasses = new CommandClassJson[commandClasses.Count];
+            NodeJSON json = new NodeJSON
+            {
+                NodeProtocolInfo = nodeInfo,
+                ID = ID,
+                CommandClasses = new CommandClassJson[commandClasses.Count]
+            };
             if (controller.SecurityManager != null)
             {
                 SecurityManager.RecordType[] types = controller.SecurityManager.GetKeys(ID);
@@ -196,15 +198,17 @@ namespace ZWaveDotNet.Entities
                     json.GrantedKeys[i] = SecurityManager.TypeToKey(types[i]);
             }
             else
-                json.GrantedKeys = new SecurityKey[0];
+                json.GrantedKeys = Array.Empty<SecurityKey>();
 
             for (int i = 0; i < commandClasses.Count; i++)
             {
                 CommandClass cls = commandClasses.ElementAt(i).Key;
-                json.CommandClasses[i] = new CommandClassJson();
-                json.CommandClasses[i].CommandClass = commandClasses[cls].CommandClass;
-                json.CommandClasses[i].Version = commandClasses[cls].Version;
-                json.CommandClasses[i].Secure = commandClasses[cls].Secure;
+                json.CommandClasses[i] = new CommandClassJson
+                {
+                    CommandClass = commandClasses[cls].CommandClass,
+                    Version = commandClasses[cls].Version,
+                    Secure = commandClasses[cls].Secure
+                };
             }
             return json;
         }
@@ -215,7 +219,7 @@ namespace ZWaveDotNet.Entities
             {
                 if (!commandClasses.ContainsKey(cc.CommandClass))
                 {
-                    CommandClassBase ccb = CommandClassBase.Create(cc.CommandClass, controller, this, 0, cc.Secure, cc.Version);
+                    CommandClassBase ccb = CommandClassBase.Create(cc.CommandClass, this, 0, cc.Secure, cc.Version);
                     commandClasses.Add(cc.CommandClass, ccb);
                 }
             }
@@ -299,7 +303,6 @@ namespace ZWaveDotNet.Entities
                     AddCommandClass(CommandClass.Notification, ccb.Secure, ccb.Version);
                 }
             }
-
 
             Log.Information("Interviewing Command Classes");
             foreach (CommandClassBase cc in commandClasses.Values)

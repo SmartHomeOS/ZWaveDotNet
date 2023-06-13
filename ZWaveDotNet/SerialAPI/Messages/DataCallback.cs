@@ -24,7 +24,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
             if (payload.Length > 2)
                 Report = payload.Slice(2);
             else
-                Report = new byte[0];
+                Report = Array.Empty<byte>();
         }
 
         public override string ToString()

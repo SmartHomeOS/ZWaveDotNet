@@ -71,7 +71,7 @@ namespace ZWaveDotNet.Util
 
                 Memory<byte> data = new byte[hexString.Length / 2];
                 for (int index = 0; index < data.Length; index++)
-                    data.Span[index] = byte.Parse(hexString.Substring(index * 2, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+                    data.Span[index] = byte.Parse(hexString.AsSpan(index * 2, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
 
                 return data;
         }

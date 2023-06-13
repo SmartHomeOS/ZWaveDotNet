@@ -8,7 +8,6 @@ namespace ZWaveDotNet.Util
     public class QRParser
     {
         public byte Version { get; private set; }
-        private byte[] checksum = new byte[2];
         public SecurityKey Keys { get; private set; }
         public Memory<byte> DSK { get; private set; }
 
@@ -19,6 +18,7 @@ namespace ZWaveDotNet.Util
             if (digitString.Substring(0, 2) != "90")
                 throw new ArgumentException("Invalid QR Prefix");
             Version = Byte.Parse(digitString.Substring(2, 2));
+            byte[] checksum = new byte[2];
             BinaryPrimitives.WriteUInt16BigEndian(checksum, ushort.Parse(digitString.Substring(4, 5)));
             byte[] hash = SHA1.HashData(Encoding.ASCII.GetBytes(digitString.Substring(9)));
             if (!Enumerable.SequenceEqual(hash.Take(2), checksum))

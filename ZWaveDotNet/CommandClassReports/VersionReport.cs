@@ -18,8 +18,10 @@ namespace ZWaveDotNet.CommandClassReports
 
             Library = (LibraryType)payload.Span[0];
             Protocol = payload.Span[1].ToString("d") + "." + payload.Span[2].ToString("d2");
-            List<string> firmwares = new List<string>();
-            firmwares.Add(payload.Span[3].ToString("d") + "." + payload.Span[4].ToString("d2"));
+            List<string> firmwares = new List<string>
+            {
+                payload.Span[3].ToString("d") + "." + payload.Span[4].ToString("d2")
+            };
 
             if (payload.Length > 6)
             {

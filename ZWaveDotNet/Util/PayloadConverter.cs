@@ -156,7 +156,7 @@ namespace ZWaveDotNet.Util
                 limit = Encoding.UTF8.GetBytes(text, payload.Slice(1).Span);
             else
                 limit = Encoding.Unicode.GetBytes(text, payload.Slice(1).Span);
-            return payload;
+            return payload.Slice(0, limit); //If the last char is multi-byte that might force truncation
         }
 
         public static List<CommandClass> GetCommandClasses(Memory<byte> bytes)

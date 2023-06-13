@@ -3,15 +3,16 @@ using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
+using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.CommandClasses
 {
     [CCVersion(CommandClass.TransportService, 1, 2, false)]
     public class TransportService : CommandClassBase
     {
-        private static CRC16_CCITT crc = new CRC16_CCITT();
-        private static Dictionary<int,Memory<byte>> buffers = new Dictionary<int,Memory<byte>>();
-        private static Dictionary<int, List<Range>> segments = new Dictionary<int, List<Range>>();
+        private static readonly CRC16_CCITT crc = new CRC16_CCITT();
+        private static readonly Dictionary<int,Memory<byte>> buffers = new Dictionary<int,Memory<byte>>();
+        private static readonly Dictionary<int, List<Range>> segments = new Dictionary<int, List<Range>>();
 
         public enum TransportServiceCommand
         {
@@ -41,7 +42,7 @@ namespace ZWaveDotNet.CommandClasses
 
         public static void Transmit (List<byte> payload)
         {
-            //TODO
+            //TODO - Implement Transport Service Transmit
         }
 
         internal static ReportMessage? Process(ReportMessage msg, Controller controller)
@@ -74,8 +75,10 @@ namespace ZWaveDotNet.CommandClasses
                     msg.Payload.Slice(0, msg.Payload.Length - 2).CopyTo(buff);
                     key = GetKey(msg.SourceNodeID, sessionId);
                     buffers.Add(key, buff);
-                    List<Range> ranges = new List<Range>();
-                    ranges.Add(new Range(0, msg.Payload.Length - 2));
+                    List<Range> ranges = new List<Range>
+                    {
+                        new Range(0, msg.Payload.Length - 2)
+                    };
                     segments.Add(key, ranges);
                     Log.Warning("First Fragment Loaded");
                     break;

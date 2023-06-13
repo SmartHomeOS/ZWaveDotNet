@@ -51,15 +51,15 @@ namespace ZWaveDotNet.CommandClasses
             return await Handle(message);
         }
 
-        public static CommandClassBase Create(CommandClass cc, Controller controller, Node node, byte endpoint, bool secure, byte version)
+        public static CommandClassBase Create(CommandClass cc,Node node, byte endpoint, bool secure, byte version)
         {
-            CommandClassBase instance = Create(cc, controller, node, endpoint, version);
+            CommandClassBase instance = Create(cc, node, endpoint, version);
             instance.Secure = secure;
             instance.Version = version;
             return instance;
         }
 
-        public static CommandClassBase Create(CommandClass cc, Controller controller, Node node, byte endpoint, byte version)
+        public static CommandClassBase Create(CommandClass cc, Node node, byte endpoint, byte version)
         {
             switch (cc)
             {
@@ -196,7 +196,7 @@ namespace ZWaveDotNet.CommandClasses
                     throw new InvalidOperationException("Security required but no keys are available");
             }
             
-            DataCallback dc = await controller.Flow.SendAcknowledgedResponseCallback(data.ToMessage());
+            DataCallback dc = await controller.Flow.SendAcknowledgedResponseCallback(data.ToMessage(), token);
             if (dc.Status != TransmissionStatus.CompleteOk && dc.Status != TransmissionStatus.CompleteNoAck && dc.Status != TransmissionStatus.CompleteVerified)
                 throw new Exception("Transmission Failure " + dc.Status.ToString());
         }

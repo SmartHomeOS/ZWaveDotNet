@@ -9,16 +9,16 @@ namespace ZWaveDotNet.Security
 {
     public class SecurityManager
     {
-        private byte[] publicKey;
-        private Memory<byte> privateKey;
+        private readonly byte[] publicKey;
+        private readonly Memory<byte> privateKey;
         private Memory<byte> prngWorking;
         public enum RecordType { Entropy, ECDH_TEMP, S0, S2UnAuth, S2Auth, S2Access };
         private static readonly TimeSpan TWENTY_SEC = TimeSpan.FromSeconds(20);
-        private Dictionary<ushort, List<SpanRecord>> spanRecords = new Dictionary<ushort, List<SpanRecord>>();
-        private Dictionary<byte, MpanRecord> mpanRecords = new Dictionary<byte, MpanRecord>();
-        private Dictionary<ushort, List<NetworkKey>> keys = new Dictionary<ushort, List<NetworkKey>>();
-        private Dictionary<ushort, KeyExchangeReport> requestedAccess = new Dictionary<ushort, KeyExchangeReport>();
-        private Dictionary<ushort, List<byte>> sequenceCache = new Dictionary<ushort, List<byte>>();
+        private readonly Dictionary<ushort, List<SpanRecord>> spanRecords = new Dictionary<ushort, List<SpanRecord>>();
+        private readonly Dictionary<byte, MpanRecord> mpanRecords = new Dictionary<byte, MpanRecord>();
+        private readonly Dictionary<ushort, List<NetworkKey>> keys = new Dictionary<ushort, List<NetworkKey>>();
+        private readonly Dictionary<ushort, KeyExchangeReport> requestedAccess = new Dictionary<ushort, KeyExchangeReport>();
+        private readonly Dictionary<ushort, List<byte>> sequenceCache = new Dictionary<ushort, List<byte>>();
         
 
         private class SpanRecord
@@ -56,7 +56,7 @@ namespace ZWaveDotNet.Security
             Curve25519.ClampPrivateKeyInline(key);
             privateKey = key;
             publicKey = Curve25519.GetPublicKey(key);
-            prngWorking = CTR_DRBG.Instantiate(seed, new byte[0]);
+            prngWorking = CTR_DRBG.Instantiate(seed, Array.Empty<byte>());
         }
 
         public byte[] CreateSharedSecret(Memory<byte> publicKeyB)
@@ -104,7 +104,7 @@ namespace ZWaveDotNet.Security
             {
                 return keyLst.Select(r => r.Key).ToArray();
             }
-            return new RecordType[0];
+            return Array.Empty<RecordType>();
         }
 
         public NetworkKey? GetKey(ushort nodeId, RecordType type)
@@ -191,7 +191,7 @@ namespace ZWaveDotNet.Security
             return null;
         }
 
-        public Memory<byte>? NextMpanNonce(byte groupID, RecordType type, byte[] keyMPAN)
+        public Memory<byte>? NextMpanNonce(byte groupID, byte[] keyMPAN)
         {
             if (mpanRecords.TryGetValue(groupID, out MpanRecord? record))
             {
@@ -283,8 +283,7 @@ namespace ZWaveDotNet.Security
                 Expires = DateTime.Now + TWENTY_SEC,
                 Type = RecordType.S0
             };
-            List<SpanRecord>? stack;
-            if (spanRecords.TryGetValue(nodeId, out stack))
+            if (spanRecords.TryGetValue(nodeId, out List<SpanRecord>? stack))
             {
                 if (stack.Count >= 4)
                     stack.RemoveAt(0);

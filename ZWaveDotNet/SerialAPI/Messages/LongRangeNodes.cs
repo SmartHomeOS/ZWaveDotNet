@@ -11,7 +11,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
 
         public ushort[] NodeIDs { get; private set; }
 
-        public LongRangeNodes() : base(Function.GetLRNodes) { NodeIDs = new ushort[0]; }
+        public LongRangeNodes() : base(Function.GetLRNodes) { NodeIDs = Array.Empty<ushort>(); }
 
         public LongRangeNodes(Memory<byte> payload) : base(Function.GetLRNodes)
         {

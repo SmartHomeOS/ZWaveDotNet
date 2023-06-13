@@ -8,7 +8,7 @@ namespace ZWaveDotNet.SerialAPI
 {
     public class CommandMessage
     {
-        private Controller controller;
+        private readonly Controller controller;
         public byte DestinationEndpoint;
         public ushort DestinationNodeId;
         public List<byte> Payload;

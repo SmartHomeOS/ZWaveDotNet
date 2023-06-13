@@ -83,18 +83,17 @@ namespace ZWaveDotNet.CommandClasses
             var entropy = controller.SecurityManager.CreateEntropy(node.ID);
             NonceReport nonceGetReport = new NonceReport(entropy.Sequence, SOS, MOS, entropy.Bytes);
             Log.Information("Declaring SPAN out of sync");
-            await SendCommand(Security2Command.NonceReport, CancellationToken.None, nonceGetReport.GetBytes());
+            await SendCommand(Security2Command.NonceReport, cancellationToken, nonceGetReport.GetBytes());
         }
 
         internal async Task KexFail(KexFailType type, CancellationToken cancellationToken = default)
         {
             Log.Information($"Sending KEX Failure {type}");
-            if (controller.SecurityManager != null)
-                controller.SecurityManager.GetRequestedKeys(node.ID, true);
+            controller.SecurityManager?.GetRequestedKeys(node.ID, true);
             if (type == KexFailType.KEX_FAIL_AUTH || type == KexFailType.KEX_FAIL_DECRYPT || type == KexFailType.KEX_FAIL_KEY_VERIFY || type == KexFailType.KEX_FAIL_KEY_GET)
             {
                 CommandMessage reportKex = new CommandMessage(controller, node.ID, endpoint, commandClass, (byte)Security2Command.KEXFail, false, (byte)type);
-                await Transmit(reportKex.Payload, SecurityManager.RecordType.ECDH_TEMP);
+                await Transmit(reportKex.Payload, SecurityManager.RecordType.ECDH_TEMP, cancellationToken);
             }
             else
                 await SendCommand(Security2Command.KEXFail, cancellationToken, (byte)type);
@@ -165,7 +164,7 @@ namespace ZWaveDotNet.CommandClasses
             }
 
             //                                                        8(tag) + 1 (command class) + 1 (command) + extension len
-            AdditionalAuthData ad = new AdditionalAuthData(node, controller, true, payload.Count + 10 + extensionData.Count, extensionData.ToArray()); //FIXME - Implement unencrypted here too
+            AdditionalAuthData ad = new AdditionalAuthData(node, controller, true, payload.Count + 10 + extensionData.Count, extensionData.ToArray()); //TODO - Include encrypted extension
             Memory<byte> encoded = EncryptCCM(payload.ToArray(),  nonce.Value.output, networkKey!.KeyCCM, ad);
 
             byte[] securePayload = new byte[extensionData.Count + encoded.Length];
@@ -203,7 +202,7 @@ namespace ZWaveDotNet.CommandClasses
             byte? groupId = null;
             if (unencryptedExt)
             {
-                while (processExtension(msg.Payload, msg.SourceNodeID, controller.SecurityManager, networkKey, out byte? group))
+                while (ProcessExtension(msg.Payload, msg.SourceNodeID, controller.SecurityManager, networkKey, out byte? group))
                 {
                     msg.Payload = msg.Payload.Slice(msg.Payload.Span[0]);
                     if (group != null)
@@ -253,9 +252,8 @@ namespace ZWaveDotNet.CommandClasses
             return msg;
         }
 
-        private static bool processExtension(Memory<byte> payload, ushort nodeId, SecurityManager sm, SecurityManager.NetworkKey netKey, out byte? groupId)
+        private static bool ProcessExtension(Memory<byte> payload, ushort nodeId, SecurityManager sm, SecurityManager.NetworkKey netKey, out byte? groupId)
         {
-            byte len = payload.Span[0];
             bool more = (payload.Span[1] & 0x80) == 0x80;
             byte type = (byte)(0x3F & payload.Span[1]);
             groupId = null;
@@ -363,9 +361,13 @@ namespace ZWaveDotNet.CommandClasses
                     await Task.Factory.StartNew(() => Transmit(transferEnd.Payload, SecurityManager.RecordType.ECDH_TEMP));
                     return SupervisionStatus.Success;
                 case Security2Command.NonceGet:
-                    //TODO - Validate sequence number
                     if (controller.SecurityManager == null)
                         return SupervisionStatus.Fail;
+                    if (!controller.SecurityManager.IsSequenceNew(message.SourceNodeID, message.Payload.Span[0]))
+                    {
+                        Log.Error("Duplicate S2 Nonce Get Skipped");
+                        return SupervisionStatus.Fail; //Duplicate Message
+                    }
                     Log.Warning("Creating new Nonce");
                     await SendNonceReport(true, false, CancellationToken.None);
                     return SupervisionStatus.Success;

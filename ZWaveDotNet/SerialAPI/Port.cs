@@ -8,9 +8,9 @@ namespace ZWaveDotNet.SerialAPI
 {
     public class Port
     {
-        private SerialPort port;
+        private readonly SerialPort port;
         private readonly Channel<Frame> tx = Channel.CreateUnbounded<Frame>();
-        private ConcurrentDictionary<Channel<Frame>, byte> rxChannels = new ConcurrentDictionary<Channel<Frame>, byte>();
+        private readonly ConcurrentDictionary<Channel<Frame>, byte> rxChannels = new ConcurrentDictionary<Channel<Frame>, byte>();
 
         public Port(string path) 
         {

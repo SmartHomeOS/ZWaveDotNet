@@ -1,4 +1,5 @@
 ﻿using System.Buffers.Binary;
+using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.SerialAPI.Enums;
 using ZWaveDotNet.SerialAPI.Messages.Enums;
@@ -12,11 +13,11 @@ namespace ZWaveDotNet.SerialAPI.Messages
         public readonly Memory<byte> Data;
         public readonly TransmitOptions Options;
         public readonly byte SessionID;
+        private readonly Controller controller;
 
         private static byte callbackID = 1;
-        private Controller controller;
 
-        public MulticastDataMessage(Controller controller, Memory<byte> payload) : base(controller.IsBridge ? Function.SendDataBridgeMulticast : Function.SendDataMulticast)
+        public MulticastDataMessage(Controller controller, Memory<byte> payload) : base(controller.ControllerType == LibraryType.BridgeController ? Function.SendDataBridgeMulticast : Function.SendDataMulticast)
         {
             if (payload.Length < 4)
                 throw new InvalidDataException("Empty MulticastDataMessage received");
@@ -60,7 +61,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
             this.controller = controller;
         }
 
-        public MulticastDataMessage(Controller controller, ushort[] nodeIds, Memory<byte> data, bool callback) : base(controller.IsBridge ? Function.SendDataBridgeMulticast : Function.SendDataMulticast)
+        public MulticastDataMessage(Controller controller, ushort[] nodeIds, Memory<byte> data, bool callback) : base(controller.ControllerType == LibraryType.BridgeController ? Function.SendDataBridgeMulticast : Function.SendDataMulticast)
         {
             DestinationNodeIDs = nodeIds;
             Data = data;
@@ -89,7 +90,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
                     bytes.Add((byte)controller.ControllerID);
             }
             bytes.Add((byte)DestinationNodeIDs.Length);
-            foreach (byte id in DestinationNodeIDs)
+            foreach (ushort id in DestinationNodeIDs)
             {
                 if (controller.WideID)
                 {
@@ -97,7 +98,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
                     bytes.AddRange(tmp);
                 }
                 else
-                    bytes.Add(id);
+                    bytes.Add((byte)id);
             }
             bytes.Add((byte)Data.Length);
             bytes.AddRange(Data.ToArray());

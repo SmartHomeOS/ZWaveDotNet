@@ -6,6 +6,7 @@ using System.Text.Json;
 using ZWaveDotNet.CommandClasses;
 using ZWaveDotNet.CommandClasses.Enums;
 using ZWaveDotNet.CommandClassReports;
+using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities.Enums;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.Security;
@@ -58,8 +59,8 @@ namespace ZWaveDotNet.Entities
             BroadcastNode = new Node(Node.BROADCAST_ID, this, null, new CommandClass[] 
             { 
                 CommandClass.Basic, CommandClass.BasicWindowCovering, CommandClass.GeographicLocation, CommandClass.Language,CommandClass.SceneActivation,
-                CommandClass.SwitchAll, CommandClass.SwitchBinary, CommandClass.SwitchColor, CommandClass.SwitchMultiLevel, CommandClass.SwitchToggleBinary, 
-                CommandClass.SwitchToggleMultiLevel, CommandClass.WindowCovering //TODO - Barrier Operator
+                CommandClass.SilenceAlarm, CommandClass.SwitchAll, CommandClass.SwitchBinary, CommandClass.SwitchColor, CommandClass.SwitchMultiLevel,
+                CommandClass.SwitchToggleBinary, CommandClass.SwitchToggleMultiLevel, CommandClass.WindowCovering //TODO - Barrier Operator
             });
         }
 
@@ -75,7 +76,7 @@ namespace ZWaveDotNet.Entities
         internal byte[] NetworkKeyS2Auth { get; private set; }
         internal byte[] NetworkKeyS2Access { get; private set; }
         internal SecurityManager? SecurityManager { get; private set; }
-        internal bool IsBridge { get; private set; } //TODO - Implement
+        public LibraryType ControllerType { get; private set; } = LibraryType.StaticController;
         internal bool WideID { get { return flow.WideID; } private set { flow.WideID = value; } }
 
         public async Task Reset()
@@ -92,6 +93,14 @@ namespace ZWaveDotNet.Entities
             //See what the controller supports
             await GetSupportedFunctions(cancellationToken);
 
+            //Detect controller type
+            if (Supports(Function.GetLibraryType))
+            {
+                if (await flow.SendAcknowledgedResponse(Function.GetLibraryType, cancellationToken) is PayloadMessage library)
+                    ControllerType = (LibraryType)library.Data.Span[0];
+                Log.Information("Controller Type: " + ControllerType);
+            }
+
             //Encap Configuration
             if (await flow.SendAcknowledgedResponse(Function.MemoryGetId, cancellationToken) is PayloadMessage networkIds && networkIds.Data.Length > 4)
             {
@@ -102,7 +111,7 @@ namespace ZWaveDotNet.Entities
                     ControllerID = BinaryPrimitives.ReadUInt16BigEndian(networkIds.Data.Slice(4, 2).Span);
             }
 
-            //Begin the interview
+            //Begin the controller interview
             if (await flow.SendAcknowledgedResponse(Function.GetSerialAPIInitData, cancellationToken) is InitData init)
             {
                 foreach (ushort id in init.NodeIDs)
@@ -240,7 +249,7 @@ namespace ZWaveDotNet.Entities
             AddSmartStartNode(parser.DSK);
         }
 
-        public async Task StartInclusion(InclusionStrategy strategy, ushort pin = 0, bool fullPower = true, bool networkWide = true)
+        public async Task StartInclusion(InclusionStrategy strategy, ushort pin = 0, CancellationToken cancellationToken = default, bool fullPower = true, bool networkWide = true)
         {
             this.currentStrategy = strategy;
             this.pin = pin;
@@ -249,46 +258,40 @@ namespace ZWaveDotNet.Entities
                 mode |= AddRemoveNodeMode.UseNormalPower;
             if (networkWide)
                 mode |= AddRemoveNodeMode.UseNetworkWide;
-            await flow.SendAcknowledged(Function.AddNodeToNetwork, (byte)mode, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0);
+            await flow.SendAcknowledged(Function.AddNodeToNetwork, cancellationToken, (byte)mode, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0);
         }
 
-        private async Task AddNodeToNetwork(byte[] NWIHomeID, byte[] AuthHomeID, bool longRange)
+        private async Task AddNodeToNetwork(byte[] NWIHomeID, byte[] AuthHomeID, bool longRange, CancellationToken cancellationToken = default)
         {
             AddRemoveNodeMode mode = AddRemoveNodeMode.SmartStartIncludeNode | AddRemoveNodeMode.UseNetworkWide | AddRemoveNodeMode.UseNormalPower;
             if (longRange)
                 mode |= AddRemoveNodeMode.IncludeLongRange;
-            await flow.SendAcknowledged(Function.AddNodeToNetwork, (byte)mode, 0x1, NWIHomeID[0], NWIHomeID[1], NWIHomeID[2], NWIHomeID[3], AuthHomeID[0], AuthHomeID[1], AuthHomeID[2], AuthHomeID[3]);
+            await flow.SendAcknowledged(Function.AddNodeToNetwork, cancellationToken, (byte)mode, 0x1, NWIHomeID[0], NWIHomeID[1], NWIHomeID[2], NWIHomeID[3], AuthHomeID[0], AuthHomeID[1], AuthHomeID[2], AuthHomeID[3]);
         }
 
-        public async Task StartSmartStartInclusion(InclusionStrategy strategy = InclusionStrategy.PreferS2, bool fullPower = true, bool networkWide = true)
+        public async Task StartSmartStartInclusion(InclusionStrategy strategy = InclusionStrategy.PreferS2, CancellationToken cancellationToken = default)
         {
             this.currentStrategy = strategy;
-            AddRemoveNodeMode mode = AddRemoveNodeMode.SmartStartListen;
-            if (fullPower)
-                mode |= AddRemoveNodeMode.UseNormalPower;
+            AddRemoveNodeMode mode = AddRemoveNodeMode.SmartStartListen | AddRemoveNodeMode.UseNetworkWide | AddRemoveNodeMode.UseNormalPower;
+            await flow.SendAcknowledged(Function.AddNodeToNetwork, cancellationToken, (byte)mode, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0);
+        }
+
+        public async Task StopInclusion(CancellationToken cancellationToken = default)
+        {
+            await flow.SendAcknowledged(Function.AddNodeToNetwork, cancellationToken, (byte)AddRemoveNodeMode.StopNetworkIncludeExclude, 0x1);
+        }
+
+        public async Task StartExclusion(bool networkWide = true, CancellationToken cancellationToken = default)
+        {
+            AddRemoveNodeMode mode = AddRemoveNodeMode.AnyNode | AddRemoveNodeMode.UseNormalPower;
             if (networkWide)
                 mode |= AddRemoveNodeMode.UseNetworkWide;
-            await flow.SendAcknowledged(Function.AddNodeToNetwork, (byte)mode, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0);
+            await flow.SendAcknowledged(Function.RemoveNodeFromNetwork, cancellationToken, (byte)mode, 0x1);
         }
 
-        public async Task StopInclusion()
+        public async Task StopExclusion(CancellationToken cancellationToken = default)
         {
-            await flow.SendAcknowledged(Function.AddNodeToNetwork, (byte)AddRemoveNodeMode.StopNetworkIncludeExclude, 0x1);
-        }
-
-        public async Task StartExclusion(bool fullPower = true, bool networkWide = true)
-        {
-            AddRemoveNodeMode mode = AddRemoveNodeMode.AnyNode;
-            if (fullPower)
-                mode |= AddRemoveNodeMode.UseNormalPower;
-            if (networkWide)
-                mode |= AddRemoveNodeMode.UseNetworkWide;
-            await flow.SendAcknowledged(Function.RemoveNodeFromNetwork, (byte)mode, 0x1);
-        }
-
-        public async Task StopExclusion()
-        {
-            await flow.SendAcknowledged(Function.RemoveNodeFromNetwork, (byte)AddRemoveNodeMode.StopNetworkIncludeExclude, 0x1);
+            await flow.SendAcknowledged(Function.RemoveNodeFromNetwork, cancellationToken, (byte)AddRemoveNodeMode.StopNetworkIncludeExclude, 0x1);
         }
 
         public async Task<byte[]> BackupNVM(CancellationToken cancellationToken = default)

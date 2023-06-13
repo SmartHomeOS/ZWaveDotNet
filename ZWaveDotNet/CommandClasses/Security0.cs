@@ -47,7 +47,7 @@ namespace ZWaveDotNet.CommandClasses
         {
             Log.Information($"Setting Network Key on {node.ID}");
             CommandMessage data = new CommandMessage(controller, node.ID, endpoint, commandClass, (byte)Security0Command.NetworkKeySet, false, controller.NetworkKeyS0);
-            await TransmitTemp(data.Payload);
+            await TransmitTemp(data.Payload, cancellationToken);
         }
 
         protected async Task<ReportMessage> GetNonce(CancellationToken cancellationToken)
@@ -144,8 +144,7 @@ namespace ZWaveDotNet.CommandClasses
             {
                 case Security0Command.NetworkKeyVerify:
                     keyVerified.TrySetResult();
-                    if (controller.SecurityManager != null)
-                        controller.SecurityManager.StoreKey(node.ID, SecurityManager.RecordType.S0, null, null, null);
+                    controller.SecurityManager?.StoreKey(node.ID, SecurityManager.RecordType.S0, null, null, null);
                     return SupervisionStatus.Success;
                 case Security0Command.NonceGet:
                     if (controller.SecurityManager == null)

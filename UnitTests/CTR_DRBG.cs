@@ -14,10 +14,10 @@ namespace UnitTests
             //NIST Test Process
 
             //Instantiate
-            var working_state = CTR_DRBG.Instantiate(MemoryUtil.From("ed1e7f21ef66ea5d8e2a85b9337245445b71d6393a4eecb0e63c193d0f72f9a9"), new byte[0]);
+            var working_state = CTR_DRBG.Instantiate(MemoryUtil.From("ed1e7f21ef66ea5d8e2a85b9337245445b71d6393a4eecb0e63c193d0f72f9a9"), Array.Empty<byte>());
 
             //Reseed
-            working_state = CTR_DRBG.Reseed(working_state, MemoryUtil.From("303fb519f0a4e17d6df0b6426aa0ecb2a36079bd48be47ad2a8dbfe48da3efad"), new byte[0]);
+            working_state = CTR_DRBG.Reseed(working_state, MemoryUtil.From("303fb519f0a4e17d6df0b6426aa0ecb2a36079bd48be47ad2a8dbfe48da3efad"), Array.Empty<byte>());
 
             //Generate (internal)
             var result = CTR_DRBG.Generate(working_state, 64);
@@ -34,10 +34,10 @@ namespace UnitTests
             //NIST Test Process
 
             //Instantiate
-            var working_state = CTR_DRBG.Instantiate(MemoryUtil.From("eab5a9f23ceac9e4195e185c8cea549d6d97d03276225a7452763c396a7f70bf"), new byte[0]);
+            var working_state = CTR_DRBG.Instantiate(MemoryUtil.From("eab5a9f23ceac9e4195e185c8cea549d6d97d03276225a7452763c396a7f70bf"), Array.Empty<byte>());
 
             //Reseed
-            working_state = CTR_DRBG.Reseed(working_state, MemoryUtil.From("4258765c65a03af92fc5816f966f1a6644a6134633aad2d5d19bd192e4c1196a"), new byte[0]);
+            working_state = CTR_DRBG.Reseed(working_state, MemoryUtil.From("4258765c65a03af92fc5816f966f1a6644a6134633aad2d5d19bd192e4c1196a"), Array.Empty<byte>());
 
             //Generate (internal)
             var result = CTR_DRBG.Generate(working_state, 64);
@@ -57,7 +57,7 @@ namespace UnitTests
             var working_state = CTR_DRBG.Instantiate(MemoryUtil.From("34cbc2b217f3d907fa2ad6a0d7a813b0fda1e17fbeed94b0e0a0abfbec947146"), MemoryUtil.From("e8fa4c5de825791e68180f2ba107e829c48299cb01be939cd0be76da120a91f2"));
 
             //Reseed
-            working_state = CTR_DRBG.Reseed(working_state, MemoryUtil.From("8326f8e9cfbd02eb076bbb9819d96a02386f80bf913c8e4a80361d82cafad52e"), new byte[0]);
+            working_state = CTR_DRBG.Reseed(working_state, MemoryUtil.From("8326f8e9cfbd02eb076bbb9819d96a02386f80bf913c8e4a80361d82cafad52e"), Array.Empty<byte>());
 
             //Generate (internal)
             var result = CTR_DRBG.Generate(working_state, 64);
@@ -77,7 +77,7 @@ namespace UnitTests
             var working_state = CTR_DRBG.Instantiate(MemoryUtil.From("ba811bf491ac4597d79d0f4473208011c5d48575a156d969f071cd5ae5aa4558"), MemoryUtil.From("0909e7809f076ed3747625cd2b80615875407a133e77d677fdf8d9d378de4fd9"));
 
             //Reseed
-            working_state = CTR_DRBG.Reseed(working_state, MemoryUtil.From("f556c3afea212ff060ed01b7f7f5dbb73f960ea6a3a93f248ae4d2df2bf49948"), new byte[0]);
+            working_state = CTR_DRBG.Reseed(working_state, MemoryUtil.From("f556c3afea212ff060ed01b7f7f5dbb73f960ea6a3a93f248ae4d2df2bf49948"), Array.Empty<byte>());
 
             //Generate (internal)
             var result = CTR_DRBG.Generate(working_state, 64);
@@ -97,7 +97,7 @@ namespace UnitTests
             var working_state = CTR_DRBG.Instantiate(MemoryUtil.From("5cd1df6db58ea507838d7426b3fb48402cd14ab75abbdef33ce30fb97c530998"), MemoryUtil.From("351420c0263ce11ee8b683f6106130c67ff1c655c4e678825293f004d27c5424"));
 
             //Reseed
-            working_state = CTR_DRBG.Reseed(working_state, MemoryUtil.From("99e6850fa29131bfc748b2e74e0fd62acc4be4e9b5f06447dc26f772c0241561"), new byte[0]);
+            working_state = CTR_DRBG.Reseed(working_state, MemoryUtil.From("99e6850fa29131bfc748b2e74e0fd62acc4be4e9b5f06447dc26f772c0241561"), Array.Empty<byte>());
 
             //Generate (internal)
             var result = CTR_DRBG.Generate(working_state, 64);

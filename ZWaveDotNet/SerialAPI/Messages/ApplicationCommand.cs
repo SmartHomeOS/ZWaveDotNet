@@ -32,7 +32,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
                 else
                     SourceNodeID = payload.Span[1];
                 DestinationNodeID = LOCAL_NODE;
-                MulticastMask = new byte[0];
+                MulticastMask = Array.Empty<byte>();
                 len = payload.Span[2 + offset];
                 if (payload.Length < (4 + len + offset))
                     throw new InvalidDataException("Truncated ApplicationCommand received");

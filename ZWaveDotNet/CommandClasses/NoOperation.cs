@@ -16,7 +16,7 @@ namespace ZWaveDotNet.CommandClasses
         {
             CommandMessage data = new CommandMessage(controller, node.ID, (byte)(endpoint & 0x7F), commandClass, 0x0);
             data.Payload.RemoveAt(1); //This class sends no command
-            DataCallback dc = await controller.Flow.SendAcknowledgedResponseCallback(data.ToMessage());
+            DataCallback dc = await controller.Flow.SendAcknowledgedResponseCallback(data.ToMessage(), cancellationToken);
             if (dc.Status != TransmissionStatus.CompleteOk && dc.Status != TransmissionStatus.CompleteNoAck && dc.Status != TransmissionStatus.CompleteVerified)
                 throw new Exception("Transmission Failure " + dc.Status.ToString());
         }

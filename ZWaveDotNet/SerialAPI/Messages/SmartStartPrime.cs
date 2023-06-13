@@ -20,7 +20,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
                 throw new InvalidDataException("SmartStartPrime should be at least 11 bytes");
             RxStatus = (ReceiveStatus)payload.Span[2];
             HomeID = payload.Slice(3, 4).ToArray();
-            byte len = payload.Span[7];
+            //byte len = payload.Span[7];
             BasicType = (BasicType)payload.Span[8];
             GenericType = (GenericType)payload.Span[9];
             SpecificType = SpecificTypeMapping.Get(GenericType, payload.Span[10]);
