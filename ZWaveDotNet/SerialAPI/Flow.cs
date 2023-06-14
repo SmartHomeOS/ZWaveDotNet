@@ -9,6 +9,7 @@ namespace ZWaveDotNet.SerialAPI
         private readonly Port port;
         private readonly Channel<Frame> unsolicited;
         public bool WideID { get; set; }
+        internal bool IsConnected { get { return port.IsConnected(); } }
 
         public Flow(string portName)
         {

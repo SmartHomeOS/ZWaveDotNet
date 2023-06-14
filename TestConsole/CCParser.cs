@@ -4,7 +4,7 @@ using ZWaveDotNet.CommandClasses;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 
-namespace TestConsole
+namespace ExampleConsole
 {
     public static class CCParser
     {

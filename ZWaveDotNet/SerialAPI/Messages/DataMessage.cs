@@ -29,7 +29,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
             else
                 SessionID = 0;
             if (callbackID == 0)
-                callbackID = 1;
+                callbackID++;
             this.controller = controller;
         }
 

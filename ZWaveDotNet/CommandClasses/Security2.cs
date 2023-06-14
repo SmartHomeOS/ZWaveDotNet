@@ -326,24 +326,23 @@ namespace ZWaveDotNet.CommandClasses
                     {
                         case SecurityKey.S0:
                             controller.NetworkKeyS0.CopyTo(resp, 1);
-                            permKey = AES.CKDFExpand(controller.NetworkKeyS0, false);
+                            controller.SecurityManager.GrantKey(node.ID, SecurityManager.KeyToType(key), controller.NetworkKeyS0);
                             break;
                         case SecurityKey.S2Unauthenticated:
                             controller.NetworkKeyS2UnAuth.CopyTo(resp, 1);
-                            permKey = AES.CKDFExpand(controller.NetworkKeyS2UnAuth, false);
+                            controller.SecurityManager.GrantKey(node.ID, SecurityManager.KeyToType(key), controller.NetworkKeyS2UnAuth);
                             break;
                         case SecurityKey.S2Authenticated:
                             controller.NetworkKeyS2Auth.CopyTo(resp, 1);
-                            permKey = AES.CKDFExpand(controller.NetworkKeyS2Auth, false);
+                            controller.SecurityManager.GrantKey(node.ID, SecurityManager.KeyToType(key), controller.NetworkKeyS2Auth);
                             break;
                         case SecurityKey.S2Access:
                             controller.NetworkKeyS2Access.CopyTo(resp, 1);
-                            permKey = AES.CKDFExpand(controller.NetworkKeyS2Access, false);
+                            controller.SecurityManager.GrantKey(node.ID, SecurityManager.KeyToType(key), controller.NetworkKeyS2Access);
                             break;
                         default:
                             return SupervisionStatus.Fail; //Invalid Key Type - Ignore this
                     }
-                    controller.SecurityManager.StoreKey(node.ID, SecurityManager.KeyToType(key), permKey.KeyCCM, permKey.PString, permKey.MPAN);
                     CommandMessage data = new CommandMessage(controller, node.ID, endpoint, commandClass, (byte)Security2Command.NetworkKeyReport, false, resp);
                     await Transmit(data.Payload, SecurityManager.RecordType.ECDH_TEMP);
                     return SupervisionStatus.Success;
@@ -358,7 +357,7 @@ namespace ZWaveDotNet.CommandClasses
                     }
                     controller.SecurityManager.RevokeKey(node.ID, SecurityManager.KeyToType(message.SecurityLevel));
                     CommandMessage transferEnd = new CommandMessage(controller, node.ID, endpoint, commandClass, (byte)Security2Command.TransferEnd, false, KEY_VERIFIED);
-                    await Task.Factory.StartNew(() => Transmit(transferEnd.Payload, SecurityManager.RecordType.ECDH_TEMP));
+                    await Transmit(transferEnd.Payload, SecurityManager.RecordType.ECDH_TEMP);
                     return SupervisionStatus.Success;
                 case Security2Command.NonceGet:
                     if (controller.SecurityManager == null)
@@ -393,20 +392,11 @@ namespace ZWaveDotNet.CommandClasses
 
                     controller.SecurityManager.RevokeKey(node.ID, SecurityManager.RecordType.ECDH_TEMP);
                     if ((kex.Keys & SecurityKey.S2Unauthenticated) == SecurityKey.S2Unauthenticated)
-                    {
-                        AES.KeyTuple unauthKey = AES.CKDFExpand(controller.NetworkKeyS2UnAuth, false);
-                        controller.SecurityManager.StoreKey(node.ID, SecurityManager.RecordType.S2UnAuth, unauthKey.KeyCCM, unauthKey.PString, unauthKey.MPAN);
-                    }
+                        controller.SecurityManager.GrantKey(node.ID, SecurityManager.RecordType.S2UnAuth, controller.NetworkKeyS2UnAuth);
                     if((kex.Keys & SecurityKey.S2Authenticated) == SecurityKey.S2Authenticated)
-                    {
-                        AES.KeyTuple authKey = AES.CKDFExpand(controller.NetworkKeyS2Auth, false);
-                        controller.SecurityManager.StoreKey(node.ID, SecurityManager.RecordType.S2Auth, authKey.KeyCCM, authKey.PString, authKey.MPAN);
-                    }
+                        controller.SecurityManager.GrantKey(node.ID, SecurityManager.RecordType.S2Auth, controller.NetworkKeyS2Auth);
                     if((kex.Keys & SecurityKey.S2Access) == SecurityKey.S2Access)
-                    {
-                        AES.KeyTuple accessKey = AES.CKDFExpand(controller.NetworkKeyS2Access, false);
-                        controller.SecurityManager.StoreKey(node.ID, SecurityManager.RecordType.S2Access, accessKey.KeyCCM, accessKey.PString, accessKey.MPAN);
-                    }
+                        controller.SecurityManager.GrantKey(node.ID, SecurityManager.RecordType.S2Access, controller.NetworkKeyS2Access);
 
                     Log.Information("Transfer Complete");
                     await FireEvent(BootstrapComplete, null);

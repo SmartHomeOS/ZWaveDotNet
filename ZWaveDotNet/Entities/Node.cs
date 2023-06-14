@@ -1,8 +1,10 @@
 ﻿using Serilog;
 using System.Buffers.Binary;
+using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.Reflection;
 using System.Text;
+using System.Xml.Linq;
 using ZWaveDotNet.CommandClasses;
 using ZWaveDotNet.CommandClasses.Enums;
 using ZWaveDotNet.CommandClassReports;
@@ -25,7 +27,7 @@ namespace ZWaveDotNet.Entities
         protected readonly NodeProtocolInfo? nodeInfo;
         protected bool lr;
         
-        protected Dictionary<CommandClass, CommandClassBase> commandClasses = new Dictionary<CommandClass, CommandClassBase>();
+        protected ConcurrentDictionary<CommandClass, CommandClassBase> commandClasses = new ConcurrentDictionary<CommandClass, CommandClassBase>();
         protected List<EndPoint> endPoints = new List<EndPoint>();
 
         public Controller Controller { get { return controller; } }
@@ -50,12 +52,7 @@ namespace ZWaveDotNet.Entities
 
         private bool AddCommandClass(CommandClass cls, bool secure = false, byte version = 1)
         {
-            if (!commandClasses.ContainsKey(cls))
-            {
-                commandClasses.Add(cls, CommandClassBase.Create(cls, this, 0, secure, version));
-                return true;
-            }
-            return false;
+            return commandClasses.TryAdd(cls, CommandClassBase.Create(cls, this, 0, secure, version));
         }
 
         public async Task DeleteReturnRoute(CancellationToken cancellationToken = default)
@@ -90,10 +87,7 @@ namespace ZWaveDotNet.Entities
             if (update is NodeInformationUpdate NIF)
             {
                 foreach (CommandClass cc in NIF.CommandClasses)
-                {
-                    if (!commandClasses.ContainsKey(cc))
-                        commandClasses.Add(cc, CommandClassBase.Create(cc, this, 0, 1));
-                }
+                    AddCommandClass(cc);
             }
         }
 
@@ -224,13 +218,7 @@ namespace ZWaveDotNet.Entities
         public void Deserialize(NodeJSON json)
         {
             foreach (CommandClassJson cc in json.CommandClasses)
-            {
-                if (!commandClasses.ContainsKey(cc.CommandClass))
-                {
-                    CommandClassBase ccb = CommandClassBase.Create(cc.CommandClass, this, 0, cc.Secure, cc.Version);
-                    commandClasses.Add(cc.CommandClass, ccb);
-                }
-            }
+                AddCommandClass(cc.CommandClass, cc.Secure, cc.Version);
 
             if (controller.SecurityManager != null)
             {
@@ -239,51 +227,88 @@ namespace ZWaveDotNet.Entities
                     switch (grantedKey)
                     {
                         case SecurityKey.S0:
-                            controller.SecurityManager!.StoreKey(ID, SecurityManager.RecordType.S0, null, null, null);
+                            controller.SecurityManager.GrantKey(ID, SecurityManager.RecordType.S0);
                             break;
                         case SecurityKey.S2Unauthenticated:
-                            AES.KeyTuple unauthKey = AES.CKDFExpand(controller.NetworkKeyS2UnAuth, false);
-                            controller.SecurityManager.StoreKey(ID, SecurityManager.RecordType.S2UnAuth, unauthKey.KeyCCM, unauthKey.PString, unauthKey.MPAN);
+                            controller.SecurityManager.GrantKey(ID, SecurityManager.RecordType.S2UnAuth, controller.NetworkKeyS2UnAuth);
                             break;
                         case SecurityKey.S2Authenticated:
-                            AES.KeyTuple authKey = AES.CKDFExpand(controller.NetworkKeyS2Auth, false);
-                            controller.SecurityManager.StoreKey(ID, SecurityManager.RecordType.S2Auth, authKey.KeyCCM, authKey.PString, authKey.MPAN);
+                            controller.SecurityManager.GrantKey(ID, SecurityManager.RecordType.S2Auth, controller.NetworkKeyS2Auth);
                             break;
                         case SecurityKey.S2Access:
-                            AES.KeyTuple accessKey = AES.CKDFExpand(controller.NetworkKeyS2Access, false);
-                            controller.SecurityManager.StoreKey(ID, SecurityManager.RecordType.S2Access, accessKey.KeyCCM, accessKey.PString, accessKey.MPAN);
+                            controller.SecurityManager.GrantKey(ID, SecurityManager.RecordType.S2Access, controller.NetworkKeyS2Access);
                             break;
                     }
                 }
             }
         }
 
-        public async Task Interview(CancellationToken cancellationToken)
+        public async Task Interview(bool newlyIncluded, CancellationToken cancellationToken)
         {
             if (controller.SecurityManager != null)
             {
                 SecurityManager.NetworkKey? key = controller.SecurityManager.GetHighestKey(ID);
-                if (key != null && key.Key == SecurityManager.RecordType.S0 && commandClasses.ContainsKey(CommandClass.Security0))
+                if (!newlyIncluded && key == null)
                 {
-                    Log.Information("Requesting S0 classes for " + ID);
-                    SupportedCommands supportedCmds = await ((Security0)commandClasses[CommandClass.Security0]).CommandsSupportedGet(cancellationToken);
-                    Log.Information($"Received {string.Join(',', supportedCmds.CommandClasses)}");
-                    foreach (CommandClass cls in supportedCmds.CommandClasses)
+                    //We need to try keys one at a time
+                    if (commandClasses.ContainsKey(CommandClass.Security0))
                     {
-                        if (!AddCommandClass(cls, true))
-                            commandClasses[cls].Secure = true;
+                        controller.SecurityManager.GrantKey(ID, SecurityManager.RecordType.S0);
+                        Log.Information("Checking S0 Security");
+                        try
+                        {
+                            CancellationTokenSource cts = new CancellationTokenSource(7000);
+                            await RequestS0(cts.Token);
+                        }
+                        catch (Exception)
+                        {
+                            controller.SecurityManager.RevokeKey(ID, SecurityManager.RecordType.S0);
+                        }
+                    }
+                    if (commandClasses.ContainsKey(CommandClass.Security2))
+                    {
+                        controller.SecurityManager.GrantKey(ID, SecurityManager.RecordType.S2UnAuth, controller.NetworkKeyS2UnAuth);
+                        Log.Information("Checking S2 Unauth Security");
+                        try
+                        {
+                            CancellationTokenSource cts = new CancellationTokenSource(7000);
+                            await RequestS2(cts.Token);
+                        }
+                        catch (Exception)
+                        {
+                            controller.SecurityManager.RevokeKey(ID, SecurityManager.RecordType.S2UnAuth);
+                        }
+                        controller.SecurityManager.GrantKey(ID, SecurityManager.RecordType.S2Auth, controller.NetworkKeyS2Auth);
+                        Log.Information("Checking S2 Auth Security");
+                        try
+                        {
+                            CancellationTokenSource cts = new CancellationTokenSource(7000);
+                            await RequestS2(cts.Token);
+                        }
+                        catch (Exception)
+                        {
+                            controller.SecurityManager.RevokeKey(ID, SecurityManager.RecordType.S2Auth);
+                        }
+                        controller.SecurityManager.GrantKey(ID, SecurityManager.RecordType.S2Access, controller.NetworkKeyS2Access);
+                        Log.Information("Checking S2 Access Security");
+                        try
+                        {
+                            CancellationTokenSource cts = new CancellationTokenSource(7000);
+                            await RequestS2(cts.Token);
+                        }
+                        catch (Exception)
+                        {
+                            controller.SecurityManager.RevokeKey(ID, SecurityManager.RecordType.S2Access);
+                        }
                     }
                 }
-                else if (key != null && commandClasses.ContainsKey(CommandClass.Security2))
+                else
                 {
-                    Log.Information("Requesting S2 classes for " + ID);
-                    List<CommandClass> supportedCmds = await ((Security2)commandClasses[CommandClass.Security2]).GetSupportedCommands(cancellationToken);
-                    Log.Information($"Received {string.Join(',', supportedCmds)}");
-                    foreach (CommandClass cls in supportedCmds)
-                    {
-                        if (!AddCommandClass(cls, true))
-                            commandClasses[cls].Secure = true;
-                    }
+                    //Whatever keys we have is what the device has
+                    if (key != null && key.Key == SecurityManager.RecordType.S0 && commandClasses.ContainsKey(CommandClass.Security0))
+                        await RequestS0(cancellationToken);
+                    else if (key != null && commandClasses.ContainsKey(CommandClass.Security2))
+                        await RequestS2(cancellationToken);
                 }
             }
             if (this.commandClasses.ContainsKey(CommandClass.MultiChannel))
@@ -294,6 +319,7 @@ namespace ZWaveDotNet.Entities
                     endPoints.Add(new EndPoint((byte)(i + 1), this));
             }
 
+            Log.Information("Checking Command Class Versions");
             if (this.commandClasses.ContainsKey(CommandClass.Version))
             {
                 CommandClasses.Version version = (CommandClasses.Version)commandClasses[CommandClass.Version];
@@ -301,13 +327,25 @@ namespace ZWaveDotNet.Entities
                 {
                     CCVersion? ccVersion = (CCVersion?)cc.GetType().GetCustomAttribute(typeof(CCVersion));
                     if ((ccVersion == null || ccVersion.maxVersion > 1) && (cc.CommandClass >= CommandClass.Basic))
-                        cc.Version = await version.GetCommandClassVersion(cc.CommandClass, cancellationToken);
+                    {
+                        CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(new CancellationTokenSource(10000).Token, cancellationToken);
+                        try
+                        {
+                            cc.Version = await version.GetCommandClassVersion(cc.CommandClass, cts.Token);
+                        }
+                        catch (OperationCanceledException oc)
+                        {
+                            Log.Warning($"Timeout trying to interview {ID} version for {cc.CommandClass}");
+                            if (cancellationToken.IsCancellationRequested)
+                                throw oc;
+                        }
+                    }
                 }
 
                 //Thanks ZWave for making things difficult
                 if (this.commandClasses.TryGetValue(CommandClass.Alarm, out CommandClassBase? ccb) && ccb.Version > 3)
                 {
-                    commandClasses.Remove(CommandClass.Alarm);
+                    commandClasses.Remove(CommandClass.Alarm, out _);
                     AddCommandClass(CommandClass.Notification, ccb.Secure, ccb.Version);
                 }
             }
@@ -315,6 +353,31 @@ namespace ZWaveDotNet.Entities
             Log.Information("Interviewing Command Classes");
             foreach (CommandClassBase cc in commandClasses.Values)
                 await cc.Interview(cancellationToken);
+            Log.Information($"Interview Complete [{ID}]");
+        }
+
+        private async Task RequestS0(CancellationToken cancellationToken)
+        {
+            Log.Information("Requesting S0 classes for " + ID);
+            SupportedCommands supportedCmds = await((Security0)commandClasses[CommandClass.Security0]).CommandsSupportedGet(cancellationToken);
+            Log.Information($"Received {string.Join(',', supportedCmds.CommandClasses)}");
+            foreach (CommandClass cls in supportedCmds.CommandClasses)
+            {
+                if (!AddCommandClass(cls, true))
+                    commandClasses[cls].Secure = true;
+            }
+        }
+
+        private async Task RequestS2(CancellationToken cancellationToken)
+        {
+            Log.Information("Requesting S2 classes for " + ID);
+            List<CommandClass> supportedCmds = await ((Security2)commandClasses[CommandClass.Security2]).GetSupportedCommands(cancellationToken);
+            Log.Information($"Received {string.Join(',', supportedCmds)}");
+            foreach (CommandClass cls in supportedCmds)
+            {
+                if (!AddCommandClass(cls, true))
+                    commandClasses[cls].Secure = true;
+            }
         }
 
         public override string ToString()

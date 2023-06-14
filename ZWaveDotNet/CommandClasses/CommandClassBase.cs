@@ -6,6 +6,7 @@ using ZWaveDotNet.SerialAPI.Messages.Enums;
 using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.Security;
 using ZWaveDotNet.CommandClassReports.Enums;
+using Serilog;
 
 namespace ZWaveDotNet.CommandClasses
 {
@@ -196,9 +197,26 @@ namespace ZWaveDotNet.CommandClasses
                     throw new InvalidOperationException("Security required but no keys are available");
             }
             
-            DataCallback dc = await controller.Flow.SendAcknowledgedResponseCallback(data.ToMessage(), token);
+            for (int i = 0; i < 3; i++)
+            {
+                if (await AttemptTransmission(data.ToMessage(), token, (i == 2)) == false)
+                {
+                    Log.Error("Transmission Failure: Retrying...");
+                    await Task.Delay(100 + (1000 * i), token);
+                }
+            }
+        }
+
+        private async Task<bool> AttemptTransmission(DataMessage message, CancellationToken cancellationToken, bool ex = false)
+        {
+            DataCallback dc = await controller.Flow.SendAcknowledgedResponseCallback(message, cancellationToken);
             if (dc.Status != TransmissionStatus.CompleteOk && dc.Status != TransmissionStatus.CompleteNoAck && dc.Status != TransmissionStatus.CompleteVerified)
+            {
+                if (!ex)
+                    return false;
                 throw new Exception("Transmission Failure " + dc.Status.ToString());
+            }
+            return true;
         }
 
         protected virtual bool IsSecure(byte command)

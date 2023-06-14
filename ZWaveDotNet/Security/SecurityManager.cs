@@ -64,7 +64,20 @@ namespace ZWaveDotNet.Security
             return Curve25519.GetSharedSecret(privateKey.ToArray(), publicKeyB.ToArray());
         }
 
-        public void StoreKey(ushort nodeId, RecordType type, byte[]? keyCCM, byte[]? pString, byte[]? mPAN)
+        public void GrantKey(ushort nodeId, RecordType type, byte[]? key = null, bool temp = false)
+        {
+            if (type == RecordType.S0)
+            {
+                StoreKey(nodeId, type, null, null, null);
+                return;
+            }
+            if (key == null)
+                throw new ArgumentNullException(nameof(key));
+            AES.KeyTuple keyTuple = AES.CKDFExpand(key, temp);
+            StoreKey(nodeId, type, keyTuple.KeyCCM, keyTuple.PString, keyTuple.MPAN);
+        }
+
+        private void StoreKey(ushort nodeId, RecordType type, byte[]? keyCCM, byte[]? pString, byte[]? mPAN)
         {
             List<NetworkKey> list;
             if (keys.TryGetValue(nodeId, out List<NetworkKey>? keyLst))

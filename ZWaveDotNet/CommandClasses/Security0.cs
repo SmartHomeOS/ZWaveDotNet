@@ -144,7 +144,7 @@ namespace ZWaveDotNet.CommandClasses
             {
                 case Security0Command.NetworkKeyVerify:
                     keyVerified.TrySetResult();
-                    controller.SecurityManager?.StoreKey(node.ID, SecurityManager.RecordType.S0, null, null, null);
+                    controller.SecurityManager?.GrantKey(node.ID, SecurityManager.RecordType.S0);
                     return SupervisionStatus.Success;
                 case Security0Command.NonceGet:
                     if (controller.SecurityManager == null)

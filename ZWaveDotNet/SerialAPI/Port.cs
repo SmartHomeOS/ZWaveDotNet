@@ -22,6 +22,11 @@ namespace ZWaveDotNet.SerialAPI
             Task.Factory.StartNew(ReadTask);
         }
 
+        public bool IsConnected()
+        {
+            return port.IsOpen;
+        }
+
         public async ValueTask QueueTX(Frame frame)
         {
             await tx.Writer.WriteAsync(frame);

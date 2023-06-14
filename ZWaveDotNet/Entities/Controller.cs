@@ -77,6 +77,7 @@ namespace ZWaveDotNet.Entities
         internal byte[] NetworkKeyS2Access { get; private set; }
         internal SecurityManager? SecurityManager { get; private set; }
         public LibraryType ControllerType { get; private set; } = LibraryType.StaticController;
+        public bool IsConnected { get { return flow.IsConnected; } }
         internal bool WideID { get { return flow.WideID; } private set { flow.WideID = value; } }
 
         public async Task Reset()
@@ -332,7 +333,7 @@ namespace ZWaveDotNet.Entities
             ControllerJSON json = Serialize();
             return JsonSerializer.Serialize(json);
         }
-        public async Task ExportNodeDB(string path)
+        public async Task ExportNodeDBAsync(string path)
         {
             using (FileStream outputStream = new FileStream(path, FileMode.Create))
             {
@@ -398,19 +399,19 @@ namespace ZWaveDotNet.Entities
         public async Task InterviewNodes()
         {
             foreach (Node n in Nodes.Values)
-                await InterviewNode(n);
+                await InterviewNode(n, false);
         }
 
-        private static async Task InterviewNode(Node node)
+        private static async Task InterviewNode(Node node, bool newlyIncluded)
         {
             if (node.Listening)
-                await node.Interview(new CancellationTokenSource(60000).Token);
+                await node.Interview(newlyIncluded, new CancellationTokenSource(180000).Token);
             else
                 await Task.Factory.StartNew(async () => {
                 //TODO - Make sure we abort this if interview is already in progress
                 if (node.CommandClasses.ContainsKey(CommandClass.WakeUp))
                     await ((WakeUp)node.CommandClasses[CommandClass.WakeUp]).WaitForAwake();
-                await node.Interview(new CancellationTokenSource(60000).Token);
+                await node.Interview(newlyIncluded, new CancellationTokenSource(180000).Token);
                 if (node.CommandClasses.ContainsKey(CommandClass.WakeUp))
                     await ((WakeUp)node.CommandClasses[CommandClass.WakeUp]).NoMoreInformation();
             });
@@ -456,7 +457,7 @@ namespace ZWaveDotNet.Entities
                             if (Nodes.TryGetValue(au.NodeId, out Node? node))
                                 node.HandleApplicationUpdate(au);
                             if (au is NodeInformationUpdate niu && NodeInfoUpdated != null)
-                                NodeInfoUpdated.Invoke(this, new ApplicationUpdateEventArgs(niu));
+                                NodeInfoUpdated.Invoke(node, new ApplicationUpdateEventArgs(niu));
                         }
                         Log.Information(au.ToString());
                     }
@@ -522,7 +523,7 @@ namespace ZWaveDotNet.Entities
         public async Task<bool> BootstrapUnsecure(Node node)
         {
             Log.Information("Included without Security. Moving to interview");
-            await InterviewNode(node);
+            await InterviewNode(node, true);
             NodeReady?.Invoke(node, new EventArgs());
             return true;
         }
@@ -543,7 +544,7 @@ namespace ZWaveDotNet.Entities
                 Log.Error(e, "Error in S0 Bootstrapping");
                 return false;
             }
-            await InterviewNode(node);
+            await InterviewNode(node, true);
             NodeReady?.Invoke(node, new EventArgs());
             return true;
         }
@@ -576,8 +577,7 @@ namespace ZWaveDotNet.Entities
                 byte[] sharedSecret = SecurityManager!.CreateSharedSecret(pub);
                 var prk = AES.CKDFTempExtract(sharedSecret, SecurityManager.PublicKey, pub);
                 Log.Information("Temp Key: " + MemoryUtil.Print(prk));
-                AES.KeyTuple ckdf = AES.CKDFExpand(prk, true);
-                SecurityManager.StoreKey(node.ID, SecurityManager.RecordType.ECDH_TEMP, ckdf.KeyCCM, ckdf.PString, ckdf.MPAN);
+                SecurityManager.GrantKey(node.ID, SecurityManager.RecordType.ECDH_TEMP, prk, true);
                 await sec2.SendPublicKey();
                 CancellationTokenSource cts = new CancellationTokenSource(30000);
                 await sec2.WaitForBootstrap(cts.Token);
@@ -590,7 +590,7 @@ namespace ZWaveDotNet.Entities
                 await sec2.KexFail(KexFailType.KEX_FAIL_CANCEL, cts.Token);
                 return false;
             }
-            await InterviewNode(node);
+            await InterviewNode(node, true);
             NodeReady?.Invoke(node, new EventArgs());
             return true;
         }
