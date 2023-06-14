@@ -20,7 +20,7 @@ await controller.InterviewNodes();
 
 After the network is interviewed, it is a good idea to save the node database for future startups.
 ```c#
-await controller.ExportNodeDB("nodes.db");
+await controller.ExportNodeDBAsync("nodes.db");
 ```
 
 ##### Option 2: Loading Node Database

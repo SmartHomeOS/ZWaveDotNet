@@ -12,13 +12,12 @@ namespace ZWaveDotNet.CommandClasses
     {
         public NoOperation(Node node, byte endpoint) : base(node, endpoint, CommandClass.NoOperation)  {  }
 
-        public async Task Ping(CancellationToken cancellationToken = default)
+        public async Task<bool> Ping(CancellationToken cancellationToken = default)
         {
             CommandMessage data = new CommandMessage(controller, node.ID, (byte)(endpoint & 0x7F), commandClass, 0x0);
             data.Payload.RemoveAt(1); //This class sends no command
             DataCallback dc = await controller.Flow.SendAcknowledgedResponseCallback(data.ToMessage(), cancellationToken);
-            if (dc.Status != TransmissionStatus.CompleteOk && dc.Status != TransmissionStatus.CompleteNoAck && dc.Status != TransmissionStatus.CompleteVerified)
-                throw new Exception("Transmission Failure " + dc.Status.ToString());
+            return (dc.Status == TransmissionStatus.CompleteOk || dc.Status == TransmissionStatus.CompleteNoAck || dc.Status == TransmissionStatus.CompleteVerified);
         }
 
         protected override async Task<SupervisionStatus> Handle(ReportMessage message)
