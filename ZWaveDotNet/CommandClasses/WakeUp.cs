@@ -1,4 +1,5 @@
 ﻿using Serilog;
+using System.Collections.Concurrent;
 using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities;
@@ -11,7 +12,7 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.WakeUp, 1, 3)]
     public class WakeUp : CommandClassBase
     {
-        private Queue<TaskCompletionSource> taskCompletionSources = new Queue<TaskCompletionSource>();
+        private ConcurrentQueue<TaskCompletionSource> taskCompletionSources = new ConcurrentQueue<TaskCompletionSource>();
         public event CommandClassEvent? Awake;
 
         enum WakeUpCommand
@@ -54,8 +55,8 @@ namespace ZWaveDotNet.CommandClasses
         {
             if (message.Command == (byte)WakeUpCommand.Notification)
             {
-                while (taskCompletionSources.Count > 0)
-                    taskCompletionSources.Dequeue().TrySetResult();
+                while (taskCompletionSources.TryDequeue(out TaskCompletionSource? tcs))
+                    tcs.TrySetResult();
                 await FireEvent(Awake, null);
                 Log.Information($"Node {node.ID} awake");
                 return SupervisionStatus.Success;
@@ -63,9 +64,10 @@ namespace ZWaveDotNet.CommandClasses
             return SupervisionStatus.NoSupport;
         }
 
-        public async Task WaitForAwake()
+        public async Task WaitForAwake(CancellationToken cancellationToken = default)
         {
-            TaskCompletionSource tcs = new TaskCompletionSource();
+            TaskCompletionSource tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            cancellationToken.Register(() => tcs.TrySetCanceled());
             taskCompletionSources.Enqueue(tcs);
             await tcs.Task;
         }

@@ -110,12 +110,16 @@ namespace ZWaveDotNet.SerialAPI
 
         private async Task SendAcknowledgedIntl(Channel<Frame> reader, Frame frame, CancellationToken cancellationToken)
         {
-            CancellationTokenSource timeout = new CancellationTokenSource(1600);
-            CancellationToken token = CancellationTokenSource.CreateLinkedTokenSource(timeout.Token, cancellationToken).Token;
-            do
+            using (CancellationTokenSource timeout = new CancellationTokenSource(1600))
             {
-                await port.QueueTX(frame);
-            } while (!await SuccessfulAck(reader, token));
+                using (CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(timeout.Token, cancellationToken))
+                {
+                    do
+                    {
+                        await port.QueueTX(frame);
+                    } while (!await SuccessfulAck(reader, cts.Token));
+                }
+            }
         }
 
         private static async Task<Frame> GetAcknowledgedResponseIntl(Channel<Frame> reader, CancellationToken token)

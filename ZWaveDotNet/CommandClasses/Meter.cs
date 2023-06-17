@@ -11,7 +11,7 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.Meter, 1, 6)]
     public class Meter : CommandClassBase
     {
-        public event CommandClassEvent? Update;
+        public event CommandClassEvent? Updated;
 
         enum MeterCommand
         {
@@ -76,7 +76,7 @@ namespace ZWaveDotNet.CommandClasses
             if (message.Command == (byte)MeterCommand.Report)
             {
                 MeterReport report = new MeterReport(message.Payload);
-                await FireEvent(Update, report);
+                await FireEvent(Updated, report);
                 Log.Information(report.ToString());
                 return SupervisionStatus.Success;
             }

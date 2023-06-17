@@ -18,8 +18,8 @@ namespace ZWaveDotNet.SerialAPI
             port.Open();
             Reset();
 
-            Task.Factory.StartNew(WriteTask);
-            Task.Factory.StartNew(ReadTask);
+            Task.Factory.StartNew(WriteTask, TaskCreationOptions.LongRunning);
+            Task.Factory.StartNew(ReadTask, TaskCreationOptions.LongRunning);
         }
 
         public bool IsConnected()

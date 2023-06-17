@@ -2,5 +2,6 @@
 {
     public interface ICommandClassReport
     {
+        public string ToString();
     }
 }

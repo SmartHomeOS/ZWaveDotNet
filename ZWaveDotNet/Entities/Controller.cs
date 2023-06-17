@@ -35,6 +35,7 @@ namespace ZWaveDotNet.Entities
         private ushort pin;
         private InclusionStrategy currentStrategy = InclusionStrategy.PreferS2;
         private readonly List<Memory<byte>> provisionList = new List<Memory<byte>>();
+        private static SemaphoreSlim nodeListLock = new SemaphoreSlim(1, 1);
 
         public Controller(string port, byte[] s0Key, byte[] s2unauth, byte[] s2auth, byte[] s2access)
         {
@@ -89,7 +90,7 @@ namespace ZWaveDotNet.Entities
         public async ValueTask Start(CancellationToken cancellationToken = default)
         {
             SecurityManager = new SecurityManager(await GetRandom(32, cancellationToken));
-            await Task.Factory.StartNew(EventLoop);
+            await Task.Factory.StartNew(EventLoop, TaskCreationOptions.LongRunning);
 
             //See what the controller supports
             await GetSupportedFunctions(cancellationToken);
@@ -330,15 +331,31 @@ namespace ZWaveDotNet.Entities
 
         public string ExportNodeDB()
         {
-            ControllerJSON json = Serialize();
-            return JsonSerializer.Serialize(json);
-        }
-        public async Task ExportNodeDBAsync(string path)
-        {
-            using (FileStream outputStream = new FileStream(path, FileMode.Create))
+            nodeListLock.Wait();
+            try
             {
                 ControllerJSON json = Serialize();
-                await JsonSerializer.SerializeAsync(outputStream, json);
+                return JsonSerializer.Serialize(json);
+            }
+            finally
+            {
+                nodeListLock.Release();
+            }
+        }
+        public async Task ExportNodeDBAsync(string path, CancellationToken cancellationToken = default)
+        {
+            await nodeListLock.WaitAsync(cancellationToken);
+            try
+            {
+                using (FileStream outputStream = new FileStream(path, FileMode.Create))
+                {
+                    ControllerJSON json = Serialize();
+                    await JsonSerializer.SerializeAsync(outputStream, json, (JsonSerializerOptions?)null, cancellationToken);
+                }
+            }
+            finally
+            {
+                nodeListLock.Release();
             }
         }
 
@@ -377,23 +394,39 @@ namespace ZWaveDotNet.Entities
 
         public bool ImportNodeDB(string json)
         {
-            ControllerJSON? entity = JsonSerializer.Deserialize<ControllerJSON>(json);
-            if (entity == null)
-                return false;
-            Deserialize(entity);
-            return true;
-        }
-
-        public async Task<bool> ImportNodeDBAsync(string path)
-        {
-            using (FileStream fs = new FileStream(path, FileMode.Open))
+            nodeListLock.Wait();
+            try
             {
-                ControllerJSON? entity = await JsonSerializer.DeserializeAsync<ControllerJSON>(fs);
+                ControllerJSON? entity = JsonSerializer.Deserialize<ControllerJSON>(json);
                 if (entity == null)
                     return false;
                 Deserialize(entity);
+                return true;
             }
-            return true;
+            finally
+            {
+                nodeListLock.Release();
+            }
+        }
+
+        public async Task<bool> ImportNodeDBAsync(string path, CancellationToken cancellationToken = default)
+        {
+            await nodeListLock.WaitAsync(cancellationToken);
+            try
+            {
+                using (FileStream fs = new FileStream(path, FileMode.Open))
+                {
+                    ControllerJSON? entity = await JsonSerializer.DeserializeAsync<ControllerJSON>(fs, (JsonSerializerOptions?)null, cancellationToken);
+                    if (entity == null)
+                        return false;
+                    Deserialize(entity);
+                }
+                return true;
+            }
+            finally
+            {
+                nodeListLock.Release();
+            }
         }
 
         public async Task InterviewNodes()
@@ -405,16 +438,21 @@ namespace ZWaveDotNet.Entities
         private static async Task InterviewNode(Node node, bool newlyIncluded)
         {
             if (node.Listening)
-                await node.Interview(newlyIncluded, new CancellationTokenSource(180000).Token);
+            {
+                using (CancellationTokenSource cts = new CancellationTokenSource(180000))
+                await node.Interview(newlyIncluded, cts.Token);
+            }
             else
-                await Task.Factory.StartNew(async () => {
-                //TODO - Make sure we abort this if interview is already in progress
-                if (node.CommandClasses.ContainsKey(CommandClass.WakeUp))
-                    await ((WakeUp)node.CommandClasses[CommandClass.WakeUp]).WaitForAwake();
-                await node.Interview(newlyIncluded, new CancellationTokenSource(180000).Token);
-                if (node.CommandClasses.ContainsKey(CommandClass.WakeUp))
-                    await ((WakeUp)node.CommandClasses[CommandClass.WakeUp]).NoMoreInformation();
-            });
+                await Task.Factory.StartNew(async () =>
+                {
+                    //TODO - Make sure we abort this if interview is already in progress
+                    if (node.CommandClasses.ContainsKey(CommandClass.WakeUp))
+                        await ((WakeUp)node.CommandClasses[CommandClass.WakeUp]).WaitForAwake();
+                    using (CancellationTokenSource cts = new CancellationTokenSource(180000))
+                    await node.Interview(newlyIncluded, cts.Token);
+                    if (node.CommandClasses.ContainsKey(CommandClass.WakeUp))
+                        await ((WakeUp)node.CommandClasses[CommandClass.WakeUp]).NoMoreInformation();
+                });
         }
 
         private async Task EventLoop()
@@ -469,7 +507,7 @@ namespace ZWaveDotNet.Entities
                     else if (msg is ApplicationCommand cmd)
                     {
                         if (Nodes.TryGetValue(cmd.SourceNodeID, out Node? node))
-                            _ = Task.Factory.StartNew(() => node.HandleApplicationCommand(cmd));
+                            _ = Task.Factory.StartNew(async() => { try { await node.HandleApplicationCommand(cmd); } catch (Exception e) { Log.Error(e, "Unhandled"); } });
                         else
                             Log.Warning("Node " + cmd.SourceNodeID + " not found");
                         Log.Information(cmd.ToString());
@@ -531,18 +569,20 @@ namespace ZWaveDotNet.Entities
         private async Task<bool> BootstrapS0(Node node)
         {
             Log.Information("Starting Secure(0-Legacy) Inclusion");
-            CancellationTokenSource cts = new CancellationTokenSource(30000);
-            try
+            using (CancellationTokenSource cts = new CancellationTokenSource(30000))
             {
-                await ((Security0)node.CommandClasses[CommandClass.Security0]).SchemeGet(cts.Token);
-                await ((Security0)node.CommandClasses[CommandClass.Security0]).KeySet(cts.Token);
-                await ((Security0)node.CommandClasses[CommandClass.Security0]).WaitForKeyVerified(cts.Token);
-                SecurityBootstrapComplete?.Invoke(node, new EventArgs());
-            }
-            catch(Exception e)
-            {
-                Log.Error(e, "Error in S0 Bootstrapping");
-                return false;
+                try
+                {
+                    await ((Security0)node.CommandClasses[CommandClass.Security0]).SchemeGet(cts.Token);
+                    await ((Security0)node.CommandClasses[CommandClass.Security0]).KeySet(cts.Token);
+                    await ((Security0)node.CommandClasses[CommandClass.Security0]).WaitForKeyVerified(cts.Token);
+                    SecurityBootstrapComplete?.Invoke(node, new EventArgs());
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e, "Error in S0 Bootstrapping");
+                    return false;
+                }
             }
             await InterviewNode(node, true);
             NodeReady?.Invoke(node, new EventArgs());
@@ -555,8 +595,10 @@ namespace ZWaveDotNet.Entities
             Log.Information("Starting Secure S2 Inclusion");
             try
             {
-                CancellationTokenSource TA1 = new CancellationTokenSource(10000);
-                KeyExchangeReport requestedKeys = await sec2.KexGet(TA1.Token);
+                KeyExchangeReport requestedKeys;
+                using (CancellationTokenSource TA1 = new CancellationTokenSource(10000))
+                    requestedKeys = await sec2.KexGet(TA1.Token);
+
                 if (!requestedKeys.Curve25519)
                 {
                     await sec2.KexFail(KexFailType.KEX_FAIL_KEX_CURVES);
@@ -569,8 +611,9 @@ namespace ZWaveDotNet.Entities
                 }
                 SecurityManager!.StoreRequestedKeys(node.ID, requestedKeys);
                 Log.Information("Sending " + requestedKeys.ToString());
-                CancellationTokenSource TA2 = new CancellationTokenSource(10000);
-                Memory<byte> pub = await sec2.KexSet(requestedKeys, TA2.Token);
+                Memory<byte> pub;
+                using (CancellationTokenSource TA2 = new CancellationTokenSource(10000))
+                    pub = await sec2.KexSet(requestedKeys, TA2.Token);
                 if ((requestedKeys.Keys & SecurityKey.S2Access) == SecurityKey.S2Access ||
                     (requestedKeys.Keys & SecurityKey.S2Authenticated) == SecurityKey.S2Authenticated)
                     BinaryPrimitives.WriteUInt16BigEndian(pub.Slice(0, 2).Span, pin);
@@ -579,15 +622,15 @@ namespace ZWaveDotNet.Entities
                 Log.Information("Temp Key: " + MemoryUtil.Print(prk));
                 SecurityManager.GrantKey(node.ID, SecurityManager.RecordType.ECDH_TEMP, prk, true);
                 await sec2.SendPublicKey();
-                CancellationTokenSource cts = new CancellationTokenSource(30000);
-                await sec2.WaitForBootstrap(cts.Token);
+                using (CancellationTokenSource cts = new CancellationTokenSource(30000))
+                    await sec2.WaitForBootstrap(cts.Token);
                 SecurityBootstrapComplete?.Invoke(node, new EventArgs());
             }
             catch(Exception e)
             {
                 Log.Error(e, "Error in S2 Bootstrapping");
-                CancellationTokenSource cts = new CancellationTokenSource(5000);
-                await sec2.KexFail(KexFailType.KEX_FAIL_CANCEL, cts.Token);
+                using (CancellationTokenSource cts = new CancellationTokenSource(5000))
+                    await sec2.KexFail(KexFailType.KEX_FAIL_CANCEL, cts.Token);
                 return false;
             }
             await InterviewNode(node, true);

@@ -7,6 +7,7 @@ using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.Security;
 using ZWaveDotNet.CommandClassReports.Enums;
 using Serilog;
+using System.Collections.Concurrent;
 
 namespace ZWaveDotNet.CommandClasses
 {
@@ -19,7 +20,7 @@ namespace ZWaveDotNet.CommandClasses
         protected Controller controller;
         protected CommandClass commandClass;
         protected byte endpoint;
-        protected Dictionary<byte, List<TaskCompletionSource<ReportMessage>>> callbacks = new Dictionary<byte, List<TaskCompletionSource<ReportMessage>>>();
+        protected ConcurrentDictionary<byte, BlockingCollection<TaskCompletionSource<ReportMessage>>> callbacks = new ConcurrentDictionary<byte, BlockingCollection<TaskCompletionSource<ReportMessage>>>();
 
         protected CommandClassBase(Node node, byte endpoint, CommandClass commandClass)
         {
@@ -37,17 +38,19 @@ namespace ZWaveDotNet.CommandClasses
 
         public async Task<SupervisionStatus> ProcessMessage(ReportMessage message)
         {
-            if (callbacks.ContainsKey(message.Command))
+            if (callbacks.TryGetValue(message.Command, out BlockingCollection<TaskCompletionSource<ReportMessage>>? lst))
             {
-                List<TaskCompletionSource<ReportMessage>> lst = callbacks[message.Command];
-                if (lst.Count > 0)
+                while (lst.TryTake(out TaskCompletionSource<ReportMessage>? tcs))
                 {
-                    lst[0].TrySetResult(message);
-                    lst.RemoveAt(0);
-                    if (lst.Count == 0)
-                        callbacks.Remove(message.Command);
-                    return SupervisionStatus.Success;
+                    if (tcs.TrySetResult(message))
+                    {
+                        if (lst.Count == 0)
+                            callbacks.TryRemove(message.Command, out _);
+                        return SupervisionStatus.Success;
+                    }
                 }
+                if (lst.Count == 0)
+                    callbacks.TryRemove(message.Command, out _);
             }
             return await Handle(message);
         }
@@ -186,7 +189,7 @@ namespace ZWaveDotNet.CommandClasses
             {
                 if (controller.SecurityManager == null)
                     throw new InvalidOperationException("Secure command requires security manager");
-                 SecurityManager.NetworkKey? key = controller.SecurityManager.GetHighestKey(node.ID);
+                SecurityManager.NetworkKey? key = controller.SecurityManager.GetHighestKey(node.ID);
                 if (key == null)
                     throw new InvalidOperationException($"Command classes are secure but no keys exist for node {node.ID}");
                 if (key.Key == SecurityManager.RecordType.S0)
@@ -196,12 +199,13 @@ namespace ZWaveDotNet.CommandClasses
                 else
                     throw new InvalidOperationException("Security required but no keys are available");
             }
-            
+
+            DataMessage message = data.ToMessage();
             for (int i = 0; i < 3; i++)
             {
-                if (await AttemptTransmission(data.ToMessage(), token, (i == 2)) == false)
+                if (await AttemptTransmission(message, token, (i == 2)) == false)
                 {
-                    Log.Error("Transmission Failure: Retrying...");
+                    Log.Error($"Transmission Failure: Retrying [Attempt {i+1}]...");
                     await Task.Delay(100 + (1000 * i), token);
                 }
             }
@@ -236,20 +240,24 @@ namespace ZWaveDotNet.CommandClasses
 
         protected async Task<ReportMessage> SendReceive(Enum command, Enum response, CancellationToken token, bool supervised = false, params byte[] payload)
         {
-            TaskCompletionSource<ReportMessage> src = new TaskCompletionSource<ReportMessage>();
+            TaskCompletionSource<ReportMessage> src = new TaskCompletionSource<ReportMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+            token.Register(() => src.TrySetCanceled());
             byte cmd = Convert.ToByte(response);
-            if (callbacks.TryGetValue(cmd, out List<TaskCompletionSource<ReportMessage>>? cbList))
+            if (callbacks.TryGetValue(cmd, out BlockingCollection<TaskCompletionSource<ReportMessage>>? cbList))
                 cbList.Add(src);
             else
             {
-                List<TaskCompletionSource<ReportMessage>> newCallbacks = new List<TaskCompletionSource<ReportMessage>>
+                BlockingCollection<TaskCompletionSource<ReportMessage>> newCallbacks = new BlockingCollection<TaskCompletionSource<ReportMessage>>
                 {
                     src
                 };
-                callbacks.Add(cmd, newCallbacks);
+                if (!callbacks.TryAdd(cmd, newCallbacks))
+                {
+                    callbacks[cmd].Add(src);
+                }
             }
             await SendCommand(command, token, supervised, payload);
-            return await src.Task.WaitAsync(token);
+            return await src.Task;
         }
 
         protected async Task FireEvent(CommandClassEvent? evt, ICommandClassReport? report)
