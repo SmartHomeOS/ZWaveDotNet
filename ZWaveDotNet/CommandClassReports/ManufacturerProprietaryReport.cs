@@ -17,5 +17,10 @@ namespace ZWaveDotNet.CommandClassReports
             Manufacturer = BinaryPrimitives.ReadUInt16BigEndian(payload.Slice(0, 2).Span);
             Data = payload.Slice(2);
         }
+
+        public override string ToString()
+        {
+            return $"Manufacturer {Manufacturer}: {Data.Length} Bytes";
+        }
     }
 }

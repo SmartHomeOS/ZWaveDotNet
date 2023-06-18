@@ -10,5 +10,10 @@
             this.ErrorNumber = errorNumber;
             this.ErrorMessage = errorMessage;
         }
+
+        public override string ToString()
+        {
+            return $"Error {ErrorNumber}: {ErrorMessage}";
+        }
     }
 }

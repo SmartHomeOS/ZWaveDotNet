@@ -12,7 +12,7 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.WakeUp, 1, 3)]
     public class WakeUp : CommandClassBase
     {
-        private ConcurrentQueue<TaskCompletionSource> taskCompletionSources = new ConcurrentQueue<TaskCompletionSource>();
+        private readonly ConcurrentQueue<TaskCompletionSource> taskCompletionSources = new ConcurrentQueue<TaskCompletionSource>();
         public event CommandClassEvent? Awake;
 
         enum WakeUpCommand
@@ -42,6 +42,7 @@ namespace ZWaveDotNet.CommandClasses
 
         public async Task NoMoreInformation(CancellationToken cancellationToken = default)
         {
+            Log.Information($"Node {node.ID} returned to sleep");
             await SendCommand(WakeUpCommand.NoMoreInformation, cancellationToken);
         }
 

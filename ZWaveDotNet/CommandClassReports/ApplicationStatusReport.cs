@@ -16,5 +16,10 @@ namespace ZWaveDotNet.CommandClassReports
             Status = (ApplicationBusyStatus)payload.Span[0];
             WaitTime = TimeSpan.FromSeconds(payload.Span[1]);
         }
+
+        public override string ToString()
+        {
+            return $"Status: {Status} [Time {WaitTime}]";
+        }
     }
 }

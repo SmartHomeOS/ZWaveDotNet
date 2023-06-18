@@ -45,7 +45,7 @@ namespace ZWaveDotNet.CommandClasses
             //TODO - Implement Transport Service Transmit
         }
 
-        internal static ReportMessage? Process(ReportMessage msg, Controller controller)
+        internal static async Task<ReportMessage?> Process(ReportMessage msg, Controller controller)
         {
             ushort datagramLen;
             byte sessionId;
@@ -103,7 +103,7 @@ namespace ZWaveDotNet.CommandClasses
                     {
                         Log.Error("Subsequent Segment received without a start");
                         CancellationTokenSource cts = new CancellationTokenSource(5000);
-                        ((TransportService)controller.Nodes[msg.SourceNodeID].CommandClasses[CommandClass.TransportService]).SendWait(0, cts.Token).Wait();
+                        await ((TransportService)controller.Nodes[msg.SourceNodeID].CommandClasses[CommandClass.TransportService]).SendWait(0, cts.Token);
                         return null;
                     }
                     msg.Payload.Slice(0, msg.Payload.Length - 2).CopyTo(buff.Slice(datagramOffset));
@@ -116,7 +116,7 @@ namespace ZWaveDotNet.CommandClasses
                         ReportMessage fullMessage = new ReportMessage(msg.SourceNodeID, msg.SourceEndpoint, buff, msg.RSSI);
                         fullMessage.Flags |= ReportFlags.Transport;
                         CancellationTokenSource cts = new CancellationTokenSource(10000);
-                        ((TransportService)controller.Nodes[msg.SourceNodeID].CommandClasses[CommandClass.TransportService]).SendComplete(sessionId, cts.Token).Wait();
+                        await ((TransportService)controller.Nodes[msg.SourceNodeID].CommandClasses[CommandClass.TransportService]).SendComplete(sessionId, cts.Token);
                         buffers.Remove(key);
                         segments.Remove(key);
                         return fullMessage;

@@ -14,6 +14,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
         public readonly TransmitOptions Options;
         public readonly byte SessionID;
         private readonly Controller controller;
+        private static object callbackSync = new object();
 
         private static byte callbackID = 1;
 
@@ -67,11 +68,16 @@ namespace ZWaveDotNet.SerialAPI.Messages
             Data = data;
             Options = TransmitOptions.RequestAck | TransmitOptions.AutoRouting | TransmitOptions.ExploreNPDUs;
             if (callback)
-                SessionID = callbackID++;
+            {
+                lock (callbackSync)
+                {
+                    SessionID = callbackID++;
+                    if (callbackID == 0)
+                        callbackID++;
+                }
+            }
             else
                 SessionID = 0;
-            if (callbackID == 0)
-                callbackID = 1;
             this.controller = controller;
         }
 

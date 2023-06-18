@@ -21,5 +21,10 @@ namespace ZWaveDotNet.CommandClassReports
             InstallerIcon = BinaryPrimitives.ReadUInt16BigEndian(payload.Slice(3, 2).Span);
             UserIcon = BinaryPrimitives.ReadUInt16BigEndian(payload.Slice(5, 2).Span);
         }
+
+        public override string ToString()
+        {
+            return $"Version: {Version}, Role:{RoleType}, Node:{NodeType}, Installer Icon:{InstallerIcon}, User Icon:{UserIcon}";
+        }
     }
 }

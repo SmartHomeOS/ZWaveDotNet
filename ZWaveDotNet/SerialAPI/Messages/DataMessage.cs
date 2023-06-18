@@ -9,6 +9,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
 {
     public class DataMessage : Message
     {
+        private static object callbackSync = new object();
         public readonly ushort DestinationNodeID;
         public readonly ushort SourceNodeID;
         public List<byte> Data;
@@ -18,18 +19,27 @@ namespace ZWaveDotNet.SerialAPI.Messages
 
         private static byte callbackID = 1;
 
-        public DataMessage(Controller controller, ushort nodeId, List<byte> data, bool callback) : base(controller.ControllerType == LibraryType.BridgeController ? Function.SendDataBridge : Function.SendData)
+        public DataMessage(Controller controller, ushort nodeId, List<byte> data, bool callback, bool exploreNPDUs) : base(controller.ControllerType == LibraryType.BridgeController ? Function.SendDataBridge : Function.SendData)
         {
             SourceNodeID = controller.ControllerID;
             DestinationNodeID = nodeId;
             Data = data;
-            Options = TransmitOptions.RequestAck | TransmitOptions.AutoRouting | TransmitOptions.ExploreNPDUs;
-            if (callback)
-                SessionID = callbackID++;
-            else
-                SessionID = 0;
-            if (callbackID == 0)
-                callbackID++;
+            Options = TransmitOptions.RequestAck | TransmitOptions.AutoRouting;
+            if (exploreNPDUs)
+                Options |= TransmitOptions.ExploreNPDUs;
+           
+                if (callback)
+                {
+                    lock (callbackSync)
+                    {
+                        SessionID = callbackID++;
+                        if (callbackID == 0)
+                            callbackID++;
+                    }
+                }
+                else
+                    SessionID = 0;
+
             this.controller = controller;
         }
 

@@ -14,5 +14,10 @@
             CommandClassSupport = (payload.Span[0] & 0x1) == 0x2;
             ZWaveSoftwareSupport = (payload.Span[0] & 0x1) == 0x4;
         }
+
+        public override string ToString()
+        {
+            return $"Supports: Version {VersionSupport}, CommandClass {CommandClassSupport}, Software {ZWaveSoftwareSupport}";
+        }
     }
 }

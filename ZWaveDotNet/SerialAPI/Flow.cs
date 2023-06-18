@@ -139,6 +139,8 @@ namespace ZWaveDotNet.SerialAPI
             do
             {
                 f = await reader.Reader.ReadAsync(token);
+                if (f.Type == FrameType.CAN)
+                    await Task.Delay(100, token);
             } while (f.Type == FrameType.SOF);
             return f.Type == FrameType.ACK;
         }
