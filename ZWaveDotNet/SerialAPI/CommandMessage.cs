@@ -12,12 +12,15 @@ namespace ZWaveDotNet.SerialAPI
         public byte DestinationEndpoint;
         public ushort DestinationNodeId;
         public List<byte> Payload;
+        private readonly bool explore;
 
         public CommandMessage(Controller controller, ushort nodeId, CommandClass commandClass, byte command, bool supervised = false, params byte[] payload)
         {
             this.controller = controller;
             DestinationEndpoint = 0;
             DestinationNodeId = nodeId;
+            //Captured packets don't include explore for this command but I don't see anything in the spec
+            explore = (commandClass != CommandClass.Security2 || command != (byte)Security2.Security2Command.NonceReport);
             if ((ushort)commandClass > 0xFF)
             {
                 Payload = new List<byte>(payload.Length + 3);
@@ -61,7 +64,7 @@ namespace ZWaveDotNet.SerialAPI
 
         public DataMessage ToMessage()
         {
-            return new DataMessage(controller, DestinationNodeId, Payload, true);
+            return new DataMessage(controller, DestinationNodeId, Payload, true, explore);
         }
     }
 }

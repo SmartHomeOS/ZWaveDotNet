@@ -12,7 +12,7 @@ namespace ZWaveDotNet.Security
         private readonly byte[] publicKey;
         private readonly Memory<byte> privateKey;
         private Memory<byte> prngWorking;
-        public enum RecordType { Entropy, ECDH_TEMP, S0, S2UnAuth, S2Auth, S2Access };
+        public enum RecordType { LocalEntropy, RemoteEntropy, ECDH_TEMP, S0, S2UnAuth, S2Auth, S2Access };
         private static readonly TimeSpan TWENTY_SEC = TimeSpan.FromSeconds(20);
         private readonly Dictionary<ushort, List<SpanRecord>> spanRecords = new Dictionary<ushort, List<SpanRecord>>();
         private readonly Dictionary<byte, MpanRecord> mpanRecords = new Dictionary<byte, MpanRecord>();
@@ -138,6 +138,8 @@ namespace ZWaveDotNet.Security
             if (keys.TryGetValue(nodeId, out List<NetworkKey>? keyLst))
             {
                 keyLst.RemoveAll(k => k.Key == type);
+                DeleteEntropy(nodeId);
+                PurgeRecords(nodeId, type);
             }
         }
 
@@ -165,8 +167,8 @@ namespace ZWaveDotNet.Security
                 SequenceNumber = ++sequence,
                 Type = type
             };
-            PurgeStack(nodeId, type);
             List<SpanRecord> stack = GetStack(nodeId);
+            PurgeRecords(nodeId, type);
             stack.Add(nr);
         }
 
@@ -233,52 +235,57 @@ namespace ZWaveDotNet.Security
             return false;
         }
 
-        public (Memory<byte> bytes, byte sequence)? GetEntropy(ushort nodeId)
+        public (Memory<byte> bytes, byte sequence)? GetEntropy(ushort nodeId, bool remote)
         {
             if (spanRecords.TryGetValue(nodeId, out List<SpanRecord>? stack))
             {
                 foreach (SpanRecord record in stack)
                 {
-                    if (record.Type == RecordType.Entropy)
+                    if (record.Type == (remote ? RecordType.RemoteEntropy : RecordType.LocalEntropy))
                         return (record.Bytes, record.SequenceNumber++);
                 }
             }
             return null;
         }
 
-        public int DeleteEntropy(ushort nodeId)
+        public int DeleteEntropy(ushort nodeId, RecordType? type = null)
         {
             if (spanRecords.TryGetValue(nodeId, out List<SpanRecord>? stack))
-                return stack.RemoveAll(n => n.Type == RecordType.Entropy);
-            
+            {
+                if (type != RecordType.LocalEntropy)
+                    return stack.RemoveAll(n => n.Type == RecordType.RemoteEntropy);
+                if (type != RecordType.RemoteEntropy)
+                    return stack.RemoveAll(n => n.Type == RecordType.LocalEntropy);
+            }
             return 0;
         }
 
-        public (Memory<byte> Bytes, byte Sequence) CreateEntropy(ushort nodeId)
+        public (Memory<byte> Bytes, byte Sequence) CreateEntropy(ushort nodeId, bool store)
         {
             var result = CTR_DRBG.Generate(prngWorking, 16);
             prngWorking = result.working_state;
             SpanRecord nr = new SpanRecord()
             {
                 Bytes = result.output,
-                Type = RecordType.Entropy,
+                Type = RecordType.LocalEntropy,
                 SequenceNumber = (byte)new Random().Next()
             };
-            DeleteEntropy(nodeId);
-            List<SpanRecord> stack = GetStack(nodeId, true);
-            stack.Add(nr);
+            DeleteEntropy(nodeId, RecordType.LocalEntropy);
+            if (store)
+                GetStack(nodeId, true).Add(nr);
+
             return (nr.Bytes, nr.SequenceNumber);
         }
 
-        public void StoreEntropy(ushort nodeId, Memory<byte> bytes, byte sequence)
+        public void StoreRemoteEntropy(ushort nodeId, Memory<byte> bytes, byte sequence)
         {
             SpanRecord nr = new SpanRecord()
             {
                 Bytes = bytes,
-                Type = RecordType.Entropy,
+                Type = RecordType.RemoteEntropy,
                 SequenceNumber = sequence
             };
-            DeleteEntropy(nodeId);
+            DeleteEntropy(nodeId, RecordType.RemoteEntropy);
             List<SpanRecord> stack = GetStack(nodeId, true);
             stack.Add(nr);
         }
@@ -361,26 +368,29 @@ namespace ZWaveDotNet.Security
                 case SecurityKey.S2Access:
                     return RecordType.S2Access;
                 default:
-                    return RecordType.Entropy;
+                    return RecordType.LocalEntropy;
             }
         }
 
         private List<SpanRecord> GetStack(ushort nodeId, bool purge = false)
         {
-            if (purge && spanRecords.ContainsKey(nodeId))
-                spanRecords.Remove(nodeId);
-            else if (spanRecords.ContainsKey(nodeId))
-                return spanRecords[nodeId];
+            if (spanRecords.ContainsKey(nodeId))
+            {
+                if (purge)
+                    spanRecords.Remove(nodeId);
+                else
+                    return spanRecords[nodeId];
+            }
 
             List<SpanRecord> stack = new List<SpanRecord>();
             spanRecords.Add(nodeId, stack);
             return stack;
         }
 
-        private void PurgeStack(ushort nodeId, RecordType type)
+        public void PurgeRecords(ushort nodeId, RecordType type)
         {
-            List<SpanRecord> stack = GetStack(nodeId);
-            stack.RemoveAll(r => r.Type == type);
+            if (spanRecords.TryGetValue(nodeId, out List<SpanRecord>? stack))
+                stack.RemoveAll(r => r.Type == type);
             if (sequenceCache.ContainsKey(nodeId))
                 sequenceCache.Remove(nodeId);
         }

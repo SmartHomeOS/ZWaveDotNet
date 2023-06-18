@@ -63,13 +63,20 @@ namespace ZWaveDotNet.CommandClasses
 
         public async Task TransmitTemp(List<byte> payload, CancellationToken cancellationToken = default)
         {
-            ReportMessage report = await GetNonce(cancellationToken);
+            ReportMessage report;
+            using (CancellationTokenSource timeout = new CancellationTokenSource(10000))
+            {
+                using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(timeout.Token, cancellationToken);
+                report = await GetNonce(cts.Token);
+                if (report.IsMulticastMethod())
+                    return; //This should never happen
+            }
 
             Log.Information("Creating Temp Payload for " + node.ID.ToString());
             byte[] receiversNonce = report.Payload.ToArray();
             byte[] sendersNonce = new byte[8];
             new Random().NextBytes(sendersNonce);
-            payload.Insert(0, (byte)0x0); //Sequenced = False
+            payload.Insert(0, 0x0); //Sequenced = False
             byte[] encrypted = EncryptDecryptPayload(payload.ToArray(), sendersNonce, receiversNonce, controller.tempE);
             byte[] mac = AES.ComputeMAC(controller.ControllerID, node.ID, (byte)Security0Command.MessageEncap, sendersNonce, receiversNonce, encrypted, controller.tempA);
 
@@ -85,12 +92,14 @@ namespace ZWaveDotNet.CommandClasses
         public async Task Encapsulate(List<byte> payload, CancellationToken cancellationToken)
         {
             ReportMessage report = await GetNonce(cancellationToken);
+            if (report.IsMulticastMethod())
+                return; //This should never happen
 
             Log.Information("Creating Payload for " + node.ID.ToString());
             byte[] receiversNonce = report.Payload.ToArray();
             byte[] sendersNonce = new byte[8];
             new Random().NextBytes(sendersNonce);
-            payload.Insert(0, (byte)0x0); //Sequenced = False
+            payload.Insert(0, 0x0); //Sequenced = False
             byte[] encrypted = EncryptDecryptPayload(payload.ToArray(), sendersNonce, receiversNonce, controller.EncryptionKey);
             byte[] mac = AES.ComputeMAC(controller.ControllerID, node.ID, (byte)Security0Command.MessageEncap, sendersNonce, receiversNonce, encrypted, controller.AuthenticationKey);
 
@@ -106,7 +115,7 @@ namespace ZWaveDotNet.CommandClasses
             payload.AddRange(securePayload);
         }
 
-        internal static ReportMessage? Free(ReportMessage msg, Controller controller)
+        internal static async Task<ReportMessage?> Free(ReportMessage msg, Controller controller)
         {
             if (controller.SecurityManager == null)
             {
@@ -135,6 +144,15 @@ namespace ZWaveDotNet.CommandClasses
             msg.Update(decryptedPayload.Slice(1));
             msg.Flags |= ReportFlags.Security;
             msg.SecurityLevel = SecurityKey.S0;
+
+            if (msg.Command == (byte)Security0Command.MessageEncapNonceGet)
+            {
+                Log.Information("Providing Next Nonce");
+                using CancellationTokenSource cts = new CancellationTokenSource(3000);
+                await ((Security0)controller.Nodes[msg.SourceNodeID].CommandClasses[CommandClass.Security0]).SendCommand(Security0Command.NonceReport, cts.Token, controller.SecurityManager.CreateS0Nonce(msg.SourceNodeID));
+            }
+
+            Log.Information("Decrypted: " + msg.ToString());
             return msg;
         }
 
@@ -143,8 +161,17 @@ namespace ZWaveDotNet.CommandClasses
             switch ((Security0Command)message.Command)
             {
                 case Security0Command.NetworkKeyVerify:
+                    if (controller.SecurityManager == null)
+                        return SupervisionStatus.Fail;
+                    if (message.IsMulticastMethod())
+                        return SupervisionStatus.Fail;
+                    if (message.SecurityLevel != SecurityKey.S0 || (message.Flags & ReportFlags.Security) != ReportFlags.Security)
+                    {
+                        Log.Information("Network Key Verify Received without proper security");
+                        return SupervisionStatus.Fail;
+                    }
                     keyVerified.TrySetResult();
-                    controller.SecurityManager?.GrantKey(node.ID, SecurityManager.RecordType.S0);
+                    controller.SecurityManager.GrantKey(node.ID, SecurityManager.RecordType.S0);
                     return SupervisionStatus.Success;
                 case Security0Command.NonceGet:
                     if (controller.SecurityManager == null)
@@ -185,12 +212,23 @@ namespace ZWaveDotNet.CommandClasses
         public async Task WaitForKeyVerified(CancellationToken cancellationToken)
         {
             keyVerified = new TaskCompletionSource();
-            await keyVerified.Task.WaitAsync(cancellationToken);
+            cancellationToken.Register(() => keyVerified.TrySetCanceled());
+            await keyVerified.Task;
         }
 
         protected override bool IsSecure(byte command)
         {
-            return command == (byte)Security0Command.CommandsSupportedGet;
+            switch ((Security0Command)command)
+            { 
+                case Security0Command.CommandsSupportedGet:
+                case Security0Command.CommandsSupportedReport:
+                case Security0Command.NetworkKeySet:
+                case Security0Command.NetworkKeyVerify:
+                case Security0Command.SchemeInherit:
+                    return true;
+                default:
+                    return false;
+            }
         }
     }
 }

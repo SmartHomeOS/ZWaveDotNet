@@ -22,6 +22,8 @@ namespace ZWaveDotNet.Entities
         public const ushort BROADCAST_ID = 0xFFFF;
         public const ushort UNINITIALIZED_ID = 0x0000;
 
+        public event EventHandler? InterviewComplete;
+
         public readonly ushort ID;
         protected readonly Controller controller;
         protected readonly NodeProtocolInfo? nodeInfo;
@@ -103,19 +105,19 @@ namespace ZWaveDotNet.Entities
             {
                 if (TransportService.IsEncapsulated(msg))
                 {
-                    msg = TransportService.Process(msg, controller);
+                    msg = await TransportService.Process(msg, controller);
                     if (msg == null)
                         return; //Not Complete Yet
                 }
                 if (Security0.IsEncapsulated(msg))
                 {
-                    msg = Security0.Free(msg, controller);
+                    msg = await Security0.Free(msg, controller);
                     if (msg == null)
                         return;
                 }
                 if (Security2.IsEncapsulated(msg))
                 {
-                    msg = Security2.Free(msg, controller);
+                    msg = await Security2.Free(msg, controller);
                     if (msg == null)
                         return;
                 }
@@ -157,7 +159,7 @@ namespace ZWaveDotNet.Entities
             if (msg.SourceEndpoint == 0)
             {
                 if (!commandClasses.ContainsKey(msg.CommandClass))
-                    AddCommandClass(msg.CommandClass);
+                    AddCommandClass(msg.CommandClass, (msg.SecurityLevel != SecurityKey.None));
                 return await commandClasses[msg.CommandClass].ProcessMessage(msg);
             }
             else
@@ -178,7 +180,13 @@ namespace ZWaveDotNet.Entities
         {
             CommandClass commandClass = ((CCVersion)typeof(T).GetCustomAttribute(typeof(CCVersion))!).commandClass;
             if (commandClasses.TryGetValue(commandClass, out CommandClassBase? ccb))
+            {
+                if (typeof(T) == typeof(Notification) && ccb.Version < 3)
+                    return null;
+                if (typeof(T) == typeof(Alarm) && ccb.Version > 2)
+                    return null;
                 return (T)ccb;
+            }
             return null;
         }
 
@@ -242,12 +250,44 @@ namespace ZWaveDotNet.Entities
                 }
             }
         }
+        public async Task Interview(CancellationToken cancellationToken = default)
+        {
+            await Interview(false, cancellationToken);
+        }
 
-        public async Task Interview(bool newlyIncluded, CancellationToken cancellationToken)
+        internal async Task Interview(bool newlyIncluded, CancellationToken cancellationToken = default)
+        {
+            SecurityManager.NetworkKey? key = null;
+            if (controller.SecurityManager != null)
+                 key = controller.SecurityManager.GetHighestKey(ID);
+            if (Listening)
+            {
+                await Interview(newlyIncluded, key, cancellationToken);
+            }
+            else
+                await Task.Run(async () =>
+                {
+                    try
+                    {
+                        //TODO - Make sure we abort this if interview is already in progress
+                        while (!commandClasses.ContainsKey(CommandClass.WakeUp))
+                            await Task.Delay(3000); //TODO - Improve this
+                        await ((WakeUp)commandClasses[CommandClass.WakeUp]).WaitForAwake();
+                        using (CancellationTokenSource cts = new CancellationTokenSource(90000))
+                            await Interview(newlyIncluded, key, cts.Token);
+                        await ((WakeUp)commandClasses[CommandClass.WakeUp]).NoMoreInformation();
+                    }
+                    catch(Exception ex)
+                    {
+                        Log.Error(ex, "Interview Exception");
+                    }
+                }, cancellationToken);
+        }
+
+        private async Task Interview(bool newlyIncluded, SecurityManager.NetworkKey? key, CancellationToken cancellationToken)
         {
             if (controller.SecurityManager != null)
             {
-                SecurityManager.NetworkKey? key = controller.SecurityManager.GetHighestKey(ID);
                 if (!newlyIncluded && key == null)
                 {
                     //We need to try keys one at a time
@@ -257,11 +297,27 @@ namespace ZWaveDotNet.Entities
                         Log.Information("Checking S0 Security");
                         try
                         {
-                            CancellationTokenSource cts = new CancellationTokenSource(7000);
-                            await RequestS0(cts.Token);
+                            for (int i = 0; i < 3; i++)
+                            {
+                                try
+                                {
+                                    using (CancellationTokenSource timeout = new CancellationTokenSource(5000))
+                                    {
+                                        using (CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(timeout.Token, cancellationToken))
+                                            await RequestS0(cts.Token);
+                                    }
+                                    break;
+                                }
+                                catch (OperationCanceledException oce)
+                                {
+                                    if (i == 2)
+                                        throw oce;
+                                }
+                            }
                         }
-                        catch (Exception)
+                        catch (Exception e)
                         {
+                            Log.Warning(e, "Failed to query S0");
                             controller.SecurityManager.RevokeKey(ID, SecurityManager.RecordType.S0);
                         }
                     }
@@ -271,33 +327,81 @@ namespace ZWaveDotNet.Entities
                         Log.Information("Checking S2 Unauth Security");
                         try
                         {
-                            CancellationTokenSource cts = new CancellationTokenSource(7000);
-                            await RequestS2(cts.Token);
+                            for (int i = 0; i < 3; i++)
+                            {
+                                try
+                                {
+                                    using (CancellationTokenSource timeout = new CancellationTokenSource(5000))
+                                    {
+                                        using (CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(timeout.Token, cancellationToken))
+                                            await RequestS2(cts.Token);
+                                    }
+                                    break;
+                                }
+                                catch (OperationCanceledException oce)
+                                {
+                                    if (i == 2)
+                                        throw oce;
+                                }
+                            }
                         }
-                        catch (Exception)
+                        catch (Exception e)
                         {
+                            Log.Warning(e, "Failed to query S2");
                             controller.SecurityManager.RevokeKey(ID, SecurityManager.RecordType.S2UnAuth);
                         }
                         controller.SecurityManager.GrantKey(ID, SecurityManager.RecordType.S2Auth, controller.NetworkKeyS2Auth);
                         Log.Information("Checking S2 Auth Security");
                         try
                         {
-                            CancellationTokenSource cts = new CancellationTokenSource(7000);
-                            await RequestS2(cts.Token);
+                            for (int i = 0; i < 3; i++)
+                            {
+                                try
+                                {
+                                    using (CancellationTokenSource timeout = new CancellationTokenSource(5000))
+                                    {
+                                        using (CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(timeout.Token, cancellationToken))
+                                            await RequestS2(cts.Token);
+                                    }
+                                    break;
+                                }
+                                catch (OperationCanceledException oce)
+                                {
+                                    if (i == 2)
+                                        throw oce;
+                                }
+                            }
                         }
-                        catch (Exception)
+                        catch (Exception e)
                         {
+                            Log.Warning(e, "Failed to query S2");
                             controller.SecurityManager.RevokeKey(ID, SecurityManager.RecordType.S2Auth);
                         }
                         controller.SecurityManager.GrantKey(ID, SecurityManager.RecordType.S2Access, controller.NetworkKeyS2Access);
                         Log.Information("Checking S2 Access Security");
                         try
                         {
-                            CancellationTokenSource cts = new CancellationTokenSource(7000);
-                            await RequestS2(cts.Token);
+                            for (int i = 0; i < 3; i++)
+                            {
+                                try
+                                {
+                                    using (CancellationTokenSource timeout = new CancellationTokenSource(5000))
+                                    {
+                                        using (CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(timeout.Token, cancellationToken))
+                                            await RequestS2(cts.Token);
+                                    }
+                                    break;
+                                }
+                                catch (OperationCanceledException oce)
+                                {
+                                    if (i == 2)
+                                        throw oce;
+                                }
+                            }
                         }
-                        catch (Exception)
+                        catch (Exception e)
                         {
+                            Log.Warning(e, "Failed to query S2");
                             controller.SecurityManager.RevokeKey(ID, SecurityManager.RecordType.S2Access);
                         }
                     }
@@ -328,16 +432,21 @@ namespace ZWaveDotNet.Entities
                     CCVersion? ccVersion = (CCVersion?)cc.GetType().GetCustomAttribute(typeof(CCVersion));
                     if ((ccVersion == null || ccVersion.maxVersion > 1) && (cc.CommandClass >= CommandClass.Basic))
                     {
-                        CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(new CancellationTokenSource(10000).Token, cancellationToken);
-                        try
+                        using (CancellationTokenSource timeout = new CancellationTokenSource(10000))
                         {
-                            cc.Version = await version.GetCommandClassVersion(cc.CommandClass, cts.Token);
-                        }
-                        catch (OperationCanceledException oc)
-                        {
-                            Log.Warning($"Timeout trying to interview {ID} version for {cc.CommandClass}");
-                            if (cancellationToken.IsCancellationRequested)
-                                throw oc;
+                            using (CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(timeout.Token, cancellationToken))
+                            {
+                                try
+                                {
+                                    cc.Version = await version.GetCommandClassVersion(cc.CommandClass, cts.Token);
+                                }
+                                catch (OperationCanceledException oc)
+                                {
+                                    Log.Warning($"Timeout trying to interview {ID} version for {cc.CommandClass}");
+                                    if (cancellationToken.IsCancellationRequested)
+                                        throw oc;
+                                }
+                            }
                         }
                     }
                 }
@@ -354,6 +463,7 @@ namespace ZWaveDotNet.Entities
             foreach (CommandClassBase cc in commandClasses.Values)
                 await cc.Interview(cancellationToken);
             Log.Information($"Interview Complete [{ID}]");
+            InterviewComplete?.Invoke(this, new EventArgs());
         }
 
         private async Task RequestS0(CancellationToken cancellationToken)

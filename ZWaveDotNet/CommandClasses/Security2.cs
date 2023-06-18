@@ -74,13 +74,17 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(Security2Command.PublicKeyReport, cancellationToken, resp);
         }
 
-        internal async Task SendNonceReport(bool SOS, bool MOS, CancellationToken cancellationToken = default)
+        internal async Task SendNonceReport(bool SOS, bool MOS, bool forceNew, CancellationToken cancellationToken = default)
         {
             if (controller.SecurityManager == null)
                 return;
             if (MOS)
                 throw new NotImplementedException("MOS Not Implemented"); //TODO - Multicast
-            var entropy = controller.SecurityManager.CreateEntropy(node.ID);
+            (Memory<byte> Bytes, byte Sequence) entropy;
+            if (forceNew)
+                entropy = controller.SecurityManager.CreateEntropy(node.ID, true);
+            else
+                entropy = controller.SecurityManager.GetEntropy(node.ID, false) ?? controller.SecurityManager.CreateEntropy(node.ID, true);
             NonceReport nonceGetReport = new NonceReport(entropy.Sequence, SOS, MOS, entropy.Bytes);
             Log.Information("Declaring SPAN out of sync");
             await SendCommand(Security2Command.NonceReport, cancellationToken, nonceGetReport.GetBytes());
@@ -117,7 +121,7 @@ namespace ZWaveDotNet.CommandClasses
         public async Task Encapsulate(List<byte> payload, SecurityManager.RecordType? type, CancellationToken cancellationToken = default)
         {
             List<byte> extensionData = new List<byte>();
-            Log.Information("Encrypting Payload for " + node.ID.ToString());
+            Log.Debug("Encrypting Payload for " + node.ID.ToString());
             if (controller.SecurityManager == null)
                 throw new InvalidOperationException("Security Manager does not exist");
             
@@ -138,13 +142,26 @@ namespace ZWaveDotNet.CommandClasses
             if (nonce == null)
             {
                 //We need a new Nonce
-                Log.Information("Requesting new Nonce");
-                ReportMessage msg = await SendReceive(Security2Command.NonceGet, Security2Command.NonceReport, cancellationToken, (byte)new Random().Next());
-                NonceReport nr = new NonceReport(msg.Payload);
-                var entropy = controller.SecurityManager.CreateEntropy(node.ID);
-                Memory<byte> MEI = AES.CKDFMEIExpand(AES.CKDFMEIExtract(entropy.Bytes, nr.Entropy));
-                controller.SecurityManager.CreateSpan(node.ID, entropy.Sequence, MEI, networkKey.PString, networkKey.Key);
+                Memory<byte> MEI;
+                (Memory<byte> Bytes, byte Sequence)? sendersEntropy = controller.SecurityManager.CreateEntropy(node.ID, false);
+                (Memory<byte> Bytes, byte Sequence)? receiversEntropy = controller.SecurityManager.GetEntropy(node.ID, true);
+                if (receiversEntropy == null)
+                {
+                    Log.Debug("Requesting new entropy");
+                    ReportMessage msg = await SendReceive(Security2Command.NonceGet, Security2Command.NonceReport, cancellationToken, (byte)new Random().Next());
+                    NonceReport nr = new NonceReport(msg.Payload);
+                    MEI = AES.CKDFMEIExpand(AES.CKDFMEIExtract(sendersEntropy.Value.Bytes, nr.Entropy));
+                }
+                else
+                {
+                    Log.Debug("Using receivers entropy");
+                    //TODO - Investigate further. Are sender/receiver inverted in this case?
+                    MEI = AES.CKDFMEIExpand(AES.CKDFMEIExtract(sendersEntropy.Value.Bytes, receiversEntropy.Value.Bytes));
+                    controller.SecurityManager.DeleteEntropy(node.ID);
+                }
+                controller.SecurityManager.CreateSpan(node.ID, sendersEntropy.Value.Sequence, MEI, networkKey.PString, networkKey.Key);
                 nonce = controller.SecurityManager.NextSpanNonce(node.ID, networkKey.Key);
+                
                 if (nonce == null)
                 {
                     Log.Error("Unable to create new Nonce");
@@ -154,8 +171,8 @@ namespace ZWaveDotNet.CommandClasses
                 extensionData.Add(nonce.Value.sequence);
                 extensionData.Add(0x1);
                 extensionData.Add(18);
-                extensionData.Add(0x41); //SPAN Ext
-                extensionData.AddRange(entropy.Bytes.ToArray());
+                extensionData.Add((byte)(Security2Ext.Critical | Security2Ext.SPAN));
+                extensionData.AddRange(sendersEntropy!.Value.Bytes.ToArray());
             }
             else
             {
@@ -177,7 +194,7 @@ namespace ZWaveDotNet.CommandClasses
             payload.AddRange(securePayload);
         }
 
-        internal static ReportMessage? Free(ReportMessage msg, Controller controller)
+        internal static async Task<ReportMessage?> Free(ReportMessage msg, Controller controller)
         {
             if (controller.SecurityManager == null)
                 throw new InvalidOperationException("Security Manager does not exist");
@@ -212,56 +229,77 @@ namespace ZWaveDotNet.CommandClasses
             }
             unencrypted = unencrypted.Slice(0, unencrypted.Length - msg.Payload.Length);
             AdditionalAuthData ad = new AdditionalAuthData(controller.Nodes[msg.SourceNodeID], controller, false, messageLen, unencrypted);
-            Memory<byte> decoded;
-            try
+            Memory<byte>? decoded = null;
+            
+            for (int i = 0; i < 3; i++)
             {
-                var nonce = controller.SecurityManager.NextSpanNonce(msg.SourceNodeID, networkKey.Key);
-                if (nonce == null)
+                decoded = Decrypt(msg, controller, networkKey, ad, ref i);
+                if (decoded != null)
+                    break;
+                else if (i == 2)
                 {
-                    Log.Error("No Nonce for Received Message");
                     try
                     {
-                        ((Security2)controller.Nodes[msg.SourceNodeID].CommandClasses[CommandClass.Security2]).SendNonceReport(true, false, new CancellationTokenSource(10000).Token).Wait();
-                    }catch(Exception)
+                        controller.SecurityManager.PurgeRecords(msg.SourceNodeID, networkKey.Key);
+                        using (CancellationTokenSource cts = new CancellationTokenSource(3000))
+                        await ((Security2)controller.Nodes[msg.SourceNodeID].CommandClasses[CommandClass.Security2]).SendNonceReport(true, false, false, cts.Token);
+                    }
+                    catch (Exception e)
                     {
-                        Log.Error("Failed to send SOS");
+                        Log.Error(e, "Failed to send SOS");
                     }
                     return null;
                 }
-                decoded = DecryptCCM(msg.Payload,
-                                                    nonce!.Value.output,
-                                                    networkKey!.KeyCCM,
-                                                    ad);
-            }catch(Exception ex)
-            {
-                Log.Error(ex, "Failed to decode message");
-                return null;
-            }
-            if (encryptedExt)
-            {
-                groupId = decoded.Span[2];
-                Memory<byte> mpan = decoded.Slice(3, 16);
-                //TODO - Process the MPAN
-                decoded = decoded.Slice(19);
             }
 
-            msg.Update(decoded);
+            if (encryptedExt)
+            {
+                groupId = decoded!.Value.Span[2];
+                Memory<byte> mpan = decoded.Value.Slice(3, 16);
+                //TODO - Process the MPAN
+                decoded = decoded.Value.Slice(19);
+            }
+
+            msg.Update(decoded!.Value);
             msg.Flags |= ReportFlags.Security;
             msg.SecurityLevel = SecurityManager.TypeToKey(networkKey.Key);
             Log.Warning("Decoded Message: " + msg.ToString());
             return msg;
         }
 
+        private static Memory<byte>? Decrypt(ReportMessage msg, Controller controller, SecurityManager.NetworkKey networkKey, AdditionalAuthData ad, ref int attempt)
+        {
+            try
+            {
+                (Memory<byte> output, byte sequence)? nonce = controller.SecurityManager!.NextSpanNonce(msg.SourceNodeID, networkKey.Key);
+                if (nonce == null)
+                {
+                    Log.Error("No Nonce for Received Message");
+                    attempt = 2;
+                    return null;
+                }
+                return DecryptCCM(msg.Payload,
+                                                    nonce!.Value.output,
+                                                    networkKey!.KeyCCM,
+                                                    ad);
+            }
+            catch (Exception)
+            {
+                Log.Error($"Failed to decode message. Attempt {attempt+1}");
+                return null;
+            }
+        }
+
         private static bool ProcessExtension(Memory<byte> payload, ushort nodeId, SecurityManager sm, SecurityManager.NetworkKey netKey, out byte? groupId)
         {
             bool more = (payload.Span[1] & 0x80) == 0x80;
-            byte type = (byte)(0x3F & payload.Span[1]);
+            Security2Ext type = (Security2Ext)(0x3F & payload.Span[1]);
             groupId = null;
             switch (type)
             {
-                case 0x01: //SPAN
+                case Security2Ext.SPAN:
                     Memory<byte> sendersEntropy = payload.Slice(2, 16);
-                    var result = sm.GetEntropy(nodeId);
+                    var result = sm.GetEntropy(nodeId, false);
                     Memory<byte> MEI = AES.CKDFMEIExpand(AES.CKDFMEIExtract(sendersEntropy, result!.Value.bytes));
                     sm.CreateSpan(nodeId, result!.Value.sequence, MEI, netKey.PString, netKey.Key);
                     Log.Warning("Created new SPAN");
@@ -269,11 +307,15 @@ namespace ZWaveDotNet.CommandClasses
                     Log.Warning("Receivers Entropy: " + MemoryUtil.Print(result!.Value.bytes));
                     Log.Warning("Mixed Entropy: " + MemoryUtil.Print(MEI));
                     break;
-                case 0x03: //MGRP
+                case Security2Ext.MGRP:
                     groupId = payload.Span[2];
                     break;
-                case 0x04: //MOS
+                case Security2Ext.MOS:
                     //TODO - Send MPAN
+                    break;
+                default:
+                    if ((payload.Span[1] & (byte)Security2Ext.Critical) == (byte)Security2Ext.Critical)
+                        throw new NotImplementedException($"Critical Extension {type} is not supported");
                     break;
             }
             return more;
@@ -283,10 +325,6 @@ namespace ZWaveDotNet.CommandClasses
         {
             switch ((Security2Command)message.Command)
             {
-                case Security2Command.KEXGet:
-                    Log.Error("Unexpected KEX Get"); //FIXME - Do we need this?
-                    await SendCommand(Security2Command.KEXReport, CancellationToken.None, 0x0, 0x2, 0x1, (byte)SecurityKey.S2Unauthenticated);
-                    return SupervisionStatus.Success;
                 case Security2Command.KEXSet:
                     KeyExchangeReport? kexReport = new KeyExchangeReport(message.Payload);
                     Log.Information("Kex Set Received: " + kexReport.ToString());
@@ -311,6 +349,8 @@ namespace ZWaveDotNet.CommandClasses
                 case Security2Command.NetworkKeyGet:
                     if (controller.SecurityManager == null)
                         return SupervisionStatus.Fail;
+                    if (message.IsMulticastMethod())
+                        return SupervisionStatus.Fail;
                     if (message.SecurityLevel != SecurityKey.None || (message.Flags & ReportFlags.Security) != ReportFlags.Security)
                     {
                         Log.Information("Network Key Get Received without proper security");
@@ -321,7 +361,6 @@ namespace ZWaveDotNet.CommandClasses
                     SecurityKey key = (SecurityKey)message.Payload.Span[0];
                     //TODO - Verify this was granted
                     resp[0] = (byte)key;
-                    AES.KeyTuple permKey;
                     switch (key)
                     {
                         case SecurityKey.S0:
@@ -362,16 +401,39 @@ namespace ZWaveDotNet.CommandClasses
                 case Security2Command.NonceGet:
                     if (controller.SecurityManager == null)
                         return SupervisionStatus.Fail;
+                    if (message.IsMulticastMethod())
+                        return SupervisionStatus.Fail;
                     if (!controller.SecurityManager.IsSequenceNew(message.SourceNodeID, message.Payload.Span[0]))
                     {
                         Log.Error("Duplicate S2 Nonce Get Skipped");
                         return SupervisionStatus.Fail; //Duplicate Message
                     }
                     Log.Warning("Creating new Nonce");
-                    await SendNonceReport(true, false, CancellationToken.None);
+                    SecurityManager.NetworkKey? nonceKey = controller.SecurityManager.GetHighestKey(message.SourceNodeID);
+                    if (nonceKey == null)
+                        return SupervisionStatus.Fail;
+                    controller.SecurityManager.PurgeRecords(node.ID, nonceKey.Key);
+                    await SendNonceReport(true, false, true, CancellationToken.None);
+                    return SupervisionStatus.Success;
+                case Security2Command.NonceReport:
+                    if (controller.SecurityManager == null)
+                        return SupervisionStatus.Fail;
+                    if (message.IsMulticastMethod())
+                        return SupervisionStatus.Fail;
+                    SecurityManager.NetworkKey? networkKey = controller.SecurityManager.GetHighestKey(message.SourceNodeID);
+                    if (networkKey == null)
+                        return SupervisionStatus.Fail;
+                    NonceReport nr = new NonceReport(message.Payload);
+                    if (nr.SPAN_OS)
+                    {
+                        Log.Information("Received Unsolicited SOS");
+                        controller.SecurityManager.StoreRemoteEntropy(node.ID, nr.Entropy, nr.Sequence);
+                    }
                     return SupervisionStatus.Success;
                 case Security2Command.TransferEnd:
                     if (controller.SecurityManager == null)
+                        return SupervisionStatus.Fail;
+                    if (message.IsMulticastMethod())
                         return SupervisionStatus.Fail;
                     if (message.SecurityLevel != SecurityKey.None || (message.Flags & ReportFlags.Security) != ReportFlags.Security)
                     {
@@ -422,6 +484,7 @@ namespace ZWaveDotNet.CommandClasses
                 case Security2Command.NetworkKeyGet:
                 case Security2Command.NetworkKeyReport:
                 case Security2Command.NetworkKeyVerify:
+                case Security2Command.TransferEnd:
                     return true;
             }
             return false;
@@ -430,7 +493,8 @@ namespace ZWaveDotNet.CommandClasses
         public async Task WaitForBootstrap(CancellationToken cancellationToken)
         {
             bootstrapComplete = new TaskCompletionSource();
-            await bootstrapComplete.Task.WaitAsync(cancellationToken);
+            cancellationToken.Register(() => bootstrapComplete.TrySetCanceled());
+            await bootstrapComplete.Task;
         }
 
         public static Memory<byte> EncryptCCM(Memory<byte> plaintext, Memory<byte> nonce, Memory<byte> key, AdditionalAuthData ad)

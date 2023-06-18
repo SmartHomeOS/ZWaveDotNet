@@ -35,7 +35,7 @@ namespace ZWaveDotNet.Entities
         private ushort pin;
         private InclusionStrategy currentStrategy = InclusionStrategy.PreferS2;
         private readonly List<Memory<byte>> provisionList = new List<Memory<byte>>();
-        private static SemaphoreSlim nodeListLock = new SemaphoreSlim(1, 1);
+        private static readonly SemaphoreSlim nodeListLock = new SemaphoreSlim(1, 1);
 
         public Controller(string port, byte[] s0Key, byte[] s2unauth, byte[] s2auth, byte[] s2access)
         {
@@ -351,6 +351,7 @@ namespace ZWaveDotNet.Entities
                 {
                     ControllerJSON json = Serialize();
                     await JsonSerializer.SerializeAsync(outputStream, json, (JsonSerializerOptions?)null, cancellationToken);
+                    await outputStream.FlushAsync(cancellationToken);
                 }
             }
             finally
@@ -432,27 +433,7 @@ namespace ZWaveDotNet.Entities
         public async Task InterviewNodes()
         {
             foreach (Node n in Nodes.Values)
-                await InterviewNode(n, false);
-        }
-
-        private static async Task InterviewNode(Node node, bool newlyIncluded)
-        {
-            if (node.Listening)
-            {
-                using (CancellationTokenSource cts = new CancellationTokenSource(180000))
-                await node.Interview(newlyIncluded, cts.Token);
-            }
-            else
-                await Task.Factory.StartNew(async () =>
-                {
-                    //TODO - Make sure we abort this if interview is already in progress
-                    if (node.CommandClasses.ContainsKey(CommandClass.WakeUp))
-                        await ((WakeUp)node.CommandClasses[CommandClass.WakeUp]).WaitForAwake();
-                    using (CancellationTokenSource cts = new CancellationTokenSource(180000))
-                    await node.Interview(newlyIncluded, cts.Token);
-                    if (node.CommandClasses.ContainsKey(CommandClass.WakeUp))
-                        await ((WakeUp)node.CommandClasses[CommandClass.WakeUp]).NoMoreInformation();
-                });
+                await n.Interview(false);
         }
 
         private async Task EventLoop()
@@ -507,7 +488,7 @@ namespace ZWaveDotNet.Entities
                     else if (msg is ApplicationCommand cmd)
                     {
                         if (Nodes.TryGetValue(cmd.SourceNodeID, out Node? node))
-                            _ = Task.Factory.StartNew(async() => { try { await node.HandleApplicationCommand(cmd); } catch (Exception e) { Log.Error(e, "Unhandled"); } });
+                            _ = Task.Run(async() => { try { await node.HandleApplicationCommand(cmd); } catch (Exception e) { Log.Error(e, "Unhandled"); } });
                         else
                             Log.Warning("Node " + cmd.SourceNodeID + " not found");
                         Log.Information(cmd.ToString());
@@ -533,11 +514,11 @@ namespace ZWaveDotNet.Entities
                                     if (SecurityManager != null)
                                     {
                                         if ((currentStrategy == InclusionStrategy.S2Only || currentStrategy == InclusionStrategy.PreferS2) && node.CommandClasses.ContainsKey(CommandClass.Security2))
-                                            await Task.Factory.StartNew(() => BootstrapS2(node));
+                                            await Task.Run(() => BootstrapS2(node));
                                         else if ((currentStrategy == InclusionStrategy.PreferS2 || currentStrategy == InclusionStrategy.LegacyS0Only) && node.CommandClasses.ContainsKey(CommandClass.Security0))
-                                            await Task.Factory.StartNew(() => BootstrapS0(node));
+                                            await Task.Run(() => BootstrapS0(node));
                                         else
-                                            await Task.Factory.StartNew(() => BootstrapUnsecure(node));
+                                            await Task.Run(() => BootstrapUnsecure(node));
                                     }
                                 }
                             }
@@ -561,7 +542,7 @@ namespace ZWaveDotNet.Entities
         public async Task<bool> BootstrapUnsecure(Node node)
         {
             Log.Information("Included without Security. Moving to interview");
-            await InterviewNode(node, true);
+            await node.Interview(true);
             NodeReady?.Invoke(node, new EventArgs());
             return true;
         }
@@ -584,7 +565,7 @@ namespace ZWaveDotNet.Entities
                     return false;
                 }
             }
-            await InterviewNode(node, true);
+            await node.Interview(true);
             NodeReady?.Invoke(node, new EventArgs());
             return true;
         }
@@ -633,7 +614,7 @@ namespace ZWaveDotNet.Entities
                     await sec2.KexFail(KexFailType.KEX_FAIL_CANCEL, cts.Token);
                 return false;
             }
-            await InterviewNode(node, true);
+            await node.Interview(true);
             NodeReady?.Invoke(node, new EventArgs());
             return true;
         }
