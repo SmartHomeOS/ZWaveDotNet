@@ -26,7 +26,7 @@ DCP_MONITOR | 0 | 1 | None
 **DEVICE_RESET_LOCALLY** | **1** | **1** | **Full**
 DOOR_LOCK | 0 | 4 | None
 DOOR_LOCK_LOGGING | 0 | 1 | None
-ENERGY_PRODUCTION | 0 | 1 | None
+**ENERGY_PRODUCTION** | **1** | **1** | **Full**
 ENTRY_CONTROL | 0 | 1 | None
 FIRMWARE_UPDATE_MD | 0 | 8 | None
 GENERIC_SCHEDULE | 0 | 1 | None
@@ -122,5 +122,5 @@ ZIP_ND | 0 | 1 | None
 ZIP_PORTAL | 0 | 1 | None
 **ZWAVEPLUS_INFO** | **2** | **2** | **Full**
 
-- Full Support for 47/121 Command Classes.
+- Full Support for 48/121 Command Classes.
 - Partial Support for 2/121 Command Classes.

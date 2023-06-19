@@ -25,6 +25,7 @@
         diastolicmmHg,
         EuropeanMacroseismic,
         feet,
+        hours,
         Hz,
         inHg,
         inPerHour,
@@ -78,5 +79,6 @@
         WaterContent, // m3/m3
         Watts,
         WattsPerSquareMeter,
+        Wh
     }
 }

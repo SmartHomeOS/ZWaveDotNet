@@ -96,6 +96,8 @@ namespace ZWaveDotNet.CommandClasses
                     return new CRC16(node, endpoint);
                 case CommandClass.DeviceResetLocally:
                     return new DeviceResetLocally(node);
+                case CommandClass.EnergyProduction:
+                    return new EnergyProduction(node, endpoint);
                 case CommandClass.GeographicLocation:
                     return new GeographicLocation(node);
                 case CommandClass.GroupingName:
