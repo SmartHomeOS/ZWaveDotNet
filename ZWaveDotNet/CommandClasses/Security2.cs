@@ -242,7 +242,7 @@ namespace ZWaveDotNet.CommandClasses
                     {
                         controller.SecurityManager.PurgeRecords(msg.SourceNodeID, networkKey.Key);
                         using (CancellationTokenSource cts = new CancellationTokenSource(3000))
-                        await ((Security2)controller.Nodes[msg.SourceNodeID].CommandClasses[CommandClass.Security2]).SendNonceReport(true, false, false, cts.Token);
+                        await controller.Nodes[msg.SourceNodeID].GetCommandClass<Security2>()!.SendNonceReport(true, false, false, cts.Token);
                     }
                     catch (Exception e)
                     {

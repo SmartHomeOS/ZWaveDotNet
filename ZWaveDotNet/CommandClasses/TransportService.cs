@@ -103,7 +103,7 @@ namespace ZWaveDotNet.CommandClasses
                     {
                         Log.Error("Subsequent Segment received without a start");
                         CancellationTokenSource cts = new CancellationTokenSource(5000);
-                        await ((TransportService)controller.Nodes[msg.SourceNodeID].CommandClasses[CommandClass.TransportService]).SendWait(0, cts.Token);
+                        await controller.Nodes[msg.SourceNodeID].GetCommandClass<TransportService>()!.SendWait(0, cts.Token);
                         return null;
                     }
                     msg.Payload.Slice(0, msg.Payload.Length - 2).CopyTo(buff.Slice(datagramOffset));
@@ -116,7 +116,7 @@ namespace ZWaveDotNet.CommandClasses
                         ReportMessage fullMessage = new ReportMessage(msg.SourceNodeID, msg.SourceEndpoint, buff, msg.RSSI);
                         fullMessage.Flags |= ReportFlags.Transport;
                         CancellationTokenSource cts = new CancellationTokenSource(10000);
-                        await ((TransportService)controller.Nodes[msg.SourceNodeID].CommandClasses[CommandClass.TransportService]).SendComplete(sessionId, cts.Token);
+                        await controller.Nodes[msg.SourceNodeID].GetCommandClass<TransportService>()!.SendComplete(sessionId, cts.Token);
                         buffers.Remove(key);
                         segments.Remove(key);
                         return fullMessage;

@@ -199,9 +199,9 @@ namespace ZWaveDotNet.CommandClasses
                 if (key == null)
                     throw new InvalidOperationException($"Command classes are secure but no keys exist for node {node.ID}");
                 if (key.Key == SecurityManager.RecordType.S0)
-                    await ((Security0)node.CommandClasses[CommandClass.Security0]).Encapsulate(data.Payload, token);
+                    await node.GetCommandClass<Security0>()!.Encapsulate(data.Payload, token);
                 else if (key.Key > SecurityManager.RecordType.S0)
-                    await ((Security2)node.CommandClasses[CommandClass.Security2]).Encapsulate(data.Payload, key.Key, token);
+                    await node.GetCommandClass<Security2>()!.Encapsulate(data.Payload, key.Key, token);
                 else
                     throw new InvalidOperationException("Security required but no keys are available");
             }

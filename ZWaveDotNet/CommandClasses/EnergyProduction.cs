@@ -1,5 +1,4 @@
-﻿using Serilog;
-using ZWaveDotNet.CommandClasses.Enums;
+﻿using ZWaveDotNet.CommandClasses.Enums;
 using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities;

@@ -176,6 +176,11 @@ namespace ZWaveDotNet.Entities
             get { return new ReadOnlyDictionary<CommandClass, CommandClassBase>(commandClasses); }
         }
 
+        public bool HasCommandClass(CommandClass commandClass)
+        {
+            return commandClasses.ContainsKey(commandClass);
+        }
+
         public T? GetCommandClass<T>() where T : CommandClassBase
         {
             CommandClass commandClass = ((CCVersion)typeof(T).GetCustomAttribute(typeof(CCVersion))!).commandClass;
@@ -260,7 +265,7 @@ namespace ZWaveDotNet.Entities
             SecurityManager.NetworkKey? key = null;
             if (controller.SecurityManager != null)
                  key = controller.SecurityManager.GetHighestKey(ID);
-            if (Listening)
+            if (Listening || newlyIncluded)
             {
                 await Interview(newlyIncluded, key, cancellationToken);
             }

@@ -1,6 +1,7 @@
 ﻿using Serilog;
 using ZWaveDotNet.Entities;
 using System.Reflection;
+using ZWaveDotNet.Entities.Enums;
 
 namespace ExampleConsole
 {
@@ -10,6 +11,7 @@ namespace ExampleConsole
         private static Controller? controller;
         private static HashSet<ushort> InterviewList = new HashSet<ushort>();
         private static HashSet<ushort> ReadyList = new HashSet<ushort>();
+        private static RFRegion region = RFRegion.Unknown;
 
         static async Task Main()
         {
@@ -32,6 +34,11 @@ namespace ExampleConsole
             //Start the controller interview
             Console.WriteLine("Interviewing Controller...");
             await controller.Start();
+            try
+            {
+                region = await controller.GetRFRegion();
+            }
+            catch (PlatformNotSupportedException) { }
             if (File.Exists("nodecache.db"))
                 await controller.ImportNodeDBAsync("nodecache.db");
 
@@ -81,8 +88,12 @@ namespace ExampleConsole
         {
             Console.Clear();
             Console.Write($"ZWaveDotNet v{Version} - Controller {controller!.ControllerID} {(controller!.IsConnected ? "Connected" : "Disconnected")}");
-            Console.Write($"{(controller!.SupportsLongRange ? " [LR] " : " ")}");
-            Console.WriteLine($"Nodes Ready: {ReadyList.Count} / {InterviewList.Count}");
+            Console.Write($" - v{controller.APIVersion.Major} ({region})");
+            Console.Write($"{(controller!.SupportsLongRange ? " [LR]" : "")}");
+            Console.Write($"{(controller!.Primary ? " [Primary]" : "")}");
+            Console.Write($"{(controller!.SIS ? " [SIS]" : "")}");
+            Console.WriteLine($" Nodes Ready: {ReadyList.Count} / {InterviewList.Count}");
+            Console.WriteLine();
             Console.WriteLine($"{controller.Nodes.Count} Nodes Found:");
             foreach (Node n in controller.Nodes.Values)
                 Console.WriteLine(n.ToString());

@@ -2,6 +2,7 @@
 using System.Buffers.Binary;
 using System.Collections;
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using ZWaveDotNet.CommandClasses;
 using ZWaveDotNet.CommandClasses.Enums;
@@ -45,7 +46,7 @@ namespace ZWaveDotNet.Entities
                 throw new ArgumentException("16 byte s0 key required", nameof(s0Key));
             using (Aes aes = Aes.Create())
             {
-                aes.Key = Enumerable.Repeat((byte)0x0, 16).ToArray();
+                aes.Key = AES.EMPTY_IV;
                 tempA = aes.EncryptEcb(Enumerable.Repeat((byte)0x55, 16).ToArray(), PaddingMode.None);
                 tempE = aes.EncryptEcb(Enumerable.Repeat((byte)0xAA, 16).ToArray(), PaddingMode.None);
                 aes.Key = s0Key;
@@ -63,12 +64,19 @@ namespace ZWaveDotNet.Entities
                 CommandClass.SilenceAlarm, CommandClass.SwitchAll, CommandClass.SwitchBinary, CommandClass.SwitchColor, CommandClass.SwitchMultiLevel,
                 CommandClass.SwitchToggleBinary, CommandClass.SwitchToggleMultiLevel, CommandClass.WindowCovering //TODO - Barrier Operator
             });
+            APIVersion = new System.Version();
         }
 
         public ushort ControllerID { get; private set; }
         public uint HomeID { get; private set; }
         public bool SupportsLongRange { get; private set; }
         public Node BroadcastNode { get; private set; }
+        public LibraryType ControllerType { get; private set; } = LibraryType.StaticController;
+        public bool IsConnected { get { return flow.IsConnected; } }
+        public System.Version APIVersion { get; private set; }
+        public uint Manufacturer { get; private set; }
+        public bool Primary { get; private set; }
+        public bool SIS { get; private set; }
         internal Flow Flow { get { return flow; } }
         internal byte[] AuthenticationKey { get; private set; }
         internal byte[] EncryptionKey { get; private set; }
@@ -77,8 +85,6 @@ namespace ZWaveDotNet.Entities
         internal byte[] NetworkKeyS2Auth { get; private set; }
         internal byte[] NetworkKeyS2Access { get; private set; }
         internal SecurityManager? SecurityManager { get; private set; }
-        public LibraryType ControllerType { get; private set; } = LibraryType.StaticController;
-        public bool IsConnected { get { return flow.IsConnected; } }
         internal bool WideID { get { return flow.WideID; } private set { flow.WideID = value; } }
 
         public async Task Reset()
@@ -116,6 +122,8 @@ namespace ZWaveDotNet.Entities
             //Begin the controller interview
             if (await flow.SendAcknowledgedResponse(Function.GetSerialAPIInitData, cancellationToken) is InitData init)
             {
+                Primary = (init.Capability & InitData.ControllerCapability.PrimaryController) == InitData.ControllerCapability.PrimaryController;
+                SIS = (init.Capability & InitData.ControllerCapability.SIS) == InitData.ControllerCapability.SIS;
                 foreach (ushort id in init.NodeIDs)
                 {
                     if (id != ControllerID && !Nodes.ContainsKey(id))
@@ -173,7 +181,9 @@ namespace ZWaveDotNet.Entities
             if (supportedFunctions.Length > 0)
                 return supportedFunctions;
             PayloadMessage response = (PayloadMessage)await flow.SendAcknowledgedResponse(Function.GetSerialCapabilities, cancellationToken);
-            //Bytes 0-8: api version, manufacturer, product type, product id
+            //Bytes 4-8: product type, product id
+            APIVersion = new System.Version(response.Data.Span[0], response.Data.Span[1]);
+            Manufacturer = BinaryPrimitives.ReadUInt16BigEndian(response.Data.Slice(2, 2).Span);
             var bits = new BitArray(response.Data.Slice(8).ToArray());
             List<Function> functions = new List<Function>();
             for (ushort i = 0; i < bits.Length; i++)
@@ -239,63 +249,6 @@ namespace ZWaveDotNet.Entities
             return random!.Data.Slice(2);
         }
 
-        public void AddSmartStartNode(Memory<byte> DSK)
-        {
-            if (DSK.Length != 16)
-                throw new ArgumentException("Invalid DSK");
-            provisionList.Add(DSK);
-        }
-        public void AddSmartStartNode(string QRcode)
-        {
-            QRParser parser = new QRParser(QRcode);
-            AddSmartStartNode(parser.DSK);
-        }
-
-        public async Task StartInclusion(InclusionStrategy strategy, ushort pin = 0, CancellationToken cancellationToken = default, bool fullPower = true, bool networkWide = true)
-        {
-            this.currentStrategy = strategy;
-            this.pin = pin;
-            AddRemoveNodeMode mode = AddRemoveNodeMode.AnyNode;
-            if (fullPower)
-                mode |= AddRemoveNodeMode.UseNormalPower;
-            if (networkWide)
-                mode |= AddRemoveNodeMode.UseNetworkWide;
-            await flow.SendAcknowledged(Function.AddNodeToNetwork, cancellationToken, (byte)mode, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0);
-        }
-
-        private async Task AddNodeToNetwork(byte[] NWIHomeID, byte[] AuthHomeID, bool longRange, CancellationToken cancellationToken = default)
-        {
-            AddRemoveNodeMode mode = AddRemoveNodeMode.SmartStartIncludeNode | AddRemoveNodeMode.UseNetworkWide | AddRemoveNodeMode.UseNormalPower;
-            if (longRange)
-                mode |= AddRemoveNodeMode.IncludeLongRange;
-            await flow.SendAcknowledged(Function.AddNodeToNetwork, cancellationToken, (byte)mode, 0x1, NWIHomeID[0], NWIHomeID[1], NWIHomeID[2], NWIHomeID[3], AuthHomeID[0], AuthHomeID[1], AuthHomeID[2], AuthHomeID[3]);
-        }
-
-        public async Task StartSmartStartInclusion(InclusionStrategy strategy = InclusionStrategy.PreferS2, CancellationToken cancellationToken = default)
-        {
-            this.currentStrategy = strategy;
-            AddRemoveNodeMode mode = AddRemoveNodeMode.SmartStartListen | AddRemoveNodeMode.UseNetworkWide | AddRemoveNodeMode.UseNormalPower;
-            await flow.SendAcknowledged(Function.AddNodeToNetwork, cancellationToken, (byte)mode, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0);
-        }
-
-        public async Task StopInclusion(CancellationToken cancellationToken = default)
-        {
-            await flow.SendAcknowledged(Function.AddNodeToNetwork, cancellationToken, (byte)AddRemoveNodeMode.StopNetworkIncludeExclude, 0x1);
-        }
-
-        public async Task StartExclusion(bool networkWide = true, CancellationToken cancellationToken = default)
-        {
-            AddRemoveNodeMode mode = AddRemoveNodeMode.AnyNode | AddRemoveNodeMode.UseNormalPower;
-            if (networkWide)
-                mode |= AddRemoveNodeMode.UseNetworkWide;
-            await flow.SendAcknowledged(Function.RemoveNodeFromNetwork, cancellationToken, (byte)mode, 0x1);
-        }
-
-        public async Task StopExclusion(CancellationToken cancellationToken = default)
-        {
-            await flow.SendAcknowledged(Function.RemoveNodeFromNetwork, cancellationToken, (byte)AddRemoveNodeMode.StopNetworkIncludeExclude, 0x1);
-        }
-
         public async Task<byte[]> BackupNVM(CancellationToken cancellationToken = default)
         {
             if (!Supports(Function.NVMBackupRestore))
@@ -329,6 +282,42 @@ namespace ZWaveDotNet.Entities
             return buffer;
         }
 
+        public async Task<bool> Set16Bit(bool enable, CancellationToken cancellationToken = default)
+        {
+            if (!Supports(SubCommand.SetNodeIDBaseType))
+                throw new PlatformNotSupportedException("Controller does not support 16bit");
+            PayloadMessage success = (PayloadMessage)await flow.SendAcknowledgedResponse(Function.SerialAPISetup, cancellationToken, (byte)SubCommand.SetNodeIDBaseType, enable ? (byte)0x2 : (byte)0x1);
+            WideID = success.Data.Span[1] != 0;
+            return WideID;
+        }
+
+        public async Task<RFRegion> GetRFRegion(CancellationToken cancellationToken = default)
+        {
+            if (!Supports(Function.SerialAPISetup) || !Supports(SubCommand.GetRFRegion))
+                throw new PlatformNotSupportedException("This controller does not support RF regions");
+            PayloadMessage region = (PayloadMessage)await flow.SendAcknowledgedResponse(Function.SerialAPISetup, cancellationToken, (byte)SubCommand.GetRFRegion);
+            if (region.Data.Length < 2)
+                return RFRegion.Unknown;
+            return (RFRegion)region.Data.Span[1];
+        }
+
+        public async Task<bool> SetRFRegion(RFRegion region, CancellationToken cancellationToken = default)
+        {
+            if (!Supports(Function.SerialAPISetup) || !Supports(SubCommand.SetRFRegion))
+                throw new PlatformNotSupportedException("This controller does not support RF regions");
+            if (region == RFRegion.Unknown)
+                throw new ArgumentException(nameof(region) + " cannot be " + nameof(RFRegion.Unknown));
+            PayloadMessage success = (PayloadMessage)await flow.SendAcknowledgedResponse(Function.SerialAPISetup, cancellationToken, (byte)SubCommand.SetRFRegion, (byte)region);
+            return success.Data.Span[1] != 0;
+        }
+
+        public async Task InterviewNodes()
+        {
+            foreach (Node n in Nodes.Values)
+                await n.Interview(false);
+        }
+
+        #region Serialization
         public string ExportNodeDB()
         {
             nodeListLock.Wait();
@@ -429,12 +418,147 @@ namespace ZWaveDotNet.Entities
                 nodeListLock.Release();
             }
         }
+        #endregion Serialization
 
-        public async Task InterviewNodes()
+        #region Inclusion
+        public void AddSmartStartNode(Memory<byte> DSK)
         {
-            foreach (Node n in Nodes.Values)
-                await n.Interview(false);
+            if (DSK.Length != 16)
+                throw new ArgumentException("Invalid DSK");
+            provisionList.Add(DSK);
         }
+        public void AddSmartStartNode(string QRcode)
+        {
+            QRParser parser = new QRParser(QRcode);
+            AddSmartStartNode(parser.DSK);
+        }
+
+        public async Task StartInclusion(InclusionStrategy strategy, ushort pin = 0, CancellationToken cancellationToken = default, bool fullPower = true, bool networkWide = true)
+        {
+            this.currentStrategy = strategy;
+            this.pin = pin;
+            AddRemoveNodeMode mode = AddRemoveNodeMode.AnyNode;
+            if (fullPower)
+                mode |= AddRemoveNodeMode.UseNormalPower;
+            if (networkWide)
+                mode |= AddRemoveNodeMode.UseNetworkWide;
+            await flow.SendAcknowledged(Function.AddNodeToNetwork, cancellationToken, (byte)mode, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0);
+        }
+
+        private async Task AddNodeToNetwork(byte[] NWIHomeID, byte[] AuthHomeID, bool longRange, CancellationToken cancellationToken = default)
+        {
+            AddRemoveNodeMode mode = AddRemoveNodeMode.SmartStartIncludeNode | AddRemoveNodeMode.UseNetworkWide | AddRemoveNodeMode.UseNormalPower;
+            if (longRange)
+                mode |= AddRemoveNodeMode.IncludeLongRange;
+            await flow.SendAcknowledged(Function.AddNodeToNetwork, cancellationToken, (byte)mode, 0x1, NWIHomeID[0], NWIHomeID[1], NWIHomeID[2], NWIHomeID[3], AuthHomeID[0], AuthHomeID[1], AuthHomeID[2], AuthHomeID[3]);
+        }
+
+        public async Task StartSmartStartInclusion(InclusionStrategy strategy = InclusionStrategy.PreferS2, CancellationToken cancellationToken = default)
+        {
+            this.currentStrategy = strategy;
+            AddRemoveNodeMode mode = AddRemoveNodeMode.SmartStartListen | AddRemoveNodeMode.UseNetworkWide | AddRemoveNodeMode.UseNormalPower;
+            await flow.SendAcknowledged(Function.AddNodeToNetwork, cancellationToken, (byte)mode, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0);
+        }
+
+        public async Task StopInclusion(CancellationToken cancellationToken = default)
+        {
+            await flow.SendAcknowledged(Function.AddNodeToNetwork, cancellationToken, (byte)AddRemoveNodeMode.StopNetworkIncludeExclude, 0x1);
+        }
+
+        public async Task StartExclusion(bool networkWide = true, CancellationToken cancellationToken = default)
+        {
+            AddRemoveNodeMode mode = AddRemoveNodeMode.AnyNode | AddRemoveNodeMode.UseNormalPower;
+            if (networkWide)
+                mode |= AddRemoveNodeMode.UseNetworkWide;
+            await flow.SendAcknowledged(Function.RemoveNodeFromNetwork, cancellationToken, (byte)mode, 0x1);
+        }
+
+        public async Task StopExclusion(CancellationToken cancellationToken = default)
+        {
+            await flow.SendAcknowledged(Function.RemoveNodeFromNetwork, cancellationToken, (byte)AddRemoveNodeMode.StopNetworkIncludeExclude, 0x1);
+        }
+
+        private async Task<bool> BootstrapUnsecure(Node node)
+        {
+            Log.Information("Included without Security. Moving to interview");
+            await node.Interview(true);
+            NodeReady?.Invoke(node, new EventArgs());
+            return true;
+        }
+
+        private async Task<bool> BootstrapS0(Node node)
+        {
+            Log.Information("Starting Secure(0-Legacy) Inclusion");
+            using (CancellationTokenSource cts = new CancellationTokenSource(30000))
+            {
+                try
+                {
+                    Security0 sec0 = node.GetCommandClass<Security0>()!;
+                    await sec0.SchemeGet(cts.Token);
+                    await sec0.KeySet(cts.Token);
+                    await sec0.WaitForKeyVerified(cts.Token);
+                    SecurityBootstrapComplete?.Invoke(node, new EventArgs());
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e, "Error in S0 Bootstrapping");
+                    return false;
+                }
+            }
+            await node.Interview(true);
+            NodeReady?.Invoke(node, new EventArgs());
+            return true;
+        }
+
+        private async Task<bool> BootstrapS2(Node node)
+        {
+            Security2 sec2 = node.GetCommandClass<Security2>()!;
+            Log.Information("Starting Secure S2 Inclusion");
+            try
+            {
+                KeyExchangeReport requestedKeys;
+                using (CancellationTokenSource TA1 = new CancellationTokenSource(10000))
+                    requestedKeys = await sec2.KexGet(TA1.Token);
+
+                if (!requestedKeys.Curve25519)
+                {
+                    await sec2.KexFail(KexFailType.KEX_FAIL_KEX_CURVES);
+                    return false;
+                }
+                if (!requestedKeys.Scheme1)
+                {
+                    await sec2.KexFail(KexFailType.KEX_FAIL_KEX_SCHEME);
+                    return false;
+                }
+                SecurityManager!.StoreRequestedKeys(node.ID, requestedKeys);
+                Log.Information("Sending " + requestedKeys.ToString());
+                Memory<byte> pub;
+                using (CancellationTokenSource TA2 = new CancellationTokenSource(10000))
+                    pub = await sec2.KexSet(requestedKeys, TA2.Token);
+                if ((requestedKeys.Keys & SecurityKey.S2Access) == SecurityKey.S2Access ||
+                    (requestedKeys.Keys & SecurityKey.S2Authenticated) == SecurityKey.S2Authenticated)
+                    BinaryPrimitives.WriteUInt16BigEndian(pub.Slice(0, 2).Span, pin);
+                byte[] sharedSecret = SecurityManager!.CreateSharedSecret(pub);
+                var prk = AES.CKDFTempExtract(sharedSecret, SecurityManager.PublicKey, pub);
+                Log.Information("Temp Key: " + MemoryUtil.Print(prk));
+                SecurityManager.GrantKey(node.ID, SecurityManager.RecordType.ECDH_TEMP, prk, true);
+                await sec2.SendPublicKey();
+                using (CancellationTokenSource cts = new CancellationTokenSource(30000))
+                    await sec2.WaitForBootstrap(cts.Token);
+                SecurityBootstrapComplete?.Invoke(node, new EventArgs());
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Error in S2 Bootstrapping");
+                using (CancellationTokenSource cts = new CancellationTokenSource(5000))
+                    await sec2.KexFail(KexFailType.KEX_FAIL_CANCEL, cts.Token);
+                return false;
+            }
+            await node.Interview(true);
+            NodeReady?.Invoke(node, new EventArgs());
+            return true;
+        }
+        #endregion Inclusion
 
         private async Task EventLoop()
         {
@@ -510,12 +634,12 @@ namespace ZWaveDotNet.Entities
                             {
                                 if (inc.NodeID > 0 && Nodes.TryGetValue(inc.NodeID, out Node? node))
                                 {
-                                    Log.Information("Added " + node.ToString()); //TODO - Event this
+                                    Log.Information("Added " + node.ToString());
                                     if (SecurityManager != null)
                                     {
-                                        if ((currentStrategy == InclusionStrategy.S2Only || currentStrategy == InclusionStrategy.PreferS2) && node.CommandClasses.ContainsKey(CommandClass.Security2))
+                                        if ((currentStrategy == InclusionStrategy.S2Only || currentStrategy == InclusionStrategy.PreferS2) && node.HasCommandClass(CommandClass.Security2))
                                             await Task.Run(() => BootstrapS2(node));
-                                        else if ((currentStrategy == InclusionStrategy.PreferS2 || currentStrategy == InclusionStrategy.LegacyS0Only) && node.CommandClasses.ContainsKey(CommandClass.Security0))
+                                        else if ((currentStrategy == InclusionStrategy.PreferS2 || currentStrategy == InclusionStrategy.LegacyS0Only) && node.HasCommandClass(CommandClass.Security0))
                                             await Task.Run(() => BootstrapS0(node));
                                         else
                                             await Task.Run(() => BootstrapUnsecure(node));
@@ -539,98 +663,17 @@ namespace ZWaveDotNet.Entities
             }
         }
 
-        public async Task<bool> BootstrapUnsecure(Node node)
-        {
-            Log.Information("Included without Security. Moving to interview");
-            await node.Interview(true);
-            NodeReady?.Invoke(node, new EventArgs());
-            return true;
-        }
-
-        private async Task<bool> BootstrapS0(Node node)
-        {
-            Log.Information("Starting Secure(0-Legacy) Inclusion");
-            using (CancellationTokenSource cts = new CancellationTokenSource(30000))
-            {
-                try
-                {
-                    await ((Security0)node.CommandClasses[CommandClass.Security0]).SchemeGet(cts.Token);
-                    await ((Security0)node.CommandClasses[CommandClass.Security0]).KeySet(cts.Token);
-                    await ((Security0)node.CommandClasses[CommandClass.Security0]).WaitForKeyVerified(cts.Token);
-                    SecurityBootstrapComplete?.Invoke(node, new EventArgs());
-                }
-                catch (Exception e)
-                {
-                    Log.Error(e, "Error in S0 Bootstrapping");
-                    return false;
-                }
-            }
-            await node.Interview(true);
-            NodeReady?.Invoke(node, new EventArgs());
-            return true;
-        }
-
-        private async Task<bool> BootstrapS2(Node node)
-        {
-            Security2 sec2 = ((Security2)node.CommandClasses[CommandClass.Security2]);
-            Log.Information("Starting Secure S2 Inclusion");
-            try
-            {
-                KeyExchangeReport requestedKeys;
-                using (CancellationTokenSource TA1 = new CancellationTokenSource(10000))
-                    requestedKeys = await sec2.KexGet(TA1.Token);
-
-                if (!requestedKeys.Curve25519)
-                {
-                    await sec2.KexFail(KexFailType.KEX_FAIL_KEX_CURVES);
-                    return false;
-                }
-                if (!requestedKeys.Scheme1)
-                {
-                    await sec2.KexFail(KexFailType.KEX_FAIL_KEX_SCHEME);
-                    return false;
-                }
-                SecurityManager!.StoreRequestedKeys(node.ID, requestedKeys);
-                Log.Information("Sending " + requestedKeys.ToString());
-                Memory<byte> pub;
-                using (CancellationTokenSource TA2 = new CancellationTokenSource(10000))
-                    pub = await sec2.KexSet(requestedKeys, TA2.Token);
-                if ((requestedKeys.Keys & SecurityKey.S2Access) == SecurityKey.S2Access ||
-                    (requestedKeys.Keys & SecurityKey.S2Authenticated) == SecurityKey.S2Authenticated)
-                    BinaryPrimitives.WriteUInt16BigEndian(pub.Slice(0, 2).Span, pin);
-                byte[] sharedSecret = SecurityManager!.CreateSharedSecret(pub);
-                var prk = AES.CKDFTempExtract(sharedSecret, SecurityManager.PublicKey, pub);
-                Log.Information("Temp Key: " + MemoryUtil.Print(prk));
-                SecurityManager.GrantKey(node.ID, SecurityManager.RecordType.ECDH_TEMP, prk, true);
-                await sec2.SendPublicKey();
-                using (CancellationTokenSource cts = new CancellationTokenSource(30000))
-                    await sec2.WaitForBootstrap(cts.Token);
-                SecurityBootstrapComplete?.Invoke(node, new EventArgs());
-            }
-            catch(Exception e)
-            {
-                Log.Error(e, "Error in S2 Bootstrapping");
-                using (CancellationTokenSource cts = new CancellationTokenSource(5000))
-                    await sec2.KexFail(KexFailType.KEX_FAIL_CANCEL, cts.Token);
-                return false;
-            }
-            await node.Interview(true);
-            NodeReady?.Invoke(node, new EventArgs());
-            return true;
-        }
-
         public override string ToString()
         {
-            return $"Controller {ControllerID} - LR: {SupportsLongRange}\nNodes: \n" + string.Join('\n', Nodes.Values);
-        }
-
-        public async Task<bool> Set16Bit(bool enable, CancellationToken cancellationToken = default)
-        {
-            if (!Supports(SubCommand.SetNodeIDBaseType))
-                throw new PlatformNotSupportedException("Controller does not support 16bit");
-            PayloadMessage success = (PayloadMessage)await flow.SendAcknowledgedResponse(Function.SerialAPISetup, cancellationToken, (byte)SubCommand.SetNodeIDBaseType, enable ? (byte)0x2 : (byte)0x1);
-            WideID = success.Data.Span[1] != 0;
-            return WideID;
+            StringBuilder ret = new StringBuilder();
+            ret.Append($"Controller {ControllerID} v{APIVersion.Major}");
+            if (Primary)
+                ret.Append("[Primary] ");
+            if (SIS)
+                ret.Append("[SIS] ");
+            ret.AppendLine($" - LR: {SupportsLongRange}\nNodes: ");
+            ret.AppendLine(string.Join('\n', Nodes.Values));
+            return ret.ToString();
         }
     }
 }
