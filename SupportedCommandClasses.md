@@ -28,7 +28,7 @@ DOOR_LOCK | 0 | 4 | None
 DOOR_LOCK_LOGGING | 0 | 1 | None
 **ENERGY_PRODUCTION** | **1** | **1** | **Full**
 ENTRY_CONTROL | 0 | 1 | None
-*FIRMWARE_UPDATE_MD* | *1* | *8* | *Full*
+FIRMWARE_UPDATE_MD | 0 | 8 | None
 GENERIC_SCHEDULE | 0 | 1 | None
 **GEOGRAPHIC_LOCATION** | **1** | **1** | **Full**
 **GROUPING_NAME** | **1** | **1** | **Full**
