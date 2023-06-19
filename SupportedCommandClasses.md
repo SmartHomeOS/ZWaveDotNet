@@ -28,7 +28,7 @@ DOOR_LOCK | 0 | 4 | None
 DOOR_LOCK_LOGGING | 0 | 1 | None
 **ENERGY_PRODUCTION** | **1** | **1** | **Full**
 ENTRY_CONTROL | 0 | 1 | None
-FIRMWARE_UPDATE_MD | 0 | 8 | None
+*FIRMWARE_UPDATE_MD* | *1* | *8* | *Full*
 GENERIC_SCHEDULE | 0 | 1 | None
 **GEOGRAPHIC_LOCATION** | **1** | **1** | **Full**
 **GROUPING_NAME** | **1** | **1** | **Full**
@@ -77,8 +77,8 @@ RATE_TBL_MONITOR | 0 | 1 | None
 REMOTE_ASSOCIATION | 0 | 1 | None
 REMOTE_ASSOCIATION_ACTIVATE | 0 | 1 | None
 **SCENE_ACTIVATION** | **1** | **1** | **Full**
-SCENE_ACTUATOR_CONF | 0 | 1 | None
-SCENE_CONTROLLER_CONF | 0 | 1 | None
+**SCENE_ACTUATOR_CONF** | **1** | **1** | **Full**
+**SCENE_CONTROLLER_CONF** | **1** | **1** | **Full**
 SCHEDULE | 0 | 4 | None
 SCHEDULE_ENTRY_LOCK | 0 | 3 | None
 SCREEN_ATTRIBUTES | 0 | 2 | None
@@ -122,5 +122,5 @@ ZIP_ND | 0 | 1 | None
 ZIP_PORTAL | 0 | 1 | None
 **ZWAVEPLUS_INFO** | **2** | **2** | **Full**
 
-- Full Support for 48/121 Command Classes.
+- Full Support for 50/121 Command Classes.
 - Partial Support for 2/121 Command Classes.

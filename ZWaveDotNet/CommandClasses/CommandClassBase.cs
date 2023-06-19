@@ -132,6 +132,10 @@ namespace ZWaveDotNet.CommandClasses
                     return new Proprietary(node, endpoint);
                 case CommandClass.SceneActivation:
                     return new SceneActivation(node, endpoint);
+                case CommandClass.SceneActuatorConf:
+                    return new SceneActuatorConf(node, endpoint);
+                case CommandClass.SceneControllerConf:
+                    return new SceneControllerConf(node, endpoint);
                 case CommandClass.Security0:
                     return new Security0(node, endpoint);
                 case CommandClass.Security2:
