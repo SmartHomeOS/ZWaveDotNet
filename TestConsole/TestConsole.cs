@@ -6,7 +6,7 @@ namespace ExampleConsole
 {
     public class TestConsole
     {
-        private static readonly string? Version = Assembly.GetExecutingAssembly().GetName().Version?.ToString();
+        private static readonly string? Version = Assembly.GetAssembly(typeof(Controller))!.GetName().Version?.ToString(3);
         private static Controller? controller;
         private static HashSet<ushort> InterviewList = new HashSet<ushort>();
         private static HashSet<ushort> ReadyList = new HashSet<ushort>();
@@ -16,12 +16,13 @@ namespace ExampleConsole
             Log.Logger = new LoggerConfiguration().WriteTo.File("console.log").CreateLogger();
 
             //Randomly Generated Test Keys - Change this before using locally
+            byte[] testKey0 = new byte[] { 0x76, 0xF7, 0xF9, 0x43, 0x4B, 0x90, 0x1B, 0x83, 0xB0, 0x4D, 0x90, 0xAD, 0x92, 0x14, 0x13, 0xEC };
             byte[] testKey = new byte[] { 0x76, 0xF7, 0xF9, 0x43, 0x4B, 0x90, 0x1B, 0x83, 0xB0, 0x4D, 0x90, 0xAD, 0x92, 0x14, 0x13, 0xEC };
             byte[] testKey2 = new byte[] { 0x76, 0xF7, 0xF9, 0x43, 0x4B, 0x90, 0x1B, 0x83, 0xB0, 0x4D, 0x90, 0xAD, 0x92, 0x14, 0x13, 0xED };
             byte[] testKey3 = new byte[] { 0x76, 0xF7, 0xF9, 0x43, 0x4B, 0x90, 0x1B, 0x83, 0xB0, 0x4D, 0x90, 0xAD, 0x92, 0x14, 0x13, 0xEE };
 
             //Create the controller and soft-reset so it's ready for commands
-            controller = new Controller("COM4", testKey, testKey, testKey2, testKey3);
+            controller = new Controller("COM4", testKey0, testKey, testKey2, testKey3);
             await controller.Reset();
 
             //Add event listeners before starting
@@ -55,7 +56,7 @@ namespace ExampleConsole
                 await Task.Factory.StartNew(async() => {
                     try
                     {
-                        await node.Interview(false, cts.Token);
+                        await node.Interview(cts.Token);
                         ReadyList.Add(node.ID);
                         await controller!.ExportNodeDBAsync("nodecache.db");
                     }
