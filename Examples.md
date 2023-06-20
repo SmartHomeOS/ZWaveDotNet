@@ -24,7 +24,7 @@ await controller.ExportNodeDBAsync("nodes.db");
 ```
 
 ##### Option 2: Loading Node Database
-Once a network interview has occured, startups can load the node database and skip re-interviewing the network.
+Once a network interview has occured, future startups can load the node database and skip re-interviewing the network.
 ```c#
 await controller.ImportNodeDBAsync("nodes.db");
 ```

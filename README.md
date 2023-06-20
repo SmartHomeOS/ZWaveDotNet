@@ -1,8 +1,8 @@
 [![Build](https://github.com/SmartHomeOS/ZWaveDotNet/actions/workflows/dotnet.yml/badge.svg)](https://github.com/SmartHomeOS/ZWaveDotNet/actions/workflows/dotnet.yml)
+[![Version](https://img.shields.io/nuget/v/ZWaveDotNet.svg)](https://www.nuget.org/packages/ZWaveDotNet)
 # ZWaveDotNet
 An implementation of ZWave Plus using the 2022b public specification. 
 
-**Not yet ready for use - star/follow for our first release.** 
 ### Features:
 * Support is included for 50+ command classes. [Full and partial command class support is listed here](SupportedCommandClasses.md).
 * Support for security (V0 and V2) and message encapsulation (CRC16, MultiChannel, MultiCommand, Transport and Supervision)
