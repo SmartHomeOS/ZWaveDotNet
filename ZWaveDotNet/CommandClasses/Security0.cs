@@ -40,14 +40,14 @@ namespace ZWaveDotNet.CommandClasses
         internal async Task SchemeGet(CancellationToken cancellationToken = default)
         {
             Log.Debug("Requesting Scheme");
-            await SendCommand(Security0Command.SchemeGet, cancellationToken, (byte)0x0);
+            await SendCommand(Security0Command.SchemeGet, cancellationToken, (byte)0x0).ConfigureAwait(false);
         }
 
         internal async Task KeySet(CancellationToken cancellationToken = default)
         {
             Log.Information($"Setting Network Key on {node.ID}");
             CommandMessage data = new CommandMessage(controller, node.ID, endpoint, commandClass, (byte)Security0Command.NetworkKeySet, false, controller.NetworkKeyS0);
-            await TransmitTemp(data.Payload, cancellationToken);
+            await TransmitTemp(data.Payload, cancellationToken).ConfigureAwait(false);
         }
 
         protected async Task<ReportMessage> GetNonce(CancellationToken cancellationToken)
@@ -67,7 +67,7 @@ namespace ZWaveDotNet.CommandClasses
             using (CancellationTokenSource timeout = new CancellationTokenSource(10000))
             {
                 using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(timeout.Token, cancellationToken);
-                report = await GetNonce(cts.Token);
+                report = await GetNonce(cts.Token).ConfigureAwait(false);
                 if (report.IsMulticastMethod())
                     return; //This should never happen
             }
@@ -86,12 +86,12 @@ namespace ZWaveDotNet.CommandClasses
             securePayload[8 + encrypted.Length] = receiversNonce[0];
             Array.Copy(mac, 0, securePayload, 9 + encrypted.Length, 8);
 
-            await SendCommand(Security0Command.MessageEncap, cancellationToken, securePayload);
+            await SendCommand(Security0Command.MessageEncap, cancellationToken, securePayload).ConfigureAwait(false);
         }
 
         public async Task Encapsulate(List<byte> payload, CancellationToken cancellationToken)
         {
-            ReportMessage report = await GetNonce(cancellationToken);
+            ReportMessage report = await GetNonce(cancellationToken).ConfigureAwait(false);
             if (report.IsMulticastMethod())
                 return; //This should never happen
 
@@ -149,7 +149,7 @@ namespace ZWaveDotNet.CommandClasses
             {
                 Log.Information("Providing Next Nonce");
                 using CancellationTokenSource cts = new CancellationTokenSource(3000);
-                await controller.Nodes[msg.SourceNodeID].GetCommandClass<Security0>()!.SendCommand(Security0Command.NonceReport, cts.Token, controller.SecurityManager.CreateS0Nonce(msg.SourceNodeID));
+                await controller.Nodes[msg.SourceNodeID].GetCommandClass<Security0>()!.SendCommand(Security0Command.NonceReport, cts.Token, controller.SecurityManager.CreateS0Nonce(msg.SourceNodeID)).ConfigureAwait(false);
             }
 
             Log.Information("Decrypted: " + msg.ToString());
@@ -179,7 +179,7 @@ namespace ZWaveDotNet.CommandClasses
                     if (message.IsMulticastMethod())
                         return SupervisionStatus.Fail;
 
-                    await SendCommand(Security0Command.NonceReport, CancellationToken.None, controller.SecurityManager.CreateS0Nonce(node.ID));
+                    await SendCommand(Security0Command.NonceReport, CancellationToken.None, controller.SecurityManager.CreateS0Nonce(node.ID)).ConfigureAwait(false);
                     return SupervisionStatus.Success;
             }
             return SupervisionStatus.NoSupport;

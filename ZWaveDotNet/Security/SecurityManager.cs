@@ -26,7 +26,6 @@ namespace ZWaveDotNet.Security
             public Memory<byte> Bytes;
             public DateTime Expires;
             public RecordType Type;
-            public byte SequenceNumber;
         }
         private class MpanRecord
         {
@@ -157,14 +156,13 @@ namespace ZWaveDotNet.Security
             return null;
         }
 
-        public void CreateSpan(ushort nodeId, byte sequence, Memory<byte> mixedEntropy, Memory<byte> personalization, RecordType type)
+        public void CreateSpan(ushort nodeId, Memory<byte> mixedEntropy, Memory<byte> personalization, RecordType type)
         {
             Log.Information($"Created SPAN ({MemoryUtil.Print(mixedEntropy)}, {MemoryUtil.Print(personalization)})");
             Memory<byte> working_state = CTR_DRBG.Instantiate(mixedEntropy, personalization);
             SpanRecord nr = new SpanRecord()
             {
                 Bytes = working_state,
-                SequenceNumber = ++sequence,
                 Type = type
             };
             List<SpanRecord> stack = GetStack(nodeId);
@@ -174,20 +172,23 @@ namespace ZWaveDotNet.Security
 
         public bool IsSequenceNew(ushort nodeId, byte sequence)
         {
-            if (sequenceCache.TryGetValue(nodeId, out List<byte>? sequences))
+            lock (sequenceCache)
             {
-                if (sequences.Contains(sequence))
-                    return false;
-                sequences.Add(sequence);
-                if (sequences.Count > 10)
-                    sequences.RemoveAt(0);
-                return true;
+                if (sequenceCache.TryGetValue(nodeId, out List<byte>? sequences))
+                {
+                    if (sequences.Contains(sequence))
+                        return false;
+                    sequences.Add(sequence);
+                    if (sequences.Count > 10)
+                        sequences.RemoveAt(0);
+                    return true;
+                }
+                sequenceCache.Add(nodeId, new List<byte>(new byte[] { sequence }));
             }
-            sequenceCache.Add(nodeId, new List<byte>(new byte[] { sequence }));
             return true;
         }
 
-        public (Memory<byte> output, byte sequence)? NextSpanNonce(ushort nodeId, RecordType type)
+        public Memory<byte>? NextSpanNonce(ushort nodeId, RecordType type)
         {
             if (spanRecords.TryGetValue(nodeId, out List<SpanRecord>? stack))
             {
@@ -197,9 +198,8 @@ namespace ZWaveDotNet.Security
                     {
                         Log.Warning("Generating Next Nonce");
                         var result = CTR_DRBG.Generate(record.Bytes, 13);
-                        record.SequenceNumber++;
                         record.Bytes = result.working_state;
-                        return (result.output, record.SequenceNumber);
+                        return result.output;
                     }
                 }
             }
@@ -235,14 +235,16 @@ namespace ZWaveDotNet.Security
             return false;
         }
 
-        public (Memory<byte> bytes, byte sequence)? GetEntropy(ushort nodeId, bool remote)
+        public Memory<byte>? GetEntropy(ushort nodeId, bool remote)
         {
             if (spanRecords.TryGetValue(nodeId, out List<SpanRecord>? stack))
             {
                 foreach (SpanRecord record in stack)
                 {
                     if (record.Type == (remote ? RecordType.RemoteEntropy : RecordType.LocalEntropy))
-                        return (record.Bytes, record.SequenceNumber++);
+                    {
+                        return record.Bytes;
+                    }
                 }
             }
             return null;
@@ -253,37 +255,34 @@ namespace ZWaveDotNet.Security
             if (spanRecords.TryGetValue(nodeId, out List<SpanRecord>? stack))
             {
                 if (type != RecordType.LocalEntropy)
-                    return stack.RemoveAll(n => n.Type == RecordType.RemoteEntropy);
-                if (type != RecordType.RemoteEntropy)
                     return stack.RemoveAll(n => n.Type == RecordType.LocalEntropy);
+                if (type != RecordType.RemoteEntropy)
+                    return stack.RemoveAll(n => n.Type == RecordType.RemoteEntropy);
             }
             return 0;
         }
 
-        public (Memory<byte> Bytes, byte Sequence) CreateEntropy(ushort nodeId, bool store)
+        public Memory<byte> CreateEntropy(ushort nodeId)
         {
             var result = CTR_DRBG.Generate(prngWorking, 16);
             prngWorking = result.working_state;
             SpanRecord nr = new SpanRecord()
             {
                 Bytes = result.output,
-                Type = RecordType.LocalEntropy,
-                SequenceNumber = (byte)new Random().Next()
+                Type = RecordType.LocalEntropy
             };
             DeleteEntropy(nodeId, RecordType.LocalEntropy);
-            if (store)
-                GetStack(nodeId, true).Add(nr);
+            GetStack(nodeId, true).Add(nr);
 
-            return (nr.Bytes, nr.SequenceNumber);
+            return nr.Bytes;
         }
 
-        public void StoreRemoteEntropy(ushort nodeId, Memory<byte> bytes, byte sequence)
+        public void StoreRemoteEntropy(ushort nodeId, Memory<byte> bytes)
         {
             SpanRecord nr = new SpanRecord()
             {
                 Bytes = bytes,
-                Type = RecordType.RemoteEntropy,
-                SequenceNumber = sequence
+                Type = RecordType.RemoteEntropy
             };
             DeleteEntropy(nodeId, RecordType.RemoteEntropy);
             List<SpanRecord> stack = GetStack(nodeId, true);

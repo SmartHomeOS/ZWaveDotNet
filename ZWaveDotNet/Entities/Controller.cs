@@ -27,6 +27,8 @@ namespace ZWaveDotNet.Entities
         public event EventHandler<ApplicationUpdateEventArgs>? NodeInfoUpdated;
         public event EventHandler? SecurityBootstrapComplete;
         public event EventHandler? NodeReady;
+        public event EventHandler? NodeExcluded;
+        public event EventHandler? InclusionStopped;
 
         private readonly Flow flow;
         internal byte[] tempA;
@@ -96,7 +98,7 @@ namespace ZWaveDotNet.Entities
         public async ValueTask Start(CancellationToken cancellationToken = default)
         {
             SecurityManager = new SecurityManager(await GetRandom(32, cancellationToken));
-            await Task.Factory.StartNew(EventLoop, TaskCreationOptions.LongRunning);
+            _ = await Task.Factory.StartNew(EventLoop, TaskCreationOptions.LongRunning);
 
             //See what the controller supports
             await GetSupportedFunctions(cancellationToken);
@@ -240,7 +242,7 @@ namespace ZWaveDotNet.Entities
                 random = await flow.SendAcknowledgedResponse(Function.GetRandom, cancellationToken, length) as PayloadMessage;
             }
             catch (Exception) { };
-            if (random == null || random.Data.Span[0] != 0x1) //TODO - Status Enums
+            if (random == null || random.Data.Span[0] == 0x0) //TODO - Status Enums
             {
                 Memory<byte> planB = new byte[length];
                 new Random().NextBytes(planB.Span);
@@ -480,53 +482,59 @@ namespace ZWaveDotNet.Entities
 
         private async Task<bool> BootstrapUnsecure(Node node)
         {
+            await Task.Delay(1000); //Give including node a chance to get ready
             Log.Information("Included without Security. Moving to interview");
-            await node.Interview(true);
+            await node.Interview(true).ConfigureAwait(false);
             NodeReady?.Invoke(node, new EventArgs());
             return true;
         }
 
         private async Task<bool> BootstrapS0(Node node)
         {
+            await Task.Delay(1000); //Give including node a chance to get ready
             Log.Information("Starting Secure(0-Legacy) Inclusion");
             using (CancellationTokenSource cts = new CancellationTokenSource(30000))
             {
                 try
                 {
                     Security0 sec0 = node.GetCommandClass<Security0>()!;
-                    await sec0.SchemeGet(cts.Token);
-                    await sec0.KeySet(cts.Token);
-                    await sec0.WaitForKeyVerified(cts.Token);
+                    await sec0.SchemeGet(cts.Token).ConfigureAwait(false);
+                    _ = Task.Run(() => sec0.KeySet(cts.Token));
+                    await sec0.WaitForKeyVerified(cts.Token).ConfigureAwait(false);
                     SecurityBootstrapComplete?.Invoke(node, new EventArgs());
                 }
                 catch (Exception e)
                 {
+                    SecurityManager?.RevokeKey(node.ID, SecurityManager.RecordType.S0);
                     Log.Error(e, "Error in S0 Bootstrapping");
                     return false;
                 }
             }
-            await node.Interview(true);
+            await node.Interview(true).ConfigureAwait(false);
             NodeReady?.Invoke(node, new EventArgs());
             return true;
         }
 
         private async Task<bool> BootstrapS2(Node node)
         {
+            await Task.Delay(1000); //Give including node a chance to get ready
             Security2 sec2 = node.GetCommandClass<Security2>()!;
             Log.Information("Starting Secure S2 Inclusion");
             try
             {
                 KeyExchangeReport requestedKeys;
                 using (CancellationTokenSource TA1 = new CancellationTokenSource(10000))
-                    requestedKeys = await sec2.KexGet(TA1.Token);
+                    requestedKeys = await sec2.KexGet(TA1.Token).ConfigureAwait(false);
 
                 if (!requestedKeys.Curve25519)
                 {
+                    Log.Error("Invalid S2 Curve");
                     await sec2.KexFail(KexFailType.KEX_FAIL_KEX_CURVES);
                     return false;
                 }
                 if (!requestedKeys.Scheme1)
                 {
+                    Log.Error("Invalid S2 Scheme");
                     await sec2.KexFail(KexFailType.KEX_FAIL_KEX_SCHEME);
                     return false;
                 }
@@ -534,7 +542,7 @@ namespace ZWaveDotNet.Entities
                 Log.Information("Sending " + requestedKeys.ToString());
                 Memory<byte> pub;
                 using (CancellationTokenSource TA2 = new CancellationTokenSource(10000))
-                    pub = await sec2.KexSet(requestedKeys, TA2.Token);
+                    pub = await sec2.KexSet(requestedKeys, TA2.Token).ConfigureAwait(false);
                 if ((requestedKeys.Keys & SecurityKey.S2Access) == SecurityKey.S2Access ||
                     (requestedKeys.Keys & SecurityKey.S2Authenticated) == SecurityKey.S2Authenticated)
                     BinaryPrimitives.WriteUInt16BigEndian(pub.Slice(0, 2).Span, pin);
@@ -542,19 +550,24 @@ namespace ZWaveDotNet.Entities
                 var prk = AES.CKDFTempExtract(sharedSecret, SecurityManager.PublicKey, pub);
                 Log.Information("Temp Key: " + MemoryUtil.Print(prk));
                 SecurityManager.GrantKey(node.ID, SecurityManager.RecordType.ECDH_TEMP, prk, true);
-                await sec2.SendPublicKey();
                 using (CancellationTokenSource cts = new CancellationTokenSource(30000))
-                    await sec2.WaitForBootstrap(cts.Token);
+                {
+                    _ = Task.Run(() => sec2.SendPublicKey(requestedKeys.ClientSideAuth, cts.Token));
+                    await sec2.WaitForBootstrap(cts.Token).ConfigureAwait(false);
+                }
                 SecurityBootstrapComplete?.Invoke(node, new EventArgs());
             }
             catch (Exception e)
             {
                 Log.Error(e, "Error in S2 Bootstrapping");
                 using (CancellationTokenSource cts = new CancellationTokenSource(5000))
-                    await sec2.KexFail(KexFailType.KEX_FAIL_CANCEL, cts.Token);
+                    await sec2.KexFail(KexFailType.KEX_FAIL_CANCEL, cts.Token).ConfigureAwait(false);
+                SecurityManager?.RevokeKey(node.ID, SecurityManager.RecordType.S2Access);
+                SecurityManager?.RevokeKey(node.ID, SecurityManager.RecordType.S2Auth);
+                SecurityManager?.RevokeKey(node.ID, SecurityManager.RecordType.S2UnAuth);
                 return false;
             }
-            await node.Interview(true);
+            await node.Interview(true).ConfigureAwait(false);
             NodeReady?.Invoke(node, new EventArgs());
             return true;
         }
@@ -612,7 +625,7 @@ namespace ZWaveDotNet.Entities
                     else if (msg is ApplicationCommand cmd)
                     {
                         if (Nodes.TryGetValue(cmd.SourceNodeID, out Node? node))
-                            _ = Task.Run(async() => { try { await node.HandleApplicationCommand(cmd); } catch (Exception e) { Log.Error(e, "Unhandled"); } });
+                            _ = Task.Factory.StartNew(async() => { try { await node.HandleApplicationCommand(cmd); } catch (Exception e) { Log.Error(e, "Unhandled"); } }, CancellationToken.None, TaskCreationOptions.RunContinuationsAsynchronously, TaskScheduler.Default);
                         else
                             Log.Warning("Node " + cmd.SourceNodeID + " not found");
                         Log.Information(cmd.ToString());
@@ -632,25 +645,30 @@ namespace ZWaveDotNet.Entities
                                 await StopInclusion();
                             else if (inc.Status == InclusionExclusionStatus.OperationComplete)
                             {
+                                InclusionStopped?.Invoke(this, EventArgs.Empty);
                                 if (inc.NodeID > 0 && Nodes.TryGetValue(inc.NodeID, out Node? node))
                                 {
                                     Log.Information("Added " + node.ToString());
                                     if (SecurityManager != null)
                                     {
                                         if ((currentStrategy == InclusionStrategy.S2Only || currentStrategy == InclusionStrategy.PreferS2) && node.HasCommandClass(CommandClass.Security2))
-                                            await Task.Run(() => BootstrapS2(node));
+                                            _ = Task.Run(() => BootstrapS2(node));
                                         else if ((currentStrategy == InclusionStrategy.PreferS2 || currentStrategy == InclusionStrategy.LegacyS0Only) && node.HasCommandClass(CommandClass.Security0))
-                                            await Task.Run(() => BootstrapS0(node));
+                                            _ = Task.Run(() => BootstrapS0(node));
                                         else
-                                            await Task.Run(() => BootstrapUnsecure(node));
+                                            _ = Task.Run(() => BootstrapUnsecure(node));
                                     }
                                 }
                             }
                         }
                         else if (inc.Function == Function.RemoveNodeFromNetwork && inc.NodeID > 0)
                         {
-                            if (Nodes.Remove(inc.NodeID))
-                                Log.Information($"Successfully exluded node {inc.NodeID}"); //TODO - Event This
+                            if (Nodes.Remove(inc.NodeID, out Node? node))
+                            {
+                                if (NodeExcluded != null)
+                                    NodeExcluded.Invoke(node, EventArgs.Empty);
+                                Log.Information($"Successfully exluded node {inc.NodeID}");
+                            }
                             if (inc.Status == InclusionExclusionStatus.OperationComplete)
                                 await StopExclusion();
                         }

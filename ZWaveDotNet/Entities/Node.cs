@@ -105,19 +105,19 @@ namespace ZWaveDotNet.Entities
             {
                 if (TransportService.IsEncapsulated(msg))
                 {
-                    msg = await TransportService.Process(msg, controller);
+                    msg = await TransportService.Process(msg, controller).ConfigureAwait(false);
                     if (msg == null)
                         return; //Not Complete Yet
                 }
                 if (Security0.IsEncapsulated(msg))
                 {
-                    msg = await Security0.Free(msg, controller);
+                    msg = await Security0.Free(msg, controller).ConfigureAwait(false);
                     if (msg == null)
                         return;
                 }
                 if (Security2.IsEncapsulated(msg))
                 {
-                    msg = await Security2.Free(msg, controller);
+                    msg = await Security2.Free(msg, controller).ConfigureAwait(false);
                     if (msg == null)
                         return;
                 }
@@ -133,7 +133,7 @@ namespace ZWaveDotNet.Entities
                 SupervisionStatus status = SupervisionStatus.Success;
                 foreach (ReportMessage r in msgs)
                 {
-                    SupervisionStatus cmdStatus = await HandleReport(r);
+                    SupervisionStatus cmdStatus = await HandleReport(r).ConfigureAwait(false);
                     if (cmdStatus == SupervisionStatus.Fail)
                         status = cmdStatus;
                     else if (cmdStatus == SupervisionStatus.NoSupport && status != SupervisionStatus.Fail)
@@ -146,7 +146,7 @@ namespace ZWaveDotNet.Entities
             }
             else
             {
-                SupervisionStatus status = await HandleReport(msg);
+                SupervisionStatus status = await HandleReport(msg).ConfigureAwait(false);
                 if (status == SupervisionStatus.NoSupport)
                     Log.Warning("No Support for " + msg.ToString());
                 if ((msg.Flags & ReportFlags.SupervisedOnce) == ReportFlags.SupervisedOnce && commandClasses.TryGetValue(CommandClass.Supervision, out CommandClassBase? supervision))
@@ -166,7 +166,7 @@ namespace ZWaveDotNet.Entities
             {
                 EndPoint? ep = GetEndPoint(msg.SourceEndpoint);
                 if (ep != null)
-                    return await ep.HandleReport(msg);
+                    return await ep.HandleReport(msg).ConfigureAwait(false);
             }
             return SupervisionStatus.NoSupport;
         }
@@ -267,7 +267,7 @@ namespace ZWaveDotNet.Entities
                  key = controller.SecurityManager.GetHighestKey(ID);
             if (Listening || newlyIncluded)
             {
-                await Interview(newlyIncluded, key, cancellationToken);
+                await Interview(newlyIncluded, key, cancellationToken).ConfigureAwait(false);
             }
             else
                 await Task.Run(async () =>
@@ -276,11 +276,11 @@ namespace ZWaveDotNet.Entities
                     {
                         //TODO - Make sure we abort this if interview is already in progress
                         while (!commandClasses.ContainsKey(CommandClass.WakeUp))
-                            await Task.Delay(3000); //TODO - Improve this
-                        await ((WakeUp)commandClasses[CommandClass.WakeUp]).WaitForAwake();
+                            await Task.Delay(3000).ConfigureAwait(false); //TODO - Improve this
+                        await ((WakeUp)commandClasses[CommandClass.WakeUp]).WaitForAwake().ConfigureAwait(false);
                         using (CancellationTokenSource cts = new CancellationTokenSource(90000))
-                            await Interview(newlyIncluded, key, cts.Token);
-                        await ((WakeUp)commandClasses[CommandClass.WakeUp]).NoMoreInformation();
+                            await Interview(newlyIncluded, key, cts.Token).ConfigureAwait(false);
+                        await ((WakeUp)commandClasses[CommandClass.WakeUp]).NoMoreInformation().ConfigureAwait(false);
                     }
                     catch(Exception ex)
                     {
@@ -309,7 +309,7 @@ namespace ZWaveDotNet.Entities
                                     using (CancellationTokenSource timeout = new CancellationTokenSource(5000))
                                     {
                                         using (CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(timeout.Token, cancellationToken))
-                                            await RequestS0(cts.Token);
+                                            await RequestS0(cts.Token).ConfigureAwait(false);
                                     }
                                     break;
                                 }
@@ -339,7 +339,7 @@ namespace ZWaveDotNet.Entities
                                     using (CancellationTokenSource timeout = new CancellationTokenSource(5000))
                                     {
                                         using (CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(timeout.Token, cancellationToken))
-                                            await RequestS2(cts.Token);
+                                            await RequestS2(cts.Token).ConfigureAwait(false);
                                     }
                                     break;
                                 }
@@ -366,7 +366,7 @@ namespace ZWaveDotNet.Entities
                                     using (CancellationTokenSource timeout = new CancellationTokenSource(5000))
                                     {
                                         using (CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(timeout.Token, cancellationToken))
-                                            await RequestS2(cts.Token);
+                                            await RequestS2(cts.Token).ConfigureAwait(false);
                                     }
                                     break;
                                 }
@@ -393,7 +393,7 @@ namespace ZWaveDotNet.Entities
                                     using (CancellationTokenSource timeout = new CancellationTokenSource(5000))
                                     {
                                         using (CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(timeout.Token, cancellationToken))
-                                            await RequestS2(cts.Token);
+                                            await RequestS2(cts.Token).ConfigureAwait(false);
                                     }
                                     break;
                                 }
@@ -414,10 +414,11 @@ namespace ZWaveDotNet.Entities
                 else
                 {
                     //Whatever keys we have is what the device has
+                    Log.Information("Requesting secure classes");
                     if (key != null && key.Key == SecurityManager.RecordType.S0 && commandClasses.ContainsKey(CommandClass.Security0))
-                        await RequestS0(cancellationToken);
+                        await RequestS0(cancellationToken).ConfigureAwait(false);
                     else if (key != null && commandClasses.ContainsKey(CommandClass.Security2))
-                        await RequestS2(cancellationToken);
+                        await RequestS2(cancellationToken).ConfigureAwait(false);
                 }
             }
             if (this.commandClasses.ContainsKey(CommandClass.MultiChannel))
@@ -466,7 +467,7 @@ namespace ZWaveDotNet.Entities
 
             Log.Information("Interviewing Command Classes");
             foreach (CommandClassBase cc in commandClasses.Values)
-                await cc.Interview(cancellationToken);
+                await cc.Interview(cancellationToken).ConfigureAwait(false);
             Log.Information($"Interview Complete [{ID}]");
             InterviewComplete?.Invoke(this, new EventArgs());
         }
@@ -474,7 +475,7 @@ namespace ZWaveDotNet.Entities
         private async Task RequestS0(CancellationToken cancellationToken)
         {
             Log.Information("Requesting S0 classes for " + ID);
-            SupportedCommands supportedCmds = await((Security0)commandClasses[CommandClass.Security0]).CommandsSupportedGet(cancellationToken);
+            SupportedCommands supportedCmds = await((Security0)commandClasses[CommandClass.Security0]).CommandsSupportedGet(cancellationToken).ConfigureAwait(false);
             Log.Information($"Received {string.Join(',', supportedCmds.CommandClasses)}");
             foreach (CommandClass cls in supportedCmds.CommandClasses)
             {
@@ -486,7 +487,7 @@ namespace ZWaveDotNet.Entities
         private async Task RequestS2(CancellationToken cancellationToken)
         {
             Log.Information("Requesting S2 classes for " + ID);
-            List<CommandClass> supportedCmds = await ((Security2)commandClasses[CommandClass.Security2]).GetSupportedCommands(cancellationToken);
+            List<CommandClass> supportedCmds = await ((Security2)commandClasses[CommandClass.Security2]).GetSupportedCommands(cancellationToken).ConfigureAwait(false);
             Log.Information($"Received {string.Join(',', supportedCmds)}");
             foreach (CommandClass cls in supportedCmds)
             {

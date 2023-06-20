@@ -1,4 +1,5 @@
-﻿using System.Threading.Channels;
+﻿using Serilog;
+using System.Threading.Channels;
 using ZWaveDotNet.SerialAPI.Enums;
 using ZWaveDotNet.SerialAPI.Messages;
 
@@ -8,6 +9,7 @@ namespace ZWaveDotNet.SerialAPI
     {
         private readonly Port port;
         private readonly Channel<Frame> unsolicited;
+        private readonly SemaphoreSlim portLock = new SemaphoreSlim(1, 1);
         public bool WideID { get; set; }
         internal bool IsConnected { get { return port.IsConnected(); } }
 
@@ -19,20 +21,28 @@ namespace ZWaveDotNet.SerialAPI
 
         public async Task SendUnacknowledged(Function function, params byte[] payload)
         {
-            Frame frame = new Frame(FrameType.SOF, DataFrameType.Request, function, payload);
-            await port.QueueTX(frame);
+            try
+            {
+                await portLock.WaitAsync();
+                Frame frame = new Frame(FrameType.SOF, DataFrameType.Request, function, payload);
+                await port.QueueTX(frame);
+            }
+            finally
+            {
+                portLock.Release();
+            }
         }
 
-        public Task SendAcknowledged(Function function, CancellationToken cancellationToken = default, params byte[] payload)
+        public async Task SendAcknowledged(Function function, CancellationToken cancellationToken = default, params byte[] payload)
         {
             Frame frame = new Frame(FrameType.SOF, DataFrameType.Request, function, payload);
-            return SendAcknowledged(frame, cancellationToken);
+            await SendAcknowledged(frame, cancellationToken).ConfigureAwait(false);
         }
 
-        public Task SendAcknowledged(Message message, CancellationToken cancellationToken = default)
+        public async Task SendAcknowledged(Message message, CancellationToken cancellationToken = default)
         {
             Frame frame = new Frame(FrameType.SOF, DataFrameType.Request, message.Function, message.GetPayload());
-            return SendAcknowledged(frame, cancellationToken);
+            await SendAcknowledged(frame, cancellationToken).ConfigureAwait(false);
         }
 
         public async Task SendAcknowledged(Frame frame, CancellationToken cancellationToken = default)
@@ -49,13 +59,14 @@ namespace ZWaveDotNet.SerialAPI
         public async Task<Message> SendAcknowledgedResponse(Function function, CancellationToken cancellationToken = default, params byte[] payload)
         {
             Frame frame = new Frame(FrameType.SOF, DataFrameType.Request, function, payload);
-            return GetMessage(await SendAcknowledgedResponse(frame, cancellationToken));
+            Frame response = await SendAcknowledgedResponse(frame, cancellationToken).ConfigureAwait(false);
+            return GetMessage(response);
         }
 
         public async Task<Message> SendAcknowledgedResponse(Message message, CancellationToken cancellationToken = default)
         {
             Frame frame = new Frame(FrameType.SOF, DataFrameType.Request, message.Function, message.GetPayload());
-            Frame response = await SendAcknowledgedResponse(frame, cancellationToken);
+            Frame response = await SendAcknowledgedResponse(frame, cancellationToken).ConfigureAwait(false);
             return GetMessage(response)!;
         }
 
@@ -65,7 +76,7 @@ namespace ZWaveDotNet.SerialAPI
             try
             {
                 await SendAcknowledgedIntl(reader, frame, cancellationToken);
-                return await GetAcknowledgedResponseIntl(reader, cancellationToken);
+                return await GetAcknowledgedResponseIntl(reader, cancellationToken).ConfigureAwait(false);
             }
             finally  {
                 port.DisposeReader(reader); 
@@ -77,7 +88,7 @@ namespace ZWaveDotNet.SerialAPI
             Frame frame = new Frame(FrameType.SOF, DataFrameType.Request, message.Function, message.GetPayload());
             var reader = port.CreateReader();
             try {
-                return await SendAcknowledgedResponseCallbackIntl(reader, frame, message.SessionID, token);
+                return await SendAcknowledgedResponseCallbackIntl(reader, frame, message.SessionID, token).ConfigureAwait(false);
             }
             finally {
                 port.DisposeReader(reader);
@@ -86,18 +97,18 @@ namespace ZWaveDotNet.SerialAPI
 
         public async Task<Message> GetUnsolicited()
         {
-            return GetMessage(await unsolicited.Reader.ReadAsync());
+            return GetMessage(await unsolicited.Reader.ReadAsync().ConfigureAwait(false));
         }
 
         private async Task<DataCallback> SendAcknowledgedResponseCallbackIntl(Channel<Frame> reader, Frame frame, byte sessionId, CancellationToken token = default)
         {
             await SendAcknowledgedIntl(reader, frame, token);
-            Frame status = await GetAcknowledgedResponseIntl(reader, token);
+            Frame status = await GetAcknowledgedResponseIntl(reader, token).ConfigureAwait(false);
             if (!new Response(status.Payload, status.CommandID).Success)
                 throw new Exception("Failed to transmit command");
             while (!token.IsCancellationRequested)
             {
-                Frame response = await reader.Reader.ReadAsync(token);
+                Frame response = await reader.Reader.ReadAsync(token).ConfigureAwait(false);
                 if (response.DataType == DataFrameType.Request)
                 {
                     Message msg = GetMessage(response)!;
@@ -110,15 +121,25 @@ namespace ZWaveDotNet.SerialAPI
 
         private async Task SendAcknowledgedIntl(Channel<Frame> reader, Frame frame, CancellationToken cancellationToken)
         {
-            using (CancellationTokenSource timeout = new CancellationTokenSource(1600))
+            try
             {
-                using (CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(timeout.Token, cancellationToken))
+                await portLock.WaitAsync(cancellationToken);
+                for (int attempt = 0; attempt < 3; attempt++)
                 {
-                    do
+                    using (CancellationTokenSource timeout = new CancellationTokenSource(1600))
+                    using (CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(timeout.Token, cancellationToken))
                     {
                         await port.QueueTX(frame);
-                    } while (!await SuccessfulAck(reader, cts.Token));
+                        if (await SuccessfulAck(reader, cts.Token))
+                            break;
+                    }
+                    Log.Warning($"Retransmit Attempt {attempt + 1}");
+                    await Task.Delay(100 + (1000 * attempt), cancellationToken);
                 }
+            }
+            finally
+            {
+                portLock.Release();
             }
         }
 
@@ -138,9 +159,7 @@ namespace ZWaveDotNet.SerialAPI
             Frame f;
             do
             {
-                f = await reader.Reader.ReadAsync(token);
-                if (f.Type == FrameType.CAN)
-                    await Task.Delay(100, token);
+                f = await reader.Reader.ReadAsync(token).ConfigureAwait(false);
             } while (f.Type == FrameType.SOF);
             return f.Type == FrameType.ACK;
         }

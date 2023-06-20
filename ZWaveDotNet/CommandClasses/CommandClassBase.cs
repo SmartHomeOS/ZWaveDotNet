@@ -180,13 +180,13 @@ namespace ZWaveDotNet.CommandClasses
 
         protected async Task SendCommand(Enum command, CancellationToken token, params byte[] payload)
         {
-            await SendCommand(command, token, false, payload);
+            await SendCommand(command, token, false, payload).ConfigureAwait(false);
         }
 
         protected async Task SendCommand(Enum command, CancellationToken token, bool supervised = false, params byte[] payload)
         {
             CommandMessage data = new CommandMessage(controller, node.ID, endpoint, commandClass, Convert.ToByte(command), supervised, payload);
-            await SendCommand(data, token);
+            await SendCommand(data, token).ConfigureAwait(false);
         }
 
         protected async Task SendCommand(CommandMessage data, CancellationToken token)
@@ -199,9 +199,9 @@ namespace ZWaveDotNet.CommandClasses
                 if (key == null)
                     throw new InvalidOperationException($"Command classes are secure but no keys exist for node {node.ID}");
                 if (key.Key == SecurityManager.RecordType.S0)
-                    await node.GetCommandClass<Security0>()!.Encapsulate(data.Payload, token);
+                    await node.GetCommandClass<Security0>()!.Encapsulate(data.Payload, token).ConfigureAwait(false);
                 else if (key.Key > SecurityManager.RecordType.S0)
-                    await node.GetCommandClass<Security2>()!.Encapsulate(data.Payload, key.Key, token);
+                    await node.GetCommandClass<Security2>()!.Encapsulate(data.Payload, key.Key, token).ConfigureAwait(false);
                 else
                     throw new InvalidOperationException("Security required but no keys are available");
             }
@@ -209,17 +209,17 @@ namespace ZWaveDotNet.CommandClasses
             DataMessage message = data.ToMessage();
             for (int i = 0; i < 3; i++)
             {
-                if (await AttemptTransmission(message, token, (i == 2)) == false)
+                if (await AttemptTransmission(message, token, i == 2).ConfigureAwait(false) == false)
                 {
-                    Log.Error($"Transmission Failure: Retrying [Attempt {i+1}]...");
-                    await Task.Delay(100 + (1000 * i), token);
+                    Log.Error($"Controller Failed to Send Message: Retrying [Attempt {i+1}]...");
+                    await Task.Delay(100 + (1000 * i), token).ConfigureAwait(false);
                 }
             }
         }
 
         private async Task<bool> AttemptTransmission(DataMessage message, CancellationToken cancellationToken, bool ex = false)
         {
-            DataCallback dc = await controller.Flow.SendAcknowledgedResponseCallback(message, cancellationToken);
+            DataCallback dc = await controller.Flow.SendAcknowledgedResponseCallback(message, cancellationToken).ConfigureAwait(false);
             if (dc.Status != TransmissionStatus.CompleteOk && dc.Status != TransmissionStatus.CompleteNoAck && dc.Status != TransmissionStatus.CompleteVerified)
             {
                 if (!ex)
@@ -241,7 +241,7 @@ namespace ZWaveDotNet.CommandClasses
 
         protected async Task<ReportMessage> SendReceive(Enum command, Enum response, CancellationToken token, params byte[] payload)
         {
-            return await SendReceive(command, response, token, false, payload);
+            return await SendReceive(command, response, token, false, payload).ConfigureAwait(false);
         }
 
         protected async Task<ReportMessage> SendReceive(Enum command, Enum response, CancellationToken token, bool supervised = false, params byte[] payload)
@@ -258,9 +258,7 @@ namespace ZWaveDotNet.CommandClasses
                     src
                 };
                 if (!callbacks.TryAdd(cmd, newCallbacks))
-                {
                     callbacks[cmd].Add(src);
-                }
             }
             await SendCommand(command, token, supervised, payload);
             return await src.Task;

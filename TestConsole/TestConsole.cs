@@ -1,7 +1,10 @@
 ﻿using Serilog;
 using ZWaveDotNet.Entities;
 using System.Reflection;
+using ZWaveDotNet.CommandClasses;
+using ZWaveDotNet.Enums;
 using ZWaveDotNet.Entities.Enums;
+using System.Xml.Linq;
 
 namespace ExampleConsole
 {
@@ -9,11 +12,14 @@ namespace ExampleConsole
     {
         private static readonly string? Version = Assembly.GetAssembly(typeof(Controller))!.GetName().Version?.ToString(3);
         private static Controller? controller;
-        private static HashSet<ushort> InterviewList = new HashSet<ushort>();
-        private static HashSet<ushort> ReadyList = new HashSet<ushort>();
+        private static readonly HashSet<ushort> InterviewList = new HashSet<ushort>();
+        private static readonly HashSet<ushort> ReadyList = new HashSet<ushort>();
         private static RFRegion region = RFRegion.Unknown;
+        private static LinkedList<string> Reports = new LinkedList<string>();
+        private enum Mode { Display, Inclusion, Exclusion};
+        private static Mode currentMode = Mode.Display;
 
-        static async Task Main()
+        static async Task Main(string[] args)
         {
             Log.Logger = new LoggerConfiguration().WriteTo.File("console.log").CreateLogger();
 
@@ -30,6 +36,8 @@ namespace ExampleConsole
             //Add event listeners before starting
             controller.NodeInfoUpdated += Controller_NodeInfoUpdated;
             controller.NodeReady += Controller_NodeReady;
+            controller.NodeExcluded += Controller_NodeExcluded;
+            controller.InclusionStopped += Controller_InclusionStopped;
 
             //Start the controller interview
             Console.WriteLine("Interviewing Controller...");
@@ -42,15 +50,86 @@ namespace ExampleConsole
             if (File.Exists("nodecache.db"))
                 await controller.ImportNodeDBAsync("nodecache.db");
 
-            await MainLoop();
+            _ = Task.Factory.StartNew(MainLoop);
+            await InputLoop();
+        }
+
+        private static void Controller_InclusionStopped(object? sender, EventArgs e)
+        {
+            currentMode = Mode.Display;
+        }
+
+        private static void Controller_NodeExcluded(object? sender, EventArgs e)
+        {
+            Node node = (Node)sender!;
+            InterviewList.Remove(node.ID);
+            ReadyList.Remove(node.ID);
+            currentMode = Mode.Display;
+        }
+
+        private static async Task InputLoop()
+        {
+            while (true)
+            {
+                ConsoleKeyInfo key = Console.ReadKey();
+                if (key.Key == ConsoleKey.E)
+                {
+                    currentMode = Mode.Exclusion;
+                    await controller!.StartExclusion();
+                    PrintMain();
+                }
+                else if (key.Key == ConsoleKey.I)
+                {
+                    currentMode = Mode.Inclusion;
+                    await controller!.StartInclusion(InclusionStrategy.PreferS2, 12345);
+                    PrintMain();
+                }
+                else if (key.Key == ConsoleKey.S)
+                {
+                    if (currentMode == Mode.Exclusion)
+                        await controller!.StopExclusion();
+                    else
+                        await controller!.StopInclusion();
+                    currentMode = Mode.Display;
+                    PrintMain();
+                }
+            }
         }
 
         private static async void Controller_NodeReady(object? sender, EventArgs e)
         {
-            ushort id = ((Node)sender!).ID;
-            ReadyList.Add(id);
-            InterviewList.Add(id);
+            Node node = (Node)sender!;
+            InterviewList.Add(node.ID);
+            ReadyList.Add(node.ID);
             await controller!.ExportNodeDBAsync("nodecache.db");
+            AttachListeners(node);
+        }
+
+        private static void AttachListeners(Node node)
+        {
+            if (node.HasCommandClass(CommandClass.SensorMultiLevel))
+                node.GetCommandClass<SensorMultiLevel>()!.Updated += Node_Updated;
+            if (node.HasCommandClass(CommandClass.Meter))
+                node.GetCommandClass<Meter>()!.Updated += Node_Updated;
+            if (node.HasCommandClass(CommandClass.Notification) && node.GetCommandClass<Notification>() is Notification not) //ZWave Weirdness
+                not.Updated += Node_Updated;
+            if (node.HasCommandClass(CommandClass.Battery))
+                node.GetCommandClass<Battery>()!.Status += Node_Updated;
+            if (node.HasCommandClass(CommandClass.SensorBinary))
+                node.GetCommandClass<SensorBinary>()!.Updated += Node_Updated;
+            if (node.HasCommandClass(CommandClass.SensorAlarm))
+                node.GetCommandClass<SensorAlarm>()!.Alarm += Node_Updated;
+            if (node.HasCommandClass(CommandClass.SwitchBinary))
+                node.GetCommandClass<SwitchBinary>()!.SwitchReport += Node_Updated;
+        }
+
+        private static async Task Node_Updated(Node sender, CommandClassEventArgs args)
+        {
+            if (args.Report == null)
+                return;
+            if (Reports.Count > 10)
+                Reports.RemoveFirst();
+            Reports.AddLast($"{DateTime.Now.ToLongTimeString()} Node {sender.ID}: {args.Report.ToString()!}");
         }
 
         private static async void Controller_NodeInfoUpdated(object? sender, ApplicationUpdateEventArgs e)
@@ -59,20 +138,17 @@ namespace ExampleConsole
             if (node != null && !InterviewList.Contains(node.ID))
             {
                 InterviewList.Add(node.ID);
-                CancellationTokenSource cts = new CancellationTokenSource(180000);
-                await Task.Factory.StartNew(async() => {
-                    try
-                    {
-                        await node.Interview(cts.Token);
-                        ReadyList.Add(node.ID);
-                        await controller!.ExportNodeDBAsync("nodecache.db");
-                    }
-                    catch(Exception ex)
-                    {
-                        Log.Error(ex, "Uncaught Exception in Node Interview");
-                    }
-                });
-                }
+                node.InterviewComplete += Node_InterviewComplete;
+                _ = Task.Run(() => node.Interview());
+            }
+        }
+
+        private static async void Node_InterviewComplete(object? sender, EventArgs e)
+        {
+            Node node = (Node)sender!;
+            ReadyList.Add(node.ID);
+            await controller!.ExportNodeDBAsync("nodecache.db");
+            AttachListeners(node);
         }
 
         private static async Task MainLoop()
@@ -87,7 +163,7 @@ namespace ExampleConsole
         private static void PrintMain()
         {
             Console.Clear();
-            Console.Write($"ZWaveDotNet v{Version} - Controller {controller!.ControllerID} {(controller!.IsConnected ? "Connected" : "Disconnected")}");
+            Console.Write($"ZWaveDotNet v{Version} - Controller #{controller!.ControllerID} {(controller!.IsConnected ? "Connected" : "Disconnected")}");
             Console.Write($" - v{controller.APIVersion.Major} ({region})");
             Console.Write($"{(controller!.SupportsLongRange ? " [LR]" : "")}");
             Console.Write($"{(controller!.Primary ? " [Primary]" : "")}");
@@ -97,6 +173,24 @@ namespace ExampleConsole
             Console.WriteLine($"{controller.Nodes.Count} Nodes Found:");
             foreach (Node n in controller.Nodes.Values)
                 Console.WriteLine(n.ToString());
+            Console.WriteLine();
+            if (currentMode == Mode.Display)
+            {
+                Console.WriteLine("Press I to enter Inclusion mode, E to enter Exclusion mode or S to Stop");
+                Console.WriteLine("Last 10 Node Reports:");
+                foreach (string report in Reports)
+                    Console.WriteLine(report);
+            }
+            else if (currentMode == Mode.Inclusion)
+            {
+                Console.WriteLine("- Inclusion Mode Active (Default PIN 12345) -");
+                Console.WriteLine("Press the Pairing button on your device");
+            }
+            else
+            {
+                Console.WriteLine("- Exclusion Mode Active -");
+                Console.WriteLine("Press the Pairing button on your device");
+            }
         }
     }
 }
