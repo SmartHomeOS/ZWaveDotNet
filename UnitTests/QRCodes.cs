@@ -17,7 +17,7 @@ namespace UnitTests
                 Assert.That(parser.Version, Is.EqualTo(0x1));
                 Assert.That(parser.Keys, Is.EqualTo((SecurityKey.S2Authenticated | SecurityKey.S2Unauthenticated)));
             });
-            CollectionAssert.AreEqual(DSK.ToArray(), parser.DSK.ToArray());
+            Assert.That(DSK.ToArray(), Is.EqualTo(parser.DSK.ToArray()).AsCollection);
         }
     }
 }

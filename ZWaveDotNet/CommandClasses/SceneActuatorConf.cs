@@ -9,9 +9,7 @@ namespace ZWaveDotNet.CommandClasses
 {
     [CCVersion(CommandClass.SceneActuatorConf)]
     public class SceneActuatorConf : CommandClassBase
-    {
-        public event CommandClassEvent? Report;
-        
+    {   
         enum SceneActuatorConfCommand : byte
         {
             Set = 0x01,

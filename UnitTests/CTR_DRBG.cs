@@ -25,7 +25,7 @@ namespace UnitTests
 
             //Generate and Print
             var final_result = CTR_DRBG.Generate(working_state, 64);
-            CollectionAssert.AreEqual(final_result.output.ToArray(), MemoryUtil.From("f80111d08e874672f32f42997133a5210f7a9375e22cea70587f9cfafebe0f6a6aa2eb68e7dd9164536d53fa020fcab20f54caddfab7d6d91e5ffec1dfd8deaa").ToArray());
+            Assert.That(final_result.output.ToArray(), Is.EqualTo(MemoryUtil.From("f80111d08e874672f32f42997133a5210f7a9375e22cea70587f9cfafebe0f6a6aa2eb68e7dd9164536d53fa020fcab20f54caddfab7d6d91e5ffec1dfd8deaa").ToArray()).AsCollection);
         }
 
         [Test]
@@ -45,7 +45,7 @@ namespace UnitTests
 
             //Generate and Print
             var final_result = CTR_DRBG.Generate(working_state, 64);
-            CollectionAssert.AreEqual(final_result.output.ToArray(), MemoryUtil.From("2915c9fabfbf7c62d68d83b4e65a239885e809ceac97eb8ef4b64df59881c277d3a15e0e15b01d167c49038fad2f54785ea714366d17bb2f8239fd217d7e1cba").ToArray());
+            Assert.That(final_result.output.ToArray(), Is.EqualTo(MemoryUtil.From("2915c9fabfbf7c62d68d83b4e65a239885e809ceac97eb8ef4b64df59881c277d3a15e0e15b01d167c49038fad2f54785ea714366d17bb2f8239fd217d7e1cba").ToArray()).AsCollection);
         }
 
         [Test]
@@ -65,7 +65,7 @@ namespace UnitTests
 
             //Generate and Print
             var final_result = CTR_DRBG.Generate(working_state, 64);
-            CollectionAssert.AreEqual(final_result.output.ToArray(), MemoryUtil.From("52f5e718bf48d99e498775c00378e545799bb2059aef0b74be573d8283f02b5293917913bc8f26fc23760a1c86c3f5c844857419868eafeb17c9248227d026b8").ToArray());
+            Assert.That(final_result.output.ToArray(), Is.EqualTo(MemoryUtil.From("52f5e718bf48d99e498775c00378e545799bb2059aef0b74be573d8283f02b5293917913bc8f26fc23760a1c86c3f5c844857419868eafeb17c9248227d026b8").ToArray()).AsCollection);
         }
 
         [Test]
@@ -85,7 +85,7 @@ namespace UnitTests
 
             //Generate and Print
             var final_result = CTR_DRBG.Generate(working_state, 64);
-            CollectionAssert.AreEqual(final_result.output.ToArray(), MemoryUtil.From("96eee34e4cfc905be64cf1dc64c6e07f1ceb3bdb745f42332568873b80b11f1a1ac6d0d576afefcdd7c70ce6a882ee940463323b51c1633998a809003b947210").ToArray());
+            Assert.That(final_result.output.ToArray(), Is.EqualTo(MemoryUtil.From("96eee34e4cfc905be64cf1dc64c6e07f1ceb3bdb745f42332568873b80b11f1a1ac6d0d576afefcdd7c70ce6a882ee940463323b51c1633998a809003b947210").ToArray()).AsCollection);
         }
 
         [Test]
@@ -105,7 +105,7 @@ namespace UnitTests
 
             //Generate and Print
             var final_result = CTR_DRBG.Generate(working_state, 64);
-            CollectionAssert.AreEqual(final_result.output.ToArray(), MemoryUtil.From("f6040af8ae7ab04cde02be25af95dedada3b10321c418c7af4ed5bc82e28ebf778ae4248c565292e4cb8eccd40f18a382848b40d7441a291cc9ee8465cbe5fd6").ToArray());
+            Assert.That(final_result.output.ToArray(), Is.EqualTo(MemoryUtil.From("f6040af8ae7ab04cde02be25af95dedada3b10321c418c7af4ed5bc82e28ebf778ae4248c565292e4cb8eccd40f18a382848b40d7441a291cc9ee8465cbe5fd6").ToArray()).AsCollection);
         }
     }
 }

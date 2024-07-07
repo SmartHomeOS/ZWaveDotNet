@@ -13,7 +13,7 @@ namespace UnitTests
             Memory<byte> expected = MemoryUtil.From("2C66");
             CRC16_CCITT crc = new CRC16_CCITT();
             byte[] result = crc.ComputeChecksum(payload);
-            CollectionAssert.AreEqual(result, expected.ToArray());
+            Assert.That(expected.ToArray(), Is.EqualTo(result).AsCollection);
         }
     }
 }

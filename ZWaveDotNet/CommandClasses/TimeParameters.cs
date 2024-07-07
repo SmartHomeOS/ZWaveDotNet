@@ -10,9 +10,7 @@ namespace ZWaveDotNet.CommandClasses
 {
     [CCVersion(CommandClass.TimeParams)]
     public class TimeParameters : CommandClassBase
-    {
-        public event CommandClassEvent? Report;
-        
+    {   
         enum TimeParamCommand : byte
         {
             Set = 0x01,

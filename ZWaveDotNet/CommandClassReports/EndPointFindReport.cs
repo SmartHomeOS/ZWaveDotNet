@@ -27,7 +27,7 @@ namespace ZWaveDotNet.CommandClassReports
                     EndPointIDs[i - 3] = (byte)(payload.Span[i] & 0x7F);
             }
             else
-                EndPointIDs = new byte[0];
+                EndPointIDs = Array.Empty<byte>();
         }
     }
 }

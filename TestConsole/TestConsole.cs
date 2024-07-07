@@ -15,7 +15,7 @@ namespace ExampleConsole
         private static readonly HashSet<ushort> InterviewList = new HashSet<ushort>();
         private static readonly HashSet<ushort> ReadyList = new HashSet<ushort>();
         private static RFRegion region = RFRegion.Unknown;
-        private static LinkedList<string> Reports = new LinkedList<string>();
+        private static readonly LinkedList<string> Reports = new LinkedList<string>();
         private enum Mode { Display, Inclusion, Exclusion};
         private static Mode currentMode = Mode.Display;
 
