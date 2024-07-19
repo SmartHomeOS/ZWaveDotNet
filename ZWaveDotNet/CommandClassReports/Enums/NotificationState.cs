@@ -5,6 +5,7 @@
         Idle = 0x0,
 
         //Smoke
+        SmokeAlarmIdle = 0x0100,
         SmokeDetected = 0x0101,
         SmokeDetectedUnknownLocation = 0x0102,
         SmokeAlarmTest = 0x0103,
@@ -15,6 +16,7 @@
         DustPresent = 0x0108,
 
         //CO
+        COAlarmIdle = 0x0200,
         CODetected = 0x0201,
         CODetectedUnknownLocation = 0x0202,
         COAlarmTest = 0x0203,
@@ -24,6 +26,7 @@
         COMaintenanceRequired = 0x0207,
 
         //CO2
+        CO2AlarmIdle = 0x0300,
         CO2Detected = 0x0301,
         CO2DetectedUnknownLocation = 0x0302,
         CO2AlarmTest = 0x0303,
@@ -33,6 +36,7 @@
         CO2MaintenanceRequired = 0x0307,
 
         //Heat
+        HeatAlarmIdle = 0x0400,
         OverheatDetected = 0x0401,
         OverheatDetectedUnknownLocation = 0x0402,
         RapidRiseDetected = 0x0403,
@@ -48,6 +52,7 @@
         RapidFallDetectedUnknownLocation = 0x040D,
 
         //Water
+        WaterAlarmIdle = 0x0500,
         LeakDetected = 0x0501,
         LeakDetectedUnknownLocation = 0x0502,
         LevelDropDetected = 0x0503,
@@ -61,6 +66,7 @@
         SumpFailure = 0x050B,
 
         //Access Control
+        AccessControlIdle = 0x0600,
         ManualLockOperation = 0x0601,
         ManualUnlockOperation = 0x0602,
         RFLockOperation = 0x0603,
@@ -102,6 +108,7 @@
         BarrierNonZWave = 0x064C,
 
         //Home Security
+        HomeSecurityIdle = 0x0700,
         Intrusion = 0x0701,
         IntrusionUnknownLocation = 0x0702,
         TamperingProductCoverRemoved = 0x0703,
@@ -116,6 +123,7 @@
         RFJamming = 0x070C,
 
         //Power Management
+        PowerStateIdle = 0x0800,
         PowerApplied = 0x0801,
         ACDisconnect = 0x0802,
         ACReconnect = 0x0803,
@@ -136,6 +144,7 @@
         BatteryDisconnected = 0x0812,
 
         //System
+        SystemStateIdle = 0x0900,
         SystemHardwareFailure = 0x0901,
         SystemSoftwareFailure = 0x0902,
         SystemProprietaryHardwareFailure = 0x0903,
@@ -148,17 +157,20 @@
         DigitalInputOpen = 0x090B,
 
         //Emergency Alarm
+        EmergencyAlarmIdle = 0x0A00,
         ContactPolice = 0x0A01,
         ContactFire = 0x0A02,
         ContactMedical = 0x0A03,
         Panic = 0x0A04,
 
         //Clock
+        ClockIdle = 0x0B00,
         Wakeup = 0x0B01,
         TimerEnded = 0x0B02,
         TimeRemaining = 0x0B03,
 
         //Appliance
+        ApplianceIdle = 0x0C00,
         ProgramStarted = 0x0C01,
         ProgramInProgress = 0x0C02,
         ProgramCompleted = 0x0C03,
@@ -184,9 +196,11 @@
         //Home Health - TODO
 
         //Siren
+        SirenIdle = 0x0E00,
         SirenActive = 0x0E01,
 
         //Water Valve
+        WaterValveIdle = 0x0F00,
         ValveOperationStatus = 0x0F01,
         MasterValveOperationStatus = 0x0F02,
         ValveShortCircuit = 0x0F03,
@@ -199,6 +213,7 @@
         //Irrigation - TODO
 
         //Gas
+        GasAlarmIdle = 0x1200,
         CombustibleGasDetectedUnknownLocation = 0x1201,
         CombustibleGasDetected = 0x1202,
         ToxicGasDetectedUnknownLocation = 0x1203,
@@ -209,12 +224,14 @@
         //Pest Control - TODO
 
         //Light
+        LightSensorIdle = 0x1400,
         LightDetected = 0x1401,
         LightTransitioned = 0x1402,
 
         //Water Quality - TODO
 
         //Home Monitor
+        HomeMonitorIdle = 0x1600,
         HomeOccupied = 0x1601,
         HomeOccupiedUnknownLocation = 0x1602,
 
