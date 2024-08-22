@@ -1,7 +1,7 @@
 [![Build](https://github.com/SmartHomeOS/ZWaveDotNet/actions/workflows/dotnet.yml/badge.svg)](https://github.com/SmartHomeOS/ZWaveDotNet/actions/workflows/dotnet.yml)
 [![Version](https://img.shields.io/nuget/v/ZWaveDotNet.svg)](https://www.nuget.org/packages/ZWaveDotNet)
 # ZWaveDotNet
-An implementation of ZWave Plus using the 2022b public specification. 
+An implementation of ZWave Plus using the 2023b public specification. 
 
 ### Features:
 * Support is included for 50+ command classes. [Full and partial command class support is listed here](SupportedCommandClasses.md).
@@ -11,7 +11,7 @@ An implementation of ZWave Plus using the 2022b public specification.
 * Support for broadcast messaging
 * Support for ZWave Plus and Device Type v2
 * Node database import/export
-* SmartStart inclusion and SmartStart for ZWave long range (LR) devices
+* SmartStart inclusion and SmartStart for ZWave long range (LR) devices (including SmartStart by QR Code)
 
 #### Getting Started:
 * See our [Examples Page](Examples.md)

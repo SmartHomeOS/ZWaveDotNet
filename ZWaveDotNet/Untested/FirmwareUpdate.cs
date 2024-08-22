@@ -9,7 +9,7 @@ using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.CommandClasses
 {
-    [CCVersion(CommandClass.FirmwareUpdateMD, 1, 1)]
+    [CCVersion(CommandClass.FirmwareUpdateMD, complete=false, minVersion = 1, maxVersion = 1)]
     public class FirmwareUpdate : CommandClassBase
     {
         public event CommandClassEvent? Status;

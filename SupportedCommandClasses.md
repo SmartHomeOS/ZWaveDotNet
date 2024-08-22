@@ -28,7 +28,7 @@ DOOR_LOCK | 0 | 4 | None
 DOOR_LOCK_LOGGING | 0 | 1 | None
 **ENERGY_PRODUCTION** | **1** | **1** | **Full**
 ENTRY_CONTROL | 0 | 1 | None
-FIRMWARE_UPDATE_MD | 0 | 8 | None
+*FIRMWARE_UPDATE_MD* | *1* | *8* | *Partial*
 GENERIC_SCHEDULE | 0 | 1 | None
 **GEOGRAPHIC_LOCATION** | **1** | **1** | **Full**
 **GROUPING_NAME** | **1** | **1** | **Full**
@@ -108,7 +108,7 @@ THERMOSTAT_OPERATING_STATE | 0 | 2 | None
 THERMOSTAT_SETBACK | 0 | 1 | None
 THERMOSTAT_SETPOINT | 0 | 3 | None
 TIME | 0 | 2 | None
-**TIME_PARAMETERS** | **1** | **1** | **Full**
+*TIME_PARAMETERS* | *1* | *2* | *Full*
 *TRANSPORT_SERVICE* | *2* | *2* | *Partial*
 USER_CODE | 0 | 2 | None
 **VERSION** | **3** | **3** | **Full**
@@ -123,4 +123,4 @@ ZIP_PORTAL | 0 | 1 | None
 **ZWAVEPLUS_INFO** | **2** | **2** | **Full**
 
 - Full Support for 50/121 Command Classes.
-- Partial Support for 2/121 Command Classes.
+- Partial Support for 3/121 Command Classes.

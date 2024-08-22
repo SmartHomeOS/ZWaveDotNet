@@ -23,12 +23,12 @@ namespace ExampleConsole
 
             try
             {
-                File.Delete("status.md");
+                File.Delete("..\\..\\..\\..\\SupportedCommandClasses.md");
             }
             catch (Exception) { }
-            FileStream fo = File.OpenWrite("status.md");
+            FileStream fo = File.OpenWrite("..\\..\\..\\..\\SupportedCommandClasses.md");
             StreamWriter fw = new StreamWriter(fo);
-            FileStream fs = File.OpenRead("CCs.csv");
+            FileStream fs = File.OpenRead("..\\..\\..\\..\\..\\CCs.csv");
             StreamReader sr = new StreamReader(fs);
             string? line = null;
             fw.WriteLine("Command Class | Max Supported Version | Max Spec Version | Support");
