@@ -1,4 +1,16 @@
-﻿using System.Globalization;
+﻿// ZWaveDotNet Copyright (C) 2024 
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or any later version.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY, without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Affero General Public License for more details.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+using System.Globalization;
 using System.Text;
 
 namespace ZWaveDotNet.Util
@@ -42,12 +54,12 @@ namespace ZWaveDotNet.Util
             return ret;
         }
 
-        public static void Increment(Memory<byte> mem)
+        public static void Increment(Span<byte> mem)
         {
             for (int i = mem.Length - 1; i >= 0; i--)
             {
-                mem.Span[i] += 1;
-                if (mem.Span[i] != 0x0)
+                mem[i] += 1;
+                if (mem[i] != 0x0)
                     return;
             }
         }
@@ -66,14 +78,14 @@ namespace ZWaveDotNet.Util
 
         public static Memory<byte> From(string hexString)
         {
-                if (hexString.Length % 2 != 0)
-                    throw new ArgumentException("Not a hex string");
+            if (hexString.Length % 2 != 0)
+                throw new ArgumentException("Not a hex string");
 
-                Memory<byte> data = new byte[hexString.Length / 2];
-                for (int index = 0; index < data.Length; index++)
-                    data.Span[index] = byte.Parse(hexString.AsSpan(index * 2, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+            Memory<byte> data = new byte[hexString.Length / 2];
+            for (int index = 0; index < data.Length; index++)
+                data.Span[index] = byte.Parse(hexString.AsSpan(index * 2, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
 
-                return data;
+            return data;
         }
     }
 }
