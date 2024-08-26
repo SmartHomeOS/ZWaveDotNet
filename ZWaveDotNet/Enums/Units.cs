@@ -37,6 +37,7 @@ namespace ZWaveDotNet.Enums
         diastolicmmHg,
         EuropeanMacroseismic,
         feet,
+        gramPerCubicMeter,
         hours,
         Hz,
         inHg,

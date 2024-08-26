@@ -58,7 +58,7 @@ namespace ZWaveDotNet.CommandClasses
             for (byte i = 0; i < bits.Length; i++)
             {
                 if (bits[i])
-                    supportedTypes.Add((FanMode)(i + 1));
+                    supportedTypes.Add((FanMode)(i));
             }
             return supportedTypes.ToArray();
         }

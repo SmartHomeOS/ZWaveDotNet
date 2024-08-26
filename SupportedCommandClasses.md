@@ -33,11 +33,11 @@ GENERIC_SCHEDULE | 0 | 1 | None
 **GEOGRAPHIC_LOCATION** | **1** | **1** | **Full**
 **GROUPING_NAME** | **1** | **1** | **Full**
 **HAIL** | **1** | **1** | **Full**
-HRV_CONTROL | 0 | 1 | None
-HRV_STATUS | 0 | 1 | None
-HUMIDITY_CONTROL_MODE | 0 | 2 | None
-HUMIDITY_CONTROL_OPERATING_STATE | 0 | 1 | None
-HUMIDITY_CONTROL_SETPOINT | 0 | 2 | None
+**HRV_CONTROL** | **1** | **1** | **Full**
+**HRV_STATUS** | **1** | **1** | **Full**
+*HUMIDITY_CONTROL_MODE* | *1* | *2* | *Full*
+**HUMIDITY_CONTROL_OPERATING_STATE** | **1** | **1** | **Full**
+**HUMIDITY_CONTROL_SETPOINT** | **2** | **2** | **Full**
 INCLUSION_CONTROLLER | 0 | 1 | None
 **INDICATOR** | **4** | **4** | **Full**
 IP_ASSOCIATION | 0 | 1 | None
@@ -45,7 +45,7 @@ IP_CONFIGURATION | 0 | 1 | None
 IR_REPEATER | 0 | 1 | None
 IRRIGATION | 0 | 1 | None
 **LANGUAGE** | **1** | **1** | **Full**
-LOCK | 0 | 1 | None
+**LOCK** | **1** | **1** | **Full**
 MAILBOX | 0 | 2 | None
 **MANUFACTURER_PROPRIETARY** | **1** | **1** | **Full**
 **MANUFACTURER_SPECIFIC** | **2** | **2** | **Full**
@@ -122,5 +122,5 @@ ZIP_ND | 0 | 1 | None
 ZIP_PORTAL | 0 | 1 | None
 **ZWAVEPLUS_INFO** | **2** | **2** | **Full**
 
-- Full Support for 54/121 Command Classes.
+- Full Support for 60/121 Command Classes.
 - Partial Support for 3/121 Command Classes.

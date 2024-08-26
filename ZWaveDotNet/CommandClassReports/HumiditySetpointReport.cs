@@ -12,30 +12,38 @@
 
 using System.Data;
 using ZWaveDotNet.CommandClasses.Enums;
+using ZWaveDotNet.Enums;
 using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.CommandClassReports
 {
-    public class ThermostatModeReport : ICommandClassReport
+    public class HumiditySetpointReport : ICommandClassReport
     {
-        public readonly ThermostatModeType Mode;
-        public readonly byte[] ManufacturerData;
+        public readonly HRVStatusParameter StatusType;
+        public readonly float Value;
+        public readonly Units Unit;
 
-        internal ThermostatModeReport(Memory<byte> payload)
+        internal HumiditySetpointReport(Memory<byte> payload)
         {
-            if (payload.Length == 0)
-                throw new DataException($"The Thermostat Mode Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
+            if (payload.Length < 3)
+                throw new DataException($"The Humidity Setpoint Status Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
 
-            Mode = (ThermostatModeType)(payload.Span[0] & 0x1F);
-            if (payload.Length > 1)
-                ManufacturerData = payload.Slice(1).ToArray();
+            StatusType = (HRVStatusParameter)payload.Span[0];
+            Value = PayloadConverter.ToFloat(payload.Slice(1), out byte scale, out _, out _);
+            Unit = GetUnit(scale);
+        }
+
+        private static Units GetUnit(byte scale)
+        {
+            if (scale == 0)
+                return Units.Percent;
             else
-                ManufacturerData = Array.Empty<byte>();
+                return Units.gramPerCubicMeter;
         }
 
         public override string ToString()
         {
-            return $"Mode:{Mode}";
+            return $"Type:{StatusType}, Value:\"{Value} {Unit}\"";
         }
     }
 }

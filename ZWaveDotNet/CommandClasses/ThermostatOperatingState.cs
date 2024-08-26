@@ -51,7 +51,7 @@ namespace ZWaveDotNet.CommandClasses
             for (byte i = 0; i < bits.Length; i++)
             {
                 if (bits[i])
-                    supportedTypes.Add((ThermostatOperatingStateType)(i + 1));
+                    supportedTypes.Add((ThermostatOperatingStateType)(i));
             }
             return supportedTypes.ToArray();
         }

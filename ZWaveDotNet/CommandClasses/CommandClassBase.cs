@@ -116,10 +116,22 @@ namespace ZWaveDotNet.CommandClasses
                     return new GroupingName(node, endpoint);
                 case CommandClass.Hail:
                     return new Hail(node, endpoint);
+                case CommandClass.HRVControl:
+                    return new HRVControl(node, endpoint);
+                case CommandClass.HRVStatus:
+                    return new HRVStatus(node, endpoint);
+                case CommandClass.HumidityControlMode:
+                    return new HumidityControlMode(node, endpoint);
+                case CommandClass.HumidityControlOperatingState:
+                    return new HumidityControlOperatingState(node, endpoint);
+                case CommandClass.HumidityControlSetpoint:
+                    return new HumidityControlSetpoint(node, endpoint);
                 case CommandClass.Indicator:
                     return new Indicator(node, endpoint);
                 case CommandClass.Language:
                     return new Language(node, endpoint);
+                case CommandClass.Lock:
+                    return new Lock(node, endpoint);
                 case CommandClass.ManufacturerProprietary:
                     return new ManufacturerProprietary(node, endpoint);
                 case CommandClass.ManufacturerSpecific:
