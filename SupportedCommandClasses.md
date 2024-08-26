@@ -101,10 +101,10 @@ SOUND_SWITCH | 0 | 2 | None
 **SWITCH_TOGGLE_MULTILEVEL** | **1** | **1** | **Full**
 TARIFF_CONFIG | 0 | 1 | None
 TARIFF_TBL_MONITOR | 0 | 1 | None
-THERMOSTAT_FAN_MODE | 0 | 5 | None
-THERMOSTAT_FAN_STATE | 0 | 2 | None
-THERMOSTAT_MODE | 0 | 3 | None
-THERMOSTAT_OPERATING_STATE | 0 | 2 | None
+**THERMOSTAT_FAN_MODE** | **5** | **5** | **Full**
+**THERMOSTAT_FAN_STATE** | **2** | **2** | **Full**
+**THERMOSTAT_MODE** | **3** | **3** | **Full**
+**THERMOSTAT_OPERATING_STATE** | **2** | **2** | **Full**
 THERMOSTAT_SETBACK | 0 | 1 | None
 THERMOSTAT_SETPOINT | 0 | 3 | None
 TIME | 0 | 2 | None
@@ -122,5 +122,5 @@ ZIP_ND | 0 | 1 | None
 ZIP_PORTAL | 0 | 1 | None
 **ZWAVEPLUS_INFO** | **2** | **2** | **Full**
 
-- Full Support for 50/121 Command Classes.
+- Full Support for 54/121 Command Classes.
 - Partial Support for 3/121 Command Classes.

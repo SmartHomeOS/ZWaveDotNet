@@ -174,6 +174,14 @@ namespace ZWaveDotNet.CommandClasses
                     return new SwitchToggleBinary(node, endpoint);
                 case CommandClass.SwitchToggleMultiLevel:
                     return new SwitchToggleMultiLevel(node, endpoint);
+                case CommandClass.ThermostatFanMode:
+                    return new ThermostatFanMode(node, endpoint);
+                case CommandClass.ThermostatFanState:
+                    return new ThermostatFanState(node, endpoint);
+                case CommandClass.ThermostatMode:
+                    return new ThermostatMode(node, endpoint);
+                case CommandClass.ThermostatOperatingState:
+                    return new ThermostatOperatingState(node, endpoint);
                 case CommandClass.TimeParams:
                     return new TimeParameters(node, endpoint);
                 case CommandClass.TransportService:
