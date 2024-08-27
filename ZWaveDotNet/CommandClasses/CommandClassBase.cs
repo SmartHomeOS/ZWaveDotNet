@@ -194,6 +194,10 @@ namespace ZWaveDotNet.CommandClasses
                     return new ThermostatMode(node, endpoint);
                 case CommandClass.ThermostatOperatingState:
                     return new ThermostatOperatingState(node, endpoint);
+                case CommandClass.ThermostatSetpoint:
+                    return new ThermostatSetpoint(node, endpoint);
+                case CommandClass.Time:
+                    return new Time(node, endpoint);
                 case CommandClass.TimeParams:
                     return new TimeParameters(node, endpoint);
                 case CommandClass.TransportService:
