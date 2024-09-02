@@ -40,6 +40,8 @@ namespace ZWaveDotNet.Entities
         protected readonly Controller controller;
         protected readonly NodeProtocolInfo? nodeInfo;
         protected bool lr;
+        protected bool failed;
+        protected bool interviewed;
         
         protected ConcurrentDictionary<CommandClass, CommandClassBase> commandClasses = new ConcurrentDictionary<CommandClass, CommandClassBase>();
         protected List<EndPoint> endPoints = new List<EndPoint>();
@@ -50,12 +52,15 @@ namespace ZWaveDotNet.Entities
         public bool Routing { get { return nodeInfo?.Routing ?? false; } }
         public SpecificType SpecificType { get { return nodeInfo?.SpecificType ?? SpecificType.Unknown; } }
         public GenericType GenericType { get { return nodeInfo?.GenericType ?? GenericType.Unknown; } }
+        public bool NodeFailed {  get {  return failed; } }
+        public bool Interviewed { get { return interviewed; } }
 
-        public Node(ushort id, Controller controller, NodeProtocolInfo? nodeInfo, CommandClass[]? commandClasses = null)
+        public Node(ushort id, Controller controller, NodeProtocolInfo? nodeInfo, CommandClass[]? commandClasses = null, bool failed = false)
         {
             ID = id;
             this.controller = controller;
             this.nodeInfo = nodeInfo;
+            this.failed = failed;
             if (commandClasses != null)
             {
                 foreach (CommandClass cc in commandClasses)
@@ -198,7 +203,7 @@ namespace ZWaveDotNet.Entities
             CommandClass commandClass = ((CCVersion)typeof(T).GetCustomAttribute(typeof(CCVersion))!).commandClass;
             if (commandClasses.TryGetValue(commandClass, out CommandClassBase? ccb))
             {
-                if (typeof(T) == typeof(Notification) && ccb.Version < 3)
+                if (typeof(T) == typeof(Notification) && ccb.Version <= 2)
                     return null;
                 if (typeof(T) == typeof(Alarm) && ccb.Version > 2)
                     return null;
@@ -215,7 +220,8 @@ namespace ZWaveDotNet.Entities
             {
                 NodeProtocolInfo = nodeInfo,
                 ID = ID,
-                CommandClasses = new CommandClassJson[commandClasses.Count]
+                CommandClasses = new CommandClassJson[commandClasses.Count],
+                Interviewed = Interviewed
             };
             if (controller.SecurityManager != null)
             {
@@ -242,6 +248,7 @@ namespace ZWaveDotNet.Entities
 
         public void Deserialize(NodeJSON json)
         {
+            interviewed = json.Interviewed;
             foreach (CommandClassJson cc in json.CommandClasses)
                 AddCommandClass(cc.CommandClass, cc.Secure, cc.Version);
 
@@ -481,6 +488,7 @@ namespace ZWaveDotNet.Entities
             foreach (CommandClassBase cc in commandClasses.Values)
                 await cc.Interview(cancellationToken).ConfigureAwait(false);
             Log.Information($"Interview Complete [{ID}]");
+            this.interviewed = true;
             InterviewComplete?.Invoke(this, new EventArgs());
         }
 
@@ -510,7 +518,7 @@ namespace ZWaveDotNet.Entities
 
         public override string ToString()
         {
-            return $"Node: {ID}, CommandClasses: {PrintCommandClasses()}, Security: {controller.SecurityManager!.GetHighestKey(ID)?.Key}";
+            return $"Node: {ID}, Failed: {failed}, CommandClasses: {PrintCommandClasses()}, Security: {controller.SecurityManager!.GetHighestKey(ID)?.Key}";
         }
 
         private string PrintCommandClasses()

@@ -51,7 +51,7 @@ namespace ZWaveDotNet.CommandClasses
 
         internal async Task SchemeGet(CancellationToken cancellationToken = default)
         {
-            Log.Debug("Requesting Scheme");
+            Log.Verbose("Requesting Scheme");
             await SendCommand(Security0Command.SchemeGet, cancellationToken, (byte)0x0).ConfigureAwait(false);
         }
 

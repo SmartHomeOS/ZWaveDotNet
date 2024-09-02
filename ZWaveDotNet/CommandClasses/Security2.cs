@@ -139,13 +139,13 @@ namespace ZWaveDotNet.CommandClasses
             if (payload.Count > 2)
                 payload.RemoveRange(0, 2);
             await SendCommand(Security2Command.MessageEncap, cancellationToken, payload.ToArray()).ConfigureAwait(false);
-            Log.Debug("Transmit Complete");
+            Log.Verbose("Transmit Complete");
         }
 
         public async Task Encapsulate(List<byte> payload, SecurityManager.RecordType? type, CancellationToken cancellationToken = default)
         {
             List<byte> extensionData = new List<byte>();
-            Log.Debug("Encrypting Payload for " + node.ID.ToString());
+            Log.Verbose("Encrypting Payload for " + node.ID.ToString());
             if (controller.SecurityManager == null)
                 throw new InvalidOperationException("Security Manager does not exist");
             
@@ -171,14 +171,14 @@ namespace ZWaveDotNet.CommandClasses
                 Memory<byte>? receiversEntropy = controller.SecurityManager.GetEntropy(node.ID, true);
                 if (!receiversEntropy.HasValue)
                 {
-                    Log.Debug("Requesting new entropy");
+                    Log.Verbose("Requesting new entropy");
                     ReportMessage msg = await SendReceive(Security2Command.NonceGet, Security2Command.NonceReport, cancellationToken, NextSequence()).ConfigureAwait(false);
                     NonceReport nr = new NonceReport(msg.Payload);
                     MEI = AES.CKDFMEIExpand(AES.CKDFMEIExtract(sendersEntropy.Value, nr.Entropy));
                 }
                 else
                 {
-                    Log.Debug("Using receivers entropy");
+                    Log.Verbose("Using receivers entropy");
                     //TODO - Investigate further. Are sender/receiver inverted in this case?
                     MEI = AES.CKDFMEIExpand(AES.CKDFMEIExtract(sendersEntropy.Value, receiversEntropy.Value));
                 }
@@ -217,7 +217,7 @@ namespace ZWaveDotNet.CommandClasses
             payload.Add((byte)commandClass);
             payload.Add((byte)Security2Command.MessageEncap);
             payload.AddRange(securePayload);
-            Log.Debug("Encapsulation Complete");
+            Log.Verbose("Encapsulation Complete");
         }
 
         internal static async Task<ReportMessage?> Free(ReportMessage msg, Controller controller)

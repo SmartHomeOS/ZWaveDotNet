@@ -20,6 +20,6 @@ An implementation of ZWave Plus using the 2023b public specification.
 * Multicast is not yet exposed
 * Security2 multicast is not implemented
 * Transport CC is receive only and not fully implemented (Very few devices use this)
-* Node interviews are only partially implemented
+* Node interviews are only partially implemented according to the spec
 
 Testers, Tickets, Feedback and PRs are welcome.

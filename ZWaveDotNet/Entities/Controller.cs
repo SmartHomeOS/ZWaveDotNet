@@ -142,17 +142,10 @@ namespace ZWaveDotNet.Entities
                 {
                     if (id != ControllerID && !Nodes.ContainsKey(id))
                     {
+                        bool failed = await IsNodeFailed(id, cancellationToken);
                         NodeProtocolInfo nodeInfo = await GetNodeProtocolInfo(id, cancellationToken);
-                        Nodes.Add(id, new Node(id, this, nodeInfo));
-                        byte[] cmd;
-                        if (WideID)
-                        {
-                            cmd = new byte[2];
-                            BinaryPrimitives.WriteUInt16BigEndian(cmd, id);
-                        }
-                        else
-                            cmd = new byte[] { (byte)id };
-                        await flow.SendAcknowledgedResponse(Function.RequestNodeInfo, CancellationToken.None, cmd);
+                        Nodes.Add(id, new Node(id, this, nodeInfo, null, failed));
+                        await flow.SendAcknowledgedResponse(Function.RequestNodeInfo, CancellationToken.None, NodeIDToBytes(id));
                     }
                 }
             }
@@ -233,15 +226,22 @@ namespace ZWaveDotNet.Entities
 
         public async Task<NodeProtocolInfo> GetNodeProtocolInfo(ushort nodeId, CancellationToken cancellationToken = default)
         {
-            byte[] cmd;
-            if (WideID)
-            {
-                cmd = new byte[2];
-                BinaryPrimitives.WriteUInt16BigEndian(cmd, nodeId);
-            }
-            else
-                cmd = new byte[] { (byte)nodeId };
+            byte[] cmd = NodeIDToBytes(nodeId);
             return (NodeProtocolInfo)await flow.SendAcknowledgedResponse(Function.GetNodeProtocolInfo, cancellationToken, cmd);
+        }
+
+        public async Task<bool> IsNodeFailed(ushort nodeId, CancellationToken cancellationToken = default)
+        {
+            byte[] cmd = NodeIDToBytes(nodeId);
+            PayloadMessage? msg = null;
+            try
+            {
+                msg = await flow.SendAcknowledgedResponse(Function.IsFailedNode, cancellationToken, cmd) as PayloadMessage;
+            }
+            catch (Exception) { }
+            if (msg == null)
+                return false;
+            return msg.Data.Span[0] == 0x1;
         }
 
         public async Task<Memory<byte>> GetRandom(byte length, CancellationToken cancellationToken = default)
@@ -691,6 +691,18 @@ namespace ZWaveDotNet.Entities
                 }
                 //Log.Information(msg.ToString());
             }
+        }
+
+        private byte[] NodeIDToBytes(ushort nodeId)
+        {
+            if (WideID)
+            {
+                byte[] cmd = new byte[2];
+                BinaryPrimitives.WriteUInt16BigEndian(cmd, nodeId);
+                return cmd;
+            }
+            else
+                return new byte[] { (byte)nodeId };
         }
 
         public override string ToString()

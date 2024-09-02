@@ -19,7 +19,7 @@ namespace ZWaveDotNet.Entities
     {
         #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         public NodeProtocolInfo NodeProtocolInfo { get; set; }
-
+        public bool Interviewed { get; set; }
         public ushort ID { get; set; }
         public CommandClassJson[] CommandClasses {  get; set; }
         public SecurityKey[] GrantedKeys { get; set; }
