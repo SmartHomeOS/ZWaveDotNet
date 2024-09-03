@@ -22,7 +22,7 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.Basic, 2)]
     public class Basic : CommandClassBase
     {
-        public event CommandClassEvent? Report;
+        public event CommandClassEvent<BasicReport>? Report;
         
         enum BasicCommand : byte
         {

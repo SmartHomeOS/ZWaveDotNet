@@ -23,7 +23,7 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.Meter, 1, 6)]
     public class Meter : CommandClassBase
     {
-        public event CommandClassEvent? Updated;
+        public event CommandClassEvent<MeterReport>? Updated;
 
         enum MeterCommand
         {

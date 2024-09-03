@@ -169,7 +169,7 @@ namespace ZWaveDotNet.Security
 
         public void CreateSpan(ushort nodeId, Memory<byte> mixedEntropy, Memory<byte> personalization, RecordType type)
         {
-            Log.Information($"Created SPAN ({MemoryUtil.Print(mixedEntropy)}, {MemoryUtil.Print(personalization)})");
+            Log.Verbose($"Created SPAN ({MemoryUtil.Print(mixedEntropy)}, {MemoryUtil.Print(personalization)})");
             Memory<byte> working_state = CTR_DRBG.Instantiate(mixedEntropy, personalization);
             SpanRecord nr = new SpanRecord()
             {
@@ -207,7 +207,7 @@ namespace ZWaveDotNet.Security
                 {
                     if (record.Type == type)
                     {
-                        Log.Warning("Generating Next Nonce");
+                        Log.Verbose("Generating Next Nonce");
                         var result = CTR_DRBG.Generate(record.Bytes, 13);
                         record.Bytes = result.working_state;
                         return result.output;

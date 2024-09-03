@@ -22,7 +22,7 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.SensorAlarm)]
     public class SensorAlarm : CommandClassBase
     {
-        public event CommandClassEvent? Alarm;
+        public event CommandClassEvent<SensorAlarmReport>? Alarm;
 
         enum SensorAlarmCommand
         {

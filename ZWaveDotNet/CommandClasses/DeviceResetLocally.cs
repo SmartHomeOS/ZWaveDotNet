@@ -21,7 +21,7 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.DeviceResetLocally)]
     public class DeviceResetLocally : CommandClassBase
     {
-        public event CommandClassEvent? DeviceReset;
+        public event CommandClassEvent<ReportMessage>? DeviceReset;
         public enum ResetLocallyCommand
         {
             Notification = 0x01

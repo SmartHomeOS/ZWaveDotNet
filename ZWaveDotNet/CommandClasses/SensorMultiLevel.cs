@@ -26,7 +26,7 @@ namespace ZWaveDotNet.CommandClasses
     {
         public SensorMultiLevel(Node node, byte endpoint) : base(node, endpoint, CommandClass.SensorMultiLevel){ }
 
-        public event CommandClassEvent? Updated;
+        public event CommandClassEvent<SensorMultiLevelReport>? Updated;
 
         enum SensorMultiLevelCommand
         {

@@ -21,7 +21,7 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.SwitchToggleBinary)]
     public class SwitchToggleBinary : CommandClassBase
     {
-        public event CommandClassEvent? Updated;
+        public event CommandClassEvent<SwitchBinaryReport>? Updated;
 
         public enum SwitchToggleBinaryCommand
         {

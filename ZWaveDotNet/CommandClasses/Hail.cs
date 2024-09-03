@@ -20,7 +20,7 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.Hail)]
     public class Hail : CommandClassBase
     {
-        public event CommandClassEvent? Hailed;
+        public event CommandClassEvent<ReportMessage>? Hailed;
         
         enum HailCommand : byte
         {

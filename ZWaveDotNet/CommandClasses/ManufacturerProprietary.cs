@@ -22,7 +22,7 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.ManufacturerProprietary)]
     public class ManufacturerProprietary : CommandClassBase
     {
-        public event CommandClassEvent? Received;
+        public event CommandClassEvent<ManufacturerProprietaryReport>? Received;
 
         public ManufacturerProprietary(Node node, byte endpoint) : base(node, endpoint, CommandClass.ManufacturerProprietary) { }
 

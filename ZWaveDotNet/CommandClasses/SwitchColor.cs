@@ -24,7 +24,7 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.SwitchColor, 1, 3)]
     public class SwitchColor : CommandClassBase
     {
-        public event CommandClassEvent? ColorChange;
+        public event CommandClassEvent<SwitchColorReport>? ColorChange;
 
         enum SwitchColorCommand
         {

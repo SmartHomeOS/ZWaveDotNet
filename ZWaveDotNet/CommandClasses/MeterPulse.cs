@@ -21,7 +21,7 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.MeterPulse)]
     public class MeterPulse : CommandClassBase
     {
-        public event CommandClassEvent? Report;
+        public event CommandClassEvent<MeterPulseReport>? Report;
         
         enum MeterPulseCommand : byte
         {

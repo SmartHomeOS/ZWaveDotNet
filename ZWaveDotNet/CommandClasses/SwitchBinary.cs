@@ -23,7 +23,7 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.SwitchBinary, 2)]
     public class SwitchBinary : CommandClassBase
     {
-        public event CommandClassEvent? SwitchReport;
+        public event CommandClassEvent<SwitchBinaryReport>? SwitchReport;
         public enum SwitchBinaryCommand
         {
             Set = 0x01,

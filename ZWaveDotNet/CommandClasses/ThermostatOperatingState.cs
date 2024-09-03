@@ -23,8 +23,6 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.ThermostatOperatingState, 2)]
     public class ThermostatOperatingState : CommandClassBase
     {
-        public event CommandClassEvent? Updated;
-
         public enum ThermostatOperatingStateCommand
         {
             LoggingSupportedGet = 0x01,

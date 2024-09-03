@@ -23,7 +23,7 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.ThermostatFanMode, 5)]
     public class ThermostatFanMode : CommandClassBase
     {
-        public event CommandClassEvent? Updated;
+        public event CommandClassEvent<ThermostatFanModeReport>? Updated;
 
         public enum ThermostatFanModeCommand
         {

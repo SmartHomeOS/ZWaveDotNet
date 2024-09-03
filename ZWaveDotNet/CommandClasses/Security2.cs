@@ -29,11 +29,11 @@ namespace ZWaveDotNet.CommandClasses
     {
         private const byte KEY_VERIFIED = 0x2;
         private const byte TRANSFER_COMPLETE = 0x1;
-        public event CommandClassEvent? SecurityError;
+        public event CommandClassEvent<ErrorReport>? SecurityError;
         TaskCompletionSource bootstrapComplete = new TaskCompletionSource();
         private static uint sequence = (uint)new Random().Next();
 
-        public enum Security2Command
+        internal enum Security2Command
         {
             NonceGet = 0x01,
             NonceReport = 0x02,
@@ -61,17 +61,17 @@ namespace ZWaveDotNet.CommandClasses
 
         internal async Task<KeyExchangeReport> KexGet(CancellationToken cancellationToken = default)
         {
-            Log.Information("Requesting Supported Curves and schemes");
+            Log.Verbose("Requesting Supported Curves and schemes");
             ReportMessage msg = await SendReceive(Security2Command.KEXGet, Security2Command.KEXReport, cancellationToken);
-            Log.Information("Curves and schemes Received");
+            Log.Verbose("Curves and schemes Received");
             return new KeyExchangeReport(msg.Payload);
         }
 
         internal async Task<Memory<byte>> KexSet(KeyExchangeReport report, CancellationToken cancellationToken = default)
         {
-            Log.Information($"Granting Keys {report.Keys}");
+            Log.Verbose($"Granting Keys {report.Keys}");
             ReportMessage msg = await SendReceive(Security2Command.KEXSet, Security2Command.PublicKeyReport,  cancellationToken, report.ToBytes());
-            Log.Information("Received Public Key "+ MemoryUtil.Print(msg.Payload.Slice(1)));
+            Log.Verbose("Received Public Key "+ MemoryUtil.Print(msg.Payload.Slice(1)));
             if (msg.Payload.Span[0] == 0x1) //The including node thinks it's us
             {
                 await KexFail(KexFailType.KEX_FAIL_CANCEL, cancellationToken).ConfigureAwait(false);
@@ -84,7 +84,7 @@ namespace ZWaveDotNet.CommandClasses
         {
             if (controller.SecurityManager == null)
                 throw new InvalidOperationException("Security Manager does not exist");
-            Log.Information("Sending Public Key");
+            Log.Verbose("Sending Public Key");
             byte[] resp = new byte[33];
             resp[0] = 0x1; //We are the including node
             Array.Copy(controller.SecurityManager.PublicKey, 0, resp, 1, 32);
@@ -110,13 +110,13 @@ namespace ZWaveDotNet.CommandClasses
             else
                 entropy = controller.SecurityManager.GetEntropy(node.ID, false) ?? controller.SecurityManager.CreateEntropy(node.ID);
             NonceReport nonceGetReport = new NonceReport(NextSequence(), SOS, MOS, entropy);
-            Log.Information("Declaring SPAN out of sync");
+            Log.Verbose("Declaring SPAN out of sync");
             await SendCommand(Security2Command.NonceReport, cancellationToken, nonceGetReport.GetBytes()).ConfigureAwait(false);
         }
 
         internal async Task KexFail(KexFailType type, CancellationToken cancellationToken = default)
         {
-            Log.Information($"Sending KEX Failure {type}");
+            Log.Verbose($"Sending KEX Failure {type}");
             controller.SecurityManager?.GetRequestedKeys(node.ID, true);
             if (type == KexFailType.KEX_FAIL_AUTH || type == KexFailType.KEX_FAIL_DECRYPT || type == KexFailType.KEX_FAIL_KEY_VERIFY || type == KexFailType.KEX_FAIL_KEY_GET)
             {
@@ -160,7 +160,7 @@ namespace ZWaveDotNet.CommandClasses
                 return;
             }
             else
-                Log.Information("Using Key " + networkKey.Key.ToString());
+                Log.Verbose("Using Key " + networkKey.Key.ToString());
 
             Memory<byte>? nonce = controller.SecurityManager.NextSpanNonce(node.ID, networkKey.Key);
             if (!nonce.HasValue)
@@ -185,7 +185,7 @@ namespace ZWaveDotNet.CommandClasses
                 controller.SecurityManager.DeleteEntropy(node.ID); //Delete Senders Entropy
                 controller.SecurityManager.CreateSpan(node.ID, MEI, networkKey.PString, networkKey.Key);
                 nonce = controller.SecurityManager.NextSpanNonce(node.ID, networkKey.Key);
-                Log.Information("New Span Created");
+                Log.Verbose("New Span Created");
                 
                 if (nonce == null)
                 {
@@ -230,7 +230,7 @@ namespace ZWaveDotNet.CommandClasses
                 Log.Error("Unable to decrypt message without network key");
                 return null;
             }
-            Log.Information("Decrypting Secure2 Message with key (" + networkKey.Key + ")");
+            Log.Verbose("Decrypting Secure2 Message with key (" + networkKey.Key + ")");
             int messageLen = msg.Payload.Length + 2;
             byte sequence = msg.Payload.Span[0];
             bool unencryptedExt = (msg.Payload.Span[1] & 0x1) == 0x1;
@@ -266,7 +266,7 @@ namespace ZWaveDotNet.CommandClasses
                 {
                     try
                     {
-                        Log.Information("Declaring SPAN failed and sending SOS");
+                        Log.Verbose("Declaring SPAN failed and sending SOS");
                         controller.SecurityManager.PurgeRecords(msg.SourceNodeID, networkKey.Key);
                         using (CancellationTokenSource cts = new CancellationTokenSource(3000))
                         await controller.Nodes[msg.SourceNodeID].GetCommandClass<Security2>()!.SendNonceReport(true, false, false, cts.Token).ConfigureAwait(false);
@@ -360,7 +360,7 @@ namespace ZWaveDotNet.CommandClasses
             {
                 case Security2Command.KEXSet:
                     KeyExchangeReport? kexReport = new KeyExchangeReport(message.Payload);
-                    Log.Information("Kex Set Received: " + kexReport.ToString());
+                    Log.Verbose("Kex Set Received: " + kexReport.ToString());
                     if (kexReport.Echo)
                     {
                         //kexReport is the granted keys
@@ -371,7 +371,7 @@ namespace ZWaveDotNet.CommandClasses
                         if (requestedKeys != null)
                         {
                             requestedKeys.Echo = true;
-                            Log.Information("Responding: " + requestedKeys.ToString());
+                            Log.Verbose("Responding: " + requestedKeys.ToString());
                             CommandMessage reportKex = new CommandMessage(controller, node.ID, endpoint, commandClass, (byte)Security2Command.KEXReport, false, requestedKeys.ToBytes());
                             await Transmit(reportKex.Payload, SecurityManager.RecordType.ECDH_TEMP).ConfigureAwait(false);
                         }
@@ -389,7 +389,7 @@ namespace ZWaveDotNet.CommandClasses
                         Log.Information("Network Key Get Received without proper security");
                         return SupervisionStatus.Fail; //Request must be secured by the ECDH Temp Key
                     }
-                    Log.Information("Network Key Get Received");
+                    Log.Verbose("Network Key Get Received");
                     byte[] resp = new byte[17];
                     SecurityKey key = (SecurityKey)message.Payload.Span[0];
                     //TODO - Verify this was granted
@@ -417,12 +417,12 @@ namespace ZWaveDotNet.CommandClasses
                     }
                     CommandMessage data = new CommandMessage(controller, node.ID, endpoint, commandClass, (byte)Security2Command.NetworkKeyReport, false, resp);
                     await Transmit(data.Payload, SecurityManager.RecordType.ECDH_TEMP).ConfigureAwait(false);
-                    Log.Information($"Provided Network Key {key}");
+                    Log.Verbose($"Provided Network Key {key}");
                     return SupervisionStatus.Success;
                 case Security2Command.NetworkKeyVerify:
                     if (controller.SecurityManager == null)
                         return SupervisionStatus.Fail;
-                    Log.Information("Network Key Verified!");
+                    Log.Verbose("Network Key Verified!");
                     if (message.SecurityLevel == SecurityKey.None || (message.Flags & ReportFlags.Security) != ReportFlags.Security)
                     {
                         Log.Information("Network Key Verify Received without proper security");

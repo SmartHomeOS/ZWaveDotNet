@@ -23,7 +23,7 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.MultiChannel, 1, 4)]
     public class MultiChannel : CommandClassBase
     {
-        public event CommandClassEvent? EndpointCapabilitiesUpdated;
+        public event CommandClassEvent<EndPointCapabilities>? EndpointCapabilitiesUpdated;
 
         public enum MultiChannelCommand
         {

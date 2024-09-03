@@ -23,7 +23,7 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.SwitchMultiLevel, 1, 4)]
     public class SwitchMultiLevel : CommandClassBase
     {
-        public event CommandClassEvent? Changed;
+        public event CommandClassEvent<SwitchMultiLevelReport>? Changed;
         enum MultiLevelCommand : byte
         {
             Set = 0x01,

@@ -23,7 +23,7 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.SensorBinary, 1, 2)]
     public class SensorBinary : CommandClassBase
     {
-        public event CommandClassEvent? Updated;
+        public event CommandClassEvent<SensorBinaryReport>? Updated;
 
         enum SensorBinaryCommand
         {

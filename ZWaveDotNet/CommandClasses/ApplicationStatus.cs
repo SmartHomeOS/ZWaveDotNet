@@ -21,8 +21,8 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.ApplicationStatus)]
     public class ApplicationStatus : CommandClassBase
     {
-        public event CommandClassEvent? ApplicationBusy;
-        public event CommandClassEvent? RequestRejected;
+        public event CommandClassEvent<ApplicationStatusReport>? ApplicationBusy;
+        public event CommandClassEvent<ReportMessage>? RequestRejected;
 
         enum ApplicationStatusCommands
         {

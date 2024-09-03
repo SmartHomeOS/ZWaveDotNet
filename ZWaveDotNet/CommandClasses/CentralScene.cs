@@ -22,7 +22,7 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.CentralScene, 1, 3)]
     public class CentralScene : CommandClassBase
     {
-        public event CommandClassEvent? SceneNotification;
+        public event CommandClassEvent<CentralSceneNotification>? SceneNotification;
         
         enum CentralSceneCommand : byte
         {

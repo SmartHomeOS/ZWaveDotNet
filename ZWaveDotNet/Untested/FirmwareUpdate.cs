@@ -24,7 +24,7 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.FirmwareUpdateMD, complete=false, minVersion = 1, maxVersion = 1)]
     public class FirmwareUpdate : CommandClassBase
     {
-        public event CommandClassEvent? Status;
+        public event CommandClassEvent<FirmwareStatusReport>? Status;
 
         private static CRC16_CCITT crc = new CRC16_CCITT();
         

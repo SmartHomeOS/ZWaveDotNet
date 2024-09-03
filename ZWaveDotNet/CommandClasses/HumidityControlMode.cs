@@ -24,8 +24,6 @@ namespace ZWaveDotNet.CommandClasses
     {
         public HumidityControlMode(Node node, byte endpoint) : base(node, endpoint, CommandClass.HumidityControlMode) { }
 
-        public event CommandClassEvent? Updated;
-
         enum HumidityControlModeCommand
         {
             Set = 0x01,

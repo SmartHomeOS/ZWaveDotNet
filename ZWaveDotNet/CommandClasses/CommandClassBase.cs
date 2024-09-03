@@ -25,7 +25,7 @@ namespace ZWaveDotNet.CommandClasses
 {
     public abstract class CommandClassBase
     {
-        public delegate Task CommandClassEvent(Node sender,  CommandClassEventArgs args);
+        public delegate Task CommandClassEvent<T>(Node sender,  CommandClassEventArgs<T> args) where T : ICommandClassReport;
         public bool Secure;
 
         protected Node node;
@@ -300,10 +300,10 @@ namespace ZWaveDotNet.CommandClasses
             return await src.Task;
         }
 
-        protected async Task FireEvent(CommandClassEvent? evt, ICommandClassReport? report)
+        protected async Task FireEvent<T>(CommandClassEvent<T>? evt, T? report) where T : ICommandClassReport?
         {
             if (evt != null)
-                await evt.Invoke(node, new CommandClassEventArgs(this, report));
+                await evt.Invoke(node, new CommandClassEventArgs<T>(this, report));
         }
     }
 }

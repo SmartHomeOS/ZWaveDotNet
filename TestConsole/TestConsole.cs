@@ -13,6 +13,7 @@
 using Serilog;
 using System.Reflection;
 using ZWaveDotNet.CommandClasses;
+using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Entities.Enums;
 using ZWaveDotNet.Enums;
@@ -130,7 +131,7 @@ namespace ExampleConsole
                 node.GetCommandClass<SwitchBinary>()!.SwitchReport += Node_Updated;
         }
 
-        private static async Task Node_Updated(Node sender, CommandClassEventArgs args)
+        private static async Task Node_Updated<T>(Node sender, CommandClassEventArgs<T> args) where T : ICommandClassReport
         {
             if (args.Report == null)
                 return;

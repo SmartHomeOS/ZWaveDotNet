@@ -24,7 +24,7 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.WindowCovering)]
     public class WindowCovering : CommandClassBase
     {
-        public event CommandClassEvent? Report;
+        public event CommandClassEvent<WindowCoveringReport>? Report;
         
         enum WindowCoveringCommand : byte
         {

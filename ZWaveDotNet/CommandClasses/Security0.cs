@@ -57,14 +57,14 @@ namespace ZWaveDotNet.CommandClasses
 
         internal async Task KeySet(CancellationToken cancellationToken = default)
         {
-            Log.Information($"Setting Network Key on {node.ID}");
+            Log.Verbose($"Setting Network Key on {node.ID}");
             CommandMessage data = new CommandMessage(controller, node.ID, endpoint, commandClass, (byte)Security0Command.NetworkKeySet, false, controller.NetworkKeyS0);
             await TransmitTemp(data.Payload, cancellationToken).ConfigureAwait(false);
         }
 
         protected async Task<ReportMessage> GetNonce(CancellationToken cancellationToken)
         {
-            Log.Information("Fetching Nonce");
+            Log.Verbose("Fetching Nonce");
             return await SendReceive(Security0Command.NonceGet, Security0Command.NonceReport, cancellationToken);
         }
 
@@ -84,7 +84,7 @@ namespace ZWaveDotNet.CommandClasses
                     return; //This should never happen
             }
 
-            Log.Information("Creating Temp Payload for " + node.ID.ToString());
+            Log.Verbose("Creating Temp Payload for " + node.ID.ToString());
             byte[] receiversNonce = report.Payload.ToArray();
             byte[] sendersNonce = new byte[8];
             new Random().NextBytes(sendersNonce);
@@ -107,7 +107,7 @@ namespace ZWaveDotNet.CommandClasses
             if (report.IsMulticastMethod())
                 return; //This should never happen
 
-            Log.Information("Creating Payload for " + node.ID.ToString());
+            Log.Verbose("Creating Payload for " + node.ID.ToString());
             byte[] receiversNonce = report.Payload.ToArray();
             byte[] sendersNonce = new byte[8];
             new Random().NextBytes(sendersNonce);
@@ -159,12 +159,12 @@ namespace ZWaveDotNet.CommandClasses
 
             if (msg.Command == (byte)Security0Command.MessageEncapNonceGet)
             {
-                Log.Information("Providing Next Nonce");
+                Log.Verbose("Providing Next Nonce");
                 using CancellationTokenSource cts = new CancellationTokenSource(3000);
                 await controller.Nodes[msg.SourceNodeID].GetCommandClass<Security0>()!.SendCommand(Security0Command.NonceReport, cts.Token, controller.SecurityManager.CreateS0Nonce(msg.SourceNodeID)).ConfigureAwait(false);
             }
 
-            Log.Information("Decrypted: " + msg.ToString());
+            Log.Verbose("Decrypted: " + msg.ToString());
             return msg;
         }
 
@@ -179,7 +179,7 @@ namespace ZWaveDotNet.CommandClasses
                         return SupervisionStatus.Fail;
                     if (message.SecurityLevel != SecurityKey.S0 || (message.Flags & ReportFlags.Security) != ReportFlags.Security)
                     {
-                        Log.Information("Network Key Verify Received without proper security");
+                        Log.Warning("Network Key Verify Received without proper security");
                         return SupervisionStatus.Fail;
                     }
                     keyVerified.TrySetResult();

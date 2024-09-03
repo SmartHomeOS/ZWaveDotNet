@@ -54,6 +54,7 @@ namespace ZWaveDotNet.Entities
         public GenericType GenericType { get { return nodeInfo?.GenericType ?? GenericType.Unknown; } }
         public bool NodeFailed {  get {  return failed; } }
         public bool Interviewed { get { return interviewed; } }
+        public sbyte RSSI { get; private set; }
 
         public Node(ushort id, Controller controller, NodeProtocolInfo? nodeInfo, CommandClass[]? commandClasses = null, bool failed = false)
         {
@@ -102,7 +103,7 @@ namespace ZWaveDotNet.Entities
 
         internal void HandleApplicationUpdate(ApplicationUpdate update)
         {
-            Log.Information($"Node {ID} Updated: {update}");
+            Log.Verbose($"Node {ID} Updated: {update}");
             if (update is NodeInformationUpdate NIF)
             {
                 foreach (CommandClass cc in NIF.CommandClasses)
@@ -113,7 +114,8 @@ namespace ZWaveDotNet.Entities
         internal async Task HandleApplicationCommand(ApplicationCommand cmd)
         {
             ReportMessage? msg = new ReportMessage(cmd);
-            Log.Information(msg.ToString());
+            Log.Verbose(msg.ToString());
+            RSSI = msg.RSSI;
 
             //Encapsulation Order (inner to outer) - MultiCommand, Supervision, Multichannel, security, transport, crc16
             if (CRC16.IsEncapsulated(msg))
@@ -165,7 +167,7 @@ namespace ZWaveDotNet.Entities
             {
                 SupervisionStatus status = await HandleReport(msg).ConfigureAwait(false);
                 if (status == SupervisionStatus.NoSupport)
-                    Log.Warning("No Support for " + msg.ToString());
+                    Log.Verbose("No Support for " + msg.ToString());
                 if ((msg.Flags & ReportFlags.SupervisedOnce) == ReportFlags.SupervisedOnce && commandClasses.TryGetValue(CommandClass.Supervision, out CommandClassBase? supervision))
                     await ((Supervision)supervision).Report(msg.SessionID, status);
             }

@@ -25,7 +25,7 @@ namespace ZWaveDotNet.CommandClasses
     public class WakeUp : CommandClassBase
     {
         private readonly ConcurrentQueue<TaskCompletionSource> taskCompletionSources = new ConcurrentQueue<TaskCompletionSource>();
-        public event CommandClassEvent? Awake;
+        public event CommandClassEvent<ReportMessage>? Awake;
 
         enum WakeUpCommand
         {

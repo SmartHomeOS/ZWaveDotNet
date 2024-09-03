@@ -82,7 +82,7 @@ namespace ZWaveDotNet.CommandClasses
                         msg.Payload = msg.Payload.Slice(2);
                     chk = crc.ComputeChecksum(msg.Payload.Slice(0, msg.Payload.Length - 2));
                     if (chk[0] == msg.Payload.Span[msg.Payload.Length - 2] && chk[1] == msg.Payload.Span[msg.Payload.Length - 1])
-                        Log.Information("Transport Checksum is OK");
+                        Log.Verbose("Transport Checksum is OK");
                     buff = new byte[datagramLen];
                     msg.Payload.Slice(0, msg.Payload.Length - 2).CopyTo(buff);
                     key = GetKey(msg.SourceNodeID, sessionId);
@@ -109,7 +109,7 @@ namespace ZWaveDotNet.CommandClasses
                         msg.Payload = msg.Payload.Slice(3);
                     chk = crc.ComputeChecksum(msg.Payload.Slice(0, msg.Payload.Length - 2));
                     if (chk[0] == msg.Payload.Span[msg.Payload.Length - 2] && chk[1] == msg.Payload.Span[msg.Payload.Length - 1])
-                        Log.Information("Transport Checksum is OK");
+                        Log.Verbose("Transport Checksum is OK");
                     key = GetKey(msg.SourceNodeID, sessionId);
                     if (!buffers.TryGetValue(key, out buff))
                     {

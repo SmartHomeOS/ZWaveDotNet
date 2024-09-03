@@ -560,7 +560,7 @@ namespace ZWaveDotNet.Entities
                     BinaryPrimitives.WriteUInt16BigEndian(pub.Slice(0, 2).Span, pin);
                 byte[] sharedSecret = SecurityManager!.CreateSharedSecret(pub);
                 var prk = AES.CKDFTempExtract(sharedSecret, SecurityManager.PublicKey, pub);
-                Log.Information("Temp Key: " + MemoryUtil.Print(prk));
+                Log.Verbose("Temp Key: " + MemoryUtil.Print(prk));
                 SecurityManager.GrantKey(node.ID, SecurityManager.RecordType.ECDH_TEMP, prk, true);
                 using (CancellationTokenSource cts = new CancellationTokenSource(30000))
                 {
@@ -627,7 +627,7 @@ namespace ZWaveDotNet.Entities
                             if (au is NodeInformationUpdate niu && NodeInfoUpdated != null)
                                 NodeInfoUpdated.Invoke(node, new ApplicationUpdateEventArgs(niu));
                         }
-                        Log.Information(au.ToString());
+                        Log.Debug(au.ToString());
                     }
                     else if (msg is APIStarted start)
                     {
@@ -640,11 +640,11 @@ namespace ZWaveDotNet.Entities
                             _ = Task.Factory.StartNew(async() => { try { await node.HandleApplicationCommand(cmd); } catch (Exception e) { Log.Error(e, "Unhandled"); } }, CancellationToken.None, TaskCreationOptions.RunContinuationsAsynchronously, TaskScheduler.Default);
                         else
                             Log.Warning("Node " + cmd.SourceNodeID + " not found");
-                        Log.Information(cmd.ToString());
+                        Log.Verbose(cmd.ToString());
                     }
                     else if (msg is InclusionStatus inc)
                     {
-                        Log.Information(inc.ToString());
+                        Log.Debug(inc.ToString());
                         if (inc.Function == Function.AddNodeToNetwork)
                         {
                             if (inc.CommandClasses.Length > 0) //We found a node

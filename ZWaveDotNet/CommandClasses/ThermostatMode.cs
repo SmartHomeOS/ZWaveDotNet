@@ -23,7 +23,7 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.ThermostatMode, 3)]
     public class ThermostatMode : CommandClassBase
     {
-        public event CommandClassEvent? Updated;
+        public event CommandClassEvent<ThermostatModeReport>? Updated;
 
         public enum ThermostatModeCommand
         {

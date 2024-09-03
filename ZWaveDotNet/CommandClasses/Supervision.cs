@@ -22,7 +22,7 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.Supervision, 2)]
     public class Supervision : CommandClassBase
     {
-        public event CommandClassEvent? StatusReport;
+        public event CommandClassEvent<SupervisionReport>? StatusReport;
 
         public enum SupervisionCommand
         {

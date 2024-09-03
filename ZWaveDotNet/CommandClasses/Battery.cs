@@ -22,7 +22,7 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.Battery, 3)]
     public class Battery : CommandClassBase
     {
-        public event CommandClassEvent? Status;
+        public event CommandClassEvent<BatteryLevelReport>? Status;
 
         enum BatteryCommand
         {

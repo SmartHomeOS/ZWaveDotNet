@@ -14,12 +14,12 @@ using ZWaveDotNet.CommandClassReports;
 
 namespace ZWaveDotNet.CommandClasses
 {
-    public class CommandClassEventArgs : EventArgs
+    public class CommandClassEventArgs<T> : EventArgs where T : ICommandClassReport
     {
-        public ICommandClassReport? Report { get; set; }
+        public T? Report { get; set; }
         public CommandClassBase Source { get; set; }
 
-        public CommandClassEventArgs(CommandClassBase source, ICommandClassReport? report)
+        public CommandClassEventArgs(CommandClassBase source, T? report)
         {
             Report = report;
             Source = source;

@@ -20,7 +20,7 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.Proprietary)]
     public class Proprietary : CommandClassBase
     {
-        public event CommandClassEvent? Report;
+        public event CommandClassEvent<ReportMessage>? Report;
         
         enum ProprietaryCommand : byte
         {

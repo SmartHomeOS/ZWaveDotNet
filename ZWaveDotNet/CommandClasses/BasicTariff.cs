@@ -22,7 +22,7 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.BasicTariff)]
     public class BasicTariff : CommandClassBase
     {
-        public event CommandClassEvent? Report;
+        public event CommandClassEvent<BasicTariffReport>? Report;
         
         enum BasicTariffCommand : byte
         {

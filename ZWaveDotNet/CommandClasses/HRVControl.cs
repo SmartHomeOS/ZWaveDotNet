@@ -24,8 +24,6 @@ namespace ZWaveDotNet.CommandClasses
     {
         public HRVControl(Node node, byte endpoint) : base(node, endpoint, CommandClass.HRVControl) { }
 
-        public event CommandClassEvent? Updated;
-
         enum HRVControlCommand
         {
             ModeSet = 0x01,

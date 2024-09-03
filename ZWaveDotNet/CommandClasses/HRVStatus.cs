@@ -26,7 +26,7 @@ namespace ZWaveDotNet.CommandClasses
     {
         public HRVStatus(Node node, byte endpoint) : base(node, endpoint, CommandClass.HRVStatus) { }
 
-        public event CommandClassEvent? Updated;
+        public event CommandClassEvent<HRVStatusReport>? Updated;
 
         enum HRVStatusCommand
         {

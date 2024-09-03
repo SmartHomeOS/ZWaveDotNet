@@ -26,7 +26,7 @@ namespace ZWaveDotNet.CommandClasses
     {
         private const byte FIRST_AVAILABLE = 0xFF;
 
-        public event CommandClassEvent? Updated;
+        public event CommandClassEvent<NotificationReport>? Updated;
 
         enum NotificationCommand
         {

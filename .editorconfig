@@ -235,3 +235,6 @@ dotnet_diagnostic.CA2016.severity = error
 
 # IDE0042: Deconstruct variable declaration
 dotnet_diagnostic.IDE0042.severity = none
+
+# CA2200: Rethrow to preserve stack details
+dotnet_diagnostic.CA2200.severity = suggestion

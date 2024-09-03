@@ -22,7 +22,7 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.MTPWindowCovering)]
     public class MTPWindowCovering : CommandClassBase
     {
-        public event CommandClassEvent? PositionChanged;
+        public event CommandClassEvent<MTPWindowCoveringReport>? PositionChanged;
         
         enum MTPWindowCommand : byte
         {

@@ -23,7 +23,7 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.ApplicationCapability)]
     public class ApplicationCapability : CommandClassBase
     {
-        public event CommandClassEvent? CommandClassUnsupported;
+        public event CommandClassEvent<ApplicationCapabilityReport>? CommandClassUnsupported;
 
         public ApplicationCapability(Node node, byte endpoint) : base(node, endpoint, CommandClass.ApplicationCapability) { }
 

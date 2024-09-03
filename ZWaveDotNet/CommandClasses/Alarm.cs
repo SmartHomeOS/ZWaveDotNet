@@ -23,7 +23,7 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.Alarm, 1, 2)]
     public class Alarm : CommandClassBase
     {
-        public event CommandClassEvent? Updated;
+        public event CommandClassEvent<AlarmReport>? Updated;
 
         enum AlarmCommand
         {
