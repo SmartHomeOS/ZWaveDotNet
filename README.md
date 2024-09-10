@@ -1,7 +1,7 @@
 [![Build](https://github.com/SmartHomeOS/ZWaveDotNet/actions/workflows/dotnet.yml/badge.svg)](https://github.com/SmartHomeOS/ZWaveDotNet/actions/workflows/dotnet.yml)
 [![Version](https://img.shields.io/nuget/v/ZWaveDotNet.svg)](https://www.nuget.org/packages/ZWaveDotNet)
 # ZWaveDotNet
-An implementation of ZWave Plus using the 2023b public specification. 
+An implementation of ZWave Plus using the 2024a public specification. 
 
 ### Features:
 * Support is included for 60+ command classes. [Full and partial command class support is listed here](SupportedCommandClasses.md).

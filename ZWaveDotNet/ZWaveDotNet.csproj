@@ -9,7 +9,7 @@
     <Company>SmartHomeOS and Contributors</Company>
 	<PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
 	<Title>ZWaveDotNet</Title>
-	<Description>A C# implementation of the 2023b ZWave Plus standard including 60+ Command Classes, Security, SmartStart and ZwaveLR</Description>
+	<Description>A C# implementation of the 2024a ZWave Plus standard including 60+ Command Classes, Security, SmartStart and ZwaveLR</Description>
 	<Copyright>Copyright ZWaveDotNet Contributors</Copyright>
 	<PackageReadmeFile>README.md</PackageReadmeFile>
 	<RepositoryUrl>https://github.com/SmartHomeOS/ZWaveDotNet/</RepositoryUrl>
