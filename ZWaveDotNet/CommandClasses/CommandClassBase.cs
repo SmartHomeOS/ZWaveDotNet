@@ -90,6 +90,8 @@ namespace ZWaveDotNet.CommandClasses
                     return new ApplicationStatus(node, endpoint);
                 case CommandClass.Association:
                     return new Association(node, endpoint);
+                case CommandClass.BarrierOperator:
+                    return new BarrierOperator(node, endpoint);
                 case CommandClass.Basic:
                     return new Basic(node, endpoint);
                 case CommandClass.BasicTariff:
