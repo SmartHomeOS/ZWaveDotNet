@@ -266,6 +266,9 @@ namespace ZWaveDotNet.CommandClasses
                 {
                     using (CancellationTokenSource cts = new CancellationTokenSource(3000))
                     await controller.Nodes[msg.SourceNodeID].GetCommandClass<Security2>()!.KexFail(KexFailType.KEX_FAIL_KEY_VERIFY).ConfigureAwait(false);
+                    if (networkKey.Key != SecurityManager.RecordType.ECDH_TEMP)
+                        controller.SecurityManager.RevokeKey(msg.SourceNodeID, networkKey.Key);
+                    return null;
                 }
                 else if (i == 2)
                 {

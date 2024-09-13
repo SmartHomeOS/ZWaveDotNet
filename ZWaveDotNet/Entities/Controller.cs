@@ -558,6 +558,8 @@ namespace ZWaveDotNet.Entities
                     await sec2.KexFail(KexFailType.KEX_FAIL_KEX_SCHEME);
                     return false;
                 }
+                if (this.pin == 0)
+                    requestedKeys.Keys = requestedKeys.Keys & SecurityKey.S2Unauthenticated; //We need a pin for higher levels
                 SecurityManager!.StoreRequestedKeys(node.ID, requestedKeys);
                 Log.Information("Sending " + requestedKeys.ToString());
                 Memory<byte> pub;
@@ -585,6 +587,7 @@ namespace ZWaveDotNet.Entities
                 SecurityManager?.RevokeKey(node.ID, SecurityManager.RecordType.S2Access);
                 SecurityManager?.RevokeKey(node.ID, SecurityManager.RecordType.S2Auth);
                 SecurityManager?.RevokeKey(node.ID, SecurityManager.RecordType.S2UnAuth);
+                SecurityManager?.RevokeKey(node.ID, SecurityManager.RecordType.ECDH_TEMP);
                 return false;
             }
             await node.Interview(true).ConfigureAwait(false);
@@ -670,14 +673,7 @@ namespace ZWaveDotNet.Entities
                                 {
                                     Log.Information("Added " + node.ToString());
                                     if (SecurityManager != null)
-                                    {
-                                        if ((currentStrategy == InclusionStrategy.S2Only || currentStrategy == InclusionStrategy.PreferS2) && node.HasCommandClass(CommandClass.Security2))
-                                            _ = Task.Run(() => BootstrapS2(node));
-                                        else if ((currentStrategy == InclusionStrategy.PreferS2 || currentStrategy == InclusionStrategy.LegacyS0Only) && node.HasCommandClass(CommandClass.Security0))
-                                            _ = Task.Run(() => BootstrapS0(node));
-                                        else
-                                            _ = Task.Run(() => BootstrapUnsecure(node));
-                                    }
+                                        await Task.Factory.StartNew(() => ExecuteStrategy(node)).ConfigureAwait(false);
                                 }
                             }
                         }
@@ -685,9 +681,10 @@ namespace ZWaveDotNet.Entities
                         {
                             if (Nodes.Remove(inc.NodeID, out Node? node))
                             {
+                                node.NodeFailed = true;
                                 if (NodeExcluded != null)
                                     NodeExcluded.Invoke(node, EventArgs.Empty);
-                                Log.Information($"Successfully exluded node {inc.NodeID}");
+                                Log.Information($"Successfully excluded node {inc.NodeID}");
                             }
                             if (inc.Status == InclusionExclusionStatus.OperationComplete)
                                 await StopExclusion();
@@ -699,6 +696,23 @@ namespace ZWaveDotNet.Entities
                 }
                 //Log.Information(msg.ToString());
             }
+        }
+
+        private async Task ExecuteStrategy(Node node)
+        {
+            if ((currentStrategy == InclusionStrategy.S2Only || currentStrategy == InclusionStrategy.AnySecure || currentStrategy == InclusionStrategy.PreferS2) && node.HasCommandClass(CommandClass.Security2))
+            {
+                if (await BootstrapS2(node) || currentStrategy == InclusionStrategy.S2Only)
+                    return; //Successful S2 or abort if failed with S2 only strategy
+                if ((node.HasCommandClass(CommandClass.Security0) && await BootstrapS0(node)) || currentStrategy == InclusionStrategy.AnySecure)
+                    return; //Successful S0 or abort if secure required
+            }
+            else if ((currentStrategy == InclusionStrategy.PreferS2 || currentStrategy == InclusionStrategy.AnySecure || currentStrategy == InclusionStrategy.LegacyS0Only) && node.HasCommandClass(CommandClass.Security0))
+            {
+                if (await BootstrapS0(node) || currentStrategy == InclusionStrategy.LegacyS0Only || currentStrategy == InclusionStrategy.AnySecure)
+                    return; //Successful S0 or abort if failed with S0 only or any secure strategy
+            }
+            await BootstrapUnsecure(node);
         }
 
         private byte[] NodeIDToBytes(ushort nodeId)

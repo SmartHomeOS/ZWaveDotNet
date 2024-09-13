@@ -30,5 +30,9 @@ namespace ZWaveDotNet.Entities.Enums
         /// Only S2 security will be attempted
         /// </summary>
         S2Only = 0x3,
+        /// <summary>
+        /// Prefer S2 first, fallback to S0. Do not attempt insecure inclusion
+        /// </summary>
+        AnySecure = 0x4
     }
 }

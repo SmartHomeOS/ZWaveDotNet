@@ -307,8 +307,11 @@ namespace ZWaveDotNet.Entities
                         while (!commandClasses.ContainsKey(CommandClass.WakeUp))
                             await Task.Delay(3000).ConfigureAwait(false); //TODO - Improve this
                         await ((WakeUp)commandClasses[CommandClass.WakeUp]).WaitForAwake().ConfigureAwait(false);
-                        using (CancellationTokenSource cts = new CancellationTokenSource(90000))
-                            await Interview(newlyIncluded, key, cts.Token).ConfigureAwait(false);
+                        using (CancellationTokenSource timeout = new CancellationTokenSource(90000))
+                        {
+                            using (CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeout.Token))
+                                await Interview(newlyIncluded, key, cts.Token).ConfigureAwait(false);
+                        }
                         await ((WakeUp)commandClasses[CommandClass.WakeUp]).NoMoreInformation().ConfigureAwait(false);
                     }
                     catch(Exception ex)
@@ -320,7 +323,7 @@ namespace ZWaveDotNet.Entities
 
         private async Task Interview(bool newlyIncluded, SecurityManager.NetworkKey? key, CancellationToken cancellationToken)
         {
-            if (controller.SecurityManager != null)
+            if (controller.SecurityManager != null && !failed)
             {
                 if (!newlyIncluded && key == null)
                 {
@@ -333,6 +336,8 @@ namespace ZWaveDotNet.Entities
                         {
                             for (int i = 0; i < 3; i++)
                             {
+                                if (failed)
+                                    return;
                                 try
                                 {
                                     using (CancellationTokenSource timeout = new CancellationTokenSource(5000))
@@ -363,6 +368,8 @@ namespace ZWaveDotNet.Entities
                         {
                             for (int i = 0; i < 3; i++)
                             {
+                                if (failed)
+                                    return;
                                 try
                                 {
                                     using (CancellationTokenSource timeout = new CancellationTokenSource(5000))
@@ -390,6 +397,8 @@ namespace ZWaveDotNet.Entities
                         {
                             for (int i = 0; i < 3; i++)
                             {
+                                if (failed)
+                                    return;
                                 try
                                 {
                                     using (CancellationTokenSource timeout = new CancellationTokenSource(5000))
@@ -417,6 +426,8 @@ namespace ZWaveDotNet.Entities
                         {
                             for (int i = 0; i < 3; i++)
                             {
+                                if (failed)
+                                    return;
                                 try
                                 {
                                     using (CancellationTokenSource timeout = new CancellationTokenSource(5000))
@@ -464,6 +475,8 @@ namespace ZWaveDotNet.Entities
                 CommandClasses.Version version = (CommandClasses.Version)commandClasses[CommandClass.Version];
                 foreach (CommandClassBase cc in commandClasses.Values)
                 {
+                    if (failed)
+                        return;
                     CCVersion? ccVersion = (CCVersion?)cc.GetType().GetCustomAttribute(typeof(CCVersion));
                     if ((ccVersion == null || ccVersion.maxVersion > 1) && (cc.CommandClass >= CommandClass.Basic))
                     {

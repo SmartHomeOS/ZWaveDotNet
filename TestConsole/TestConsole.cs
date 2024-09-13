@@ -28,7 +28,7 @@ namespace ExampleConsole
         private static readonly HashSet<ushort> ReadyList = new HashSet<ushort>();
         private static RFRegion region = RFRegion.Unknown;
         private static readonly LinkedList<string> Reports = new LinkedList<string>();
-        private enum Mode { Display, Inclusion, Exclusion};
+        private enum Mode { Display, Inclusion, Exclusion, UserInput};
         private static Mode currentMode = Mode.Display;
 
         static async Task Main(string[] args)
@@ -88,8 +88,17 @@ namespace ExampleConsole
                 }
                 else if (key.Key == ConsoleKey.I)
                 {
+                    currentMode = Mode.UserInput;
+                    Console.Clear();
+                    Console.Write("Enter Inclusion Pin (or press enter to skip): ");
+                    string? pin = Console.ReadLine();
                     currentMode = Mode.Inclusion;
-                    await controller!.StartInclusion(InclusionStrategy.PreferS2, 12345);
+                    if (pin == null)
+                        return;
+                    if (pin == string.Empty)
+                        await controller!.StartInclusion(InclusionStrategy.PreferS2);
+                    else
+                        await controller!.StartInclusion(InclusionStrategy.PreferS2, ushort.Parse(pin));
                     PrintMain();
                 }
                 else if (key.Key == ConsoleKey.S)
@@ -170,6 +179,8 @@ namespace ExampleConsole
 
         private static void PrintMain()
         {
+            if (currentMode == Mode.UserInput)
+                return;
             Console.Clear();
             Console.Write($"ZWaveDotNet v{Version} - Controller #{controller!.ControllerID} {(controller!.IsConnected ? "Connected" : "Disconnected")}");
             Console.Write($" - v{controller.APIVersion.Major} ({region})");
@@ -191,7 +202,7 @@ namespace ExampleConsole
             }
             else if (currentMode == Mode.Inclusion)
             {
-                Console.WriteLine("- Inclusion Mode Active (Default PIN 12345) -");
+                Console.WriteLine("- Inclusion Mode Active -");
                 Console.WriteLine("Press the Pairing button on your device");
             }
             else
