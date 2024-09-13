@@ -8,8 +8,6 @@ ANTITHEFT_UNLOCK | 0 | 1 | None
 **ASSOCIATION** | **3** | **3** | **Full**
 ASSOCIATION_COMMAND_CONFIGURATION | 0 | 1 | None
 ASSOCIATION_GRP_INFO | 0 | 3 | None
-AUTHENTICATION | 0 | 1 | None
-AUTHENTICATION_MEDIA_WRITE | 0 | 1 | None
 BARRIER_OPERATOR | 0 | 1 | None
 **BASIC** | **2** | **2** | **Full**
 **BASIC_TARIFF_INFO** | **1** | **1** | **Full**
@@ -29,7 +27,6 @@ DOOR_LOCK_LOGGING | 0 | 1 | None
 **ENERGY_PRODUCTION** | **1** | **1** | **Full**
 ENTRY_CONTROL | 0 | 1 | None
 *FIRMWARE_UPDATE_MD* | *1* | *8* | *Partial*
-GENERIC_SCHEDULE | 0 | 1 | None
 **GEOGRAPHIC_LOCATION** | **1** | **1** | **Full**
 **GROUPING_NAME** | **1** | **1** | **Full**
 **HAIL** | **1** | **1** | **Full**
@@ -59,7 +56,6 @@ METER_TBL_PUSH | 0 | 1 | None
 **NODE_NAMING** | **1** | **1** | **Full**
 **NOTIFICATION** | **8** | **8** | **Full**
 PREPAYMENT | 0 | 1 | None
-PREPAYMENT_ENCAPSULATION | 0 | 1 | None
 **PROPRIETARY** | **1** | **1** | **Full**
 PROTECTION | 0 | 2 | None
 RATE_TBL_CONFIG | 0 | 1 | None
@@ -104,5 +100,5 @@ USER_CODE | 0 | 2 | None
 **WINDOW_COVERING** | **1** | **1** | **Full**
 **ZWAVEPLUS_INFO** | **2** | **2** | **Full**
 
-- Full Support for 63/103 Command Classes.
-- Partial Support for 3/103 Command Classes.
+- Full Support for 63/99 Command Classes.
+- Partial Support for 3/99 Command Classes.

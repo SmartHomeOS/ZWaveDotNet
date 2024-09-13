@@ -144,6 +144,8 @@ namespace ZWaveDotNet.CommandClasses
                     return new MTPWindowCovering(node, endpoint);
                 case CommandClass.MultiChannel:
                     return new MultiChannel(node, endpoint);
+                case CommandClass.MultiChannelAssociation:
+                    return new MultiChannelAssociation(node, endpoint);
                 case CommandClass.MultiCommand:
                     return new MultiCommand(node, endpoint);
                 case CommandClass.NodeNaming:
