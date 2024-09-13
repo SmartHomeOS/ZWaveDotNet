@@ -84,7 +84,7 @@ namespace ZWaveDotNet.Security
             if (key == null)
                 throw new ArgumentNullException(nameof(key));
             AES.KeyTuple keyTuple = AES.CKDFExpand(key, temp);
-            StoreKey(nodeId, type, keyTuple.KeyCCM, keyTuple.PString, keyTuple.MPAN);
+            StoreKey(nodeId, type, keyTuple.KeyCCM, keyTuple.PersonalizationString, keyTuple.keyMPAN);
         }
 
         private void StoreKey(ushort nodeId, RecordType type, byte[]? keyCCM, byte[]? pString, byte[]? mPAN)
@@ -141,6 +141,11 @@ namespace ZWaveDotNet.Security
                 }
             }
             return null;
+        }
+
+        public bool HasKey(ushort nodeId, RecordType key)
+        {
+            return GetKey(nodeId, key) != null;
         }
 
         public void RevokeKey(ushort nodeId, RecordType type)
@@ -213,6 +218,21 @@ namespace ZWaveDotNet.Security
                         return result.output;
                     }
                 }
+            }
+            return null;
+        }
+
+        public Memory<byte>? CurrentMpanNonce(byte groupID, byte[] keyMPAN)
+        {
+            if (mpanRecords.TryGetValue(groupID, out MpanRecord? record))
+            {
+                Memory<byte> result = new byte[16];
+                using (Aes aes = Aes.Create())
+                {
+                    aes.Key = keyMPAN;
+                    aes.EncryptEcb(record.Bytes.Span, result.Span, PaddingMode.None);
+                }
+                return result;
             }
             return null;
         }

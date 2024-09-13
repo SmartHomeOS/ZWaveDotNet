@@ -49,31 +49,28 @@ namespace ZWaveDotNet.CommandClasses
 
         public async Task SetDefault(byte parameter, CancellationToken cancellationToken = default)
         {
-            await Set(parameter, 0, 0, cancellationToken, true);
+            await Set(parameter, 0, cancellationToken, true);
         }
 
         public async Task Set(byte parameter, sbyte value, CancellationToken cancellationToken = default)
         {
-            await Set(parameter, value, 0, cancellationToken);
+            await Set(parameter, value, cancellationToken);
         }
 
         public async Task Set(byte parameter, short value, CancellationToken cancellationToken = default)
         {
-            await Set(parameter, value, 0, cancellationToken);
+            await Set(parameter, value, cancellationToken);
         }
 
         public async Task Set(byte parameter, int value, CancellationToken cancellationToken = default)
         {
-            await Set(parameter, value, 0, cancellationToken);
+            await Set(parameter, value, cancellationToken);
         }
 
-        private async Task Set(byte parameter, int value, byte size, CancellationToken cancellationToken = default, bool reset = false)
+        private async Task Set(byte parameter, int value, CancellationToken cancellationToken = default, bool resetToDefault = false)
         {
-            if (size == 0)
-            {
-                ReportMessage response = await SendReceive(ConfigurationCommand.Get, ConfigurationCommand.Report, cancellationToken);
-                size = response.Payload.Span[1];
-            }
+            ReportMessage response = await SendReceive(ConfigurationCommand.Get, ConfigurationCommand.Report, cancellationToken);
+            byte size = response.Payload.Span[1];
 
             var values = new byte[size];
             switch (size)
@@ -90,7 +87,7 @@ namespace ZWaveDotNet.CommandClasses
                 default:
                     throw new NotSupportedException($"Size:{size} is not supported");
             }
-            if (reset)
+            if (resetToDefault)
                 size |= 0x80;
             await SendCommand(ConfigurationCommand.Set, cancellationToken, new[] { parameter, size }.Concat(values).ToArray());
         }

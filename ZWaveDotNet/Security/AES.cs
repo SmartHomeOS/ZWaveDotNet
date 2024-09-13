@@ -23,13 +23,13 @@ namespace ZWaveDotNet.Security
         public struct KeyTuple
         {
             public byte[] KeyCCM;
-            public byte[] PString;
-            public byte[] MPAN;
+            public byte[] PersonalizationString;
+            public byte[] keyMPAN;
             public KeyTuple(byte[] keyCCM, byte[] pString, byte[] mPAN)
             {
                 this.KeyCCM = keyCCM;
-                this.PString = pString;
-                this.MPAN = mPAN;
+                this.PersonalizationString = pString;
+                this.keyMPAN = mPAN;
             }
         }
 

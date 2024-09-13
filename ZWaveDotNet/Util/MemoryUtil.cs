@@ -73,8 +73,13 @@ namespace ZWaveDotNet.Util
 
         public static string Print(Memory<byte> mem)
         {
-            StringBuilder ret = new StringBuilder(mem.Length * 3);
-            foreach (byte b in mem.Span)
+            return Print(mem.Span);
+        }
+
+        public static string Print(ReadOnlySpan<byte> span)
+        {
+            StringBuilder ret = new StringBuilder(span.Length * 3);
+            foreach (byte b in span)
             {
                 if (ret.Length > 0)
                     ret.Append(' ');

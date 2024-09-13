@@ -262,6 +262,11 @@ namespace ZWaveDotNet.CommandClasses
                 decoded = Decrypt(msg, controller, networkKey, ad, ref i);
                 if (decoded != null)
                     break;
+                else if (controller.SecurityManager.HasKey(msg.SourceNodeID, SecurityManager.RecordType.ECDH_TEMP))
+                {
+                    using (CancellationTokenSource cts = new CancellationTokenSource(3000))
+                    await controller.Nodes[msg.SourceNodeID].GetCommandClass<Security2>()!.KexFail(KexFailType.KEX_FAIL_KEY_VERIFY).ConfigureAwait(false);
+                }
                 else if (i == 2)
                 {
                     try
@@ -364,13 +369,16 @@ namespace ZWaveDotNet.CommandClasses
                     Log.Verbose("Kex Set Received: " + kexReport.ToString());
                     if (kexReport.Echo)
                     {
-                        //kexReport is the granted keys
-                        //TODO - Send KexFail if attempting to get more keys than we granted
                         if (controller.SecurityManager == null)
                             return SupervisionStatus.Fail;
                         KeyExchangeReport? requestedKeys = controller.SecurityManager.GetRequestedKeys(node.ID);
                         if (requestedKeys != null)
                         {
+                            if (requestedKeys.Keys != kexReport.Keys)
+                            {
+                                await KexFail(KexFailType.KEX_FAIL_AUTH);
+                                return SupervisionStatus.Fail;
+                            }
                             requestedKeys.Echo = true;
                             Log.Verbose("Responding: " + requestedKeys.ToString());
                             CommandMessage reportKex = new CommandMessage(controller, node.ID, endpoint, commandClass, (byte)Security2Command.KEXReport, false, requestedKeys.ToBytes());
@@ -393,7 +401,13 @@ namespace ZWaveDotNet.CommandClasses
                     Log.Verbose("Network Key Get Received");
                     byte[] resp = new byte[17];
                     SecurityKey key = (SecurityKey)message.Payload.Span[0];
-                    //TODO - Verify this was granted
+                    KeyExchangeReport? grantedKeys = controller.SecurityManager.GetRequestedKeys(node.ID);
+                    if (grantedKeys == null || (grantedKeys.Keys & key) != key)
+                    {
+                        await KexFail(KexFailType.KEX_FAIL_KEY_GET);
+                        Log.Error("Network Key Get Received for an ungranted key");
+                        return SupervisionStatus.Fail;
+                    }
                     resp[0] = (byte)key;
                     switch (key)
                     {

@@ -74,7 +74,7 @@ namespace ZWaveDotNet.CommandClasses
                     sessionId = (byte)((msg.Payload.Span[1] & 0xF0) >> 4);
                     if ((msg.Payload.Span[1] & 0x8) == 0x8)
                     {
-                        //We skip extensions for now
+                        //No extensions are defined yet
                         Log.Information("Transport Service skipped an extension");
                         msg.Payload = msg.Payload.Slice(msg.Payload.Span[2] + 3);
                     }
@@ -82,7 +82,7 @@ namespace ZWaveDotNet.CommandClasses
                         msg.Payload = msg.Payload.Slice(2);
                     chk = crc.ComputeChecksum(msg.Payload.Slice(0, msg.Payload.Length - 2));
                     if (chk[0] == msg.Payload.Span[msg.Payload.Length - 2] && chk[1] == msg.Payload.Span[msg.Payload.Length - 1])
-                        Log.Verbose("Transport Checksum is OK");
+                        Log.Debug("Transport Checksum is OK");
                     buff = new byte[datagramLen];
                     msg.Payload.Slice(0, msg.Payload.Length - 2).CopyTo(buff);
                     key = GetKey(msg.SourceNodeID, sessionId);
@@ -101,7 +101,7 @@ namespace ZWaveDotNet.CommandClasses
                     ushort datagramOffset = (ushort)(((msg.Payload.Span[1] & 0x7) << 8) | msg.Payload.Span[2]);
                     if ((msg.Payload.Span[1] & 0x8) == 0x8)
                     {
-                        //We skip extensions for now
+                        //No extensions are defined yet
                         Log.Information("Transport Service skipped an extension");
                         msg.Payload = msg.Payload.Slice(msg.Payload.Span[3] + 4);
                     }
@@ -109,7 +109,7 @@ namespace ZWaveDotNet.CommandClasses
                         msg.Payload = msg.Payload.Slice(3);
                     chk = crc.ComputeChecksum(msg.Payload.Slice(0, msg.Payload.Length - 2));
                     if (chk[0] == msg.Payload.Span[msg.Payload.Length - 2] && chk[1] == msg.Payload.Span[msg.Payload.Length - 1])
-                        Log.Verbose("Transport Checksum is OK");
+                        Log.Debug("Transport Checksum is OK");
                     key = GetKey(msg.SourceNodeID, sessionId);
                     if (!buffers.TryGetValue(key, out buff))
                     {

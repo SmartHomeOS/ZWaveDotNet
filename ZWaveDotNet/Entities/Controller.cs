@@ -265,7 +265,7 @@ namespace ZWaveDotNet.Entities
             if (random == null || random.Data.Span[0] == 0x0) //TODO - Status Enums
             {
                 Memory<byte> planB = new byte[length];
-                new Random().NextBytes(planB.Span);
+                RandomNumberGenerator.Fill(planB.Span);
                 return planB;
             }
             return random!.Data.Slice(2);
