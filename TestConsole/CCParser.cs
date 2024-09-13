@@ -62,7 +62,7 @@ namespace ExampleConsole
                             CCVersion ccv = attrs[cc];
                             if (cc == CommandClass.Alarm && parts[2] != "2")
                                 ccv = attrs[CommandClass.Mark]; //Hack for notification cc
-                            bool complete = ccv.complete && int.TryParse(parts[2], out int result) && ccv.maxVersion == result;
+                            bool complete = ccv.complete && int.TryParse(parts[2], out int result) && ccv.maxVersion >= result;
                             if (complete)
                                 fw.Write("**");
                             else

@@ -53,7 +53,7 @@ METER_TBL_MONITOR | 0 | 3 | None
 METER_TBL_PUSH | 0 | 1 | None
 **MTP_WINDOW_COVERING** | **1** | **1** | **Full**
 **MULTI_CHANNEL** | **4** | **4** | **Full**
-MULTI_CHANNEL_ASSOCIATION | 0 | 4 | None
+**MULTI_CHANNEL_ASSOCIATION** | **5** | **4** | **Full**
 **MULTI_CMD** | **1** | **1** | **Full**
 **NO_OPERATION** | **1** | **1** | **Full**
 **NODE_NAMING** | **1** | **1** | **Full**
@@ -104,5 +104,5 @@ USER_CODE | 0 | 2 | None
 **WINDOW_COVERING** | **1** | **1** | **Full**
 **ZWAVEPLUS_INFO** | **2** | **2** | **Full**
 
-- Full Support for 62/103 Command Classes.
+- Full Support for 63/103 Command Classes.
 - Partial Support for 3/103 Command Classes.
