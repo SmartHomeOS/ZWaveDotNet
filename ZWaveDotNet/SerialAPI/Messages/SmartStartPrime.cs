@@ -39,17 +39,17 @@ namespace ZWaveDotNet.SerialAPI.Messages
             CommandClasses = PayloadConverter.GetCommandClasses(payload.Slice(11)).ToArray();
         }
 
-        public override List<byte> GetPayload()
+        public override PayloadWriter GetPayload()
         {
-            List<byte> bytes = base.GetPayload();
-            bytes.Add((byte)RxStatus);
-            bytes.AddRange(HomeID);
-            bytes.Add((byte)CommandClasses.Length);
-            bytes.Add((byte)BasicType);
-            bytes.Add((byte)GenericType);
-            bytes.Add(SpecificTypeMapping.Get(GenericType, SpecificType));
+            PayloadWriter bytes = base.GetPayload();
+            bytes.Write((byte)RxStatus);
+            bytes.Write(HomeID);
+            bytes.Write((byte)CommandClasses.Length);
+            bytes.Write((byte)BasicType);
+            bytes.Write((byte)GenericType);
+            bytes.Write(SpecificTypeMapping.Get(GenericType, SpecificType));
             for (byte i = 0; i < CommandClasses.Length; i++)
-                bytes.Add((byte)CommandClasses[i]);
+                bytes.Write((byte)CommandClasses[i]);
             return bytes;
         }
 

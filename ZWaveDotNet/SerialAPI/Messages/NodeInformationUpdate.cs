@@ -34,16 +34,16 @@ namespace ZWaveDotNet.SerialAPI.Messages
             CommandClasses = PayloadConverter.GetCommandClasses(payload.Slice(6)).ToArray();
         }
 
-        public override List<byte> GetPayload()
+        public override PayloadWriter GetPayload()
         {
-            List<byte> bytes = base.GetPayload();
-            bytes.Add((byte)CommandClasses.Length);
-            bytes.Add((byte)BasicType);
-            bytes.Add((byte)GenericType);
-            bytes.Add(SpecificTypeMapping.Get(GenericType, SpecificType));
+            PayloadWriter writer = base.GetPayload();
+            writer.Write((byte)CommandClasses.Length);
+            writer.Write((byte)BasicType);
+            writer.Write((byte)GenericType);
+            writer.Write(SpecificTypeMapping.Get(GenericType, SpecificType));
             for (byte i = 0; i < CommandClasses.Length; i++)
-                bytes.Add((byte)CommandClasses[i]);
-            return bytes;
+                writer.Write((byte)CommandClasses[i]);
+            return writer;
         }
 
         public override string ToString()

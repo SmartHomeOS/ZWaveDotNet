@@ -10,7 +10,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using System.IO.Ports;
 using ZWaveDotNet.SerialAPI.Enums;
+using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.SerialAPI
 {
@@ -19,6 +21,7 @@ namespace ZWaveDotNet.SerialAPI
         public static readonly Frame ACK = new Frame(FrameType.ACK);
         public static readonly Frame NAK = new Frame(FrameType.NAK);
         public static readonly Frame CAN = new Frame(FrameType.CAN);
+        public static volatile bool reading;
 
         public readonly FrameType Type;
         public readonly DataFrameType DataType;
@@ -27,17 +30,20 @@ namespace ZWaveDotNet.SerialAPI
 
         public Frame() { }
 
-        public Frame (FrameType type, DataFrameType dataType = DataFrameType.Other, Function CommandID = Function.None, Memory<byte> payload = default)
+        public Frame (FrameType type, DataFrameType dataType = DataFrameType.Other, Function CommandID = Function.None, PayloadWriter? payload = null)
         {
-            this.Payload = payload;
+            if (payload == null)
+                this.Payload = Memory<byte>.Empty;
+            else
+                this.Payload = payload.GetPayload();
             this.Type = type;
             this.DataType = dataType;
             this.CommandID = CommandID;
         }
 
-        public Frame(FrameType type, DataFrameType dataType, Function CommandID, List<byte> payload)
+        public Frame(FrameType type, DataFrameType dataType, Function CommandID, Memory<byte> payload)
         {
-            this.Payload = payload.ToArray();
+            this.Payload = payload;
             this.Type = type;
             this.DataType = dataType;
             this.CommandID = CommandID;
@@ -49,8 +55,10 @@ namespace ZWaveDotNet.SerialAPI
             FrameType frame;
             do
             {
+                reading = false;
                 if (await stream.ReadAsync(buff.Slice(0, 1)) == 0)
                     throw new EndOfStreamException();
+                reading = true;
                 frame = (FrameType)buff.Span[0];
                 if (frame == FrameType.ACK)
                     return ACK;
@@ -62,63 +70,64 @@ namespace ZWaveDotNet.SerialAPI
 
             if (frame == FrameType.SOF)
             {
-                if (await stream.ReadAsync(buff.Slice(1, 1)) == 0)
-                    throw new EndOfStreamException();
-                byte len = buff.Span[1];
-                int total = 0;
-                do
+                try
                 {
-                    int read = await stream.ReadAsync(buff.Slice(2 + total, len));
-                    if (read == 0)
+                    CancellationTokenSource cts = new CancellationTokenSource(1500);
+                    if (await stream.ReadAsync(buff.Slice(1, 1), cts.Token) == 0)
                         throw new EndOfStreamException();
-                    total += read;
+                    byte len = buff.Span[1];
+                    int total = 0;
+                    do
+                    {
+                        int read = await stream.ReadAsync(buff.Slice(2 + total, len), cts.Token);
+                        if (read == 0)
+                            throw new EndOfStreamException();
+                        total += read;
+                    }
+                    while (total < len);
+                    reading = false;
+                    if (!ValidateChecksum(buff))
+                        return null;
+                    return new Frame(frame, (DataFrameType)buff.Span[2], (Function)buff.Span[3], buff.Slice(4, len - 3));
                 }
-                while (total < len);
-                if (!ValidateChecksum(buff))
-                    return null;
-                return new Frame(frame, (DataFrameType)buff.Span[2], (Function)buff.Span[3], buff.Slice(4, len - 3));
+                catch (OperationCanceledException) { }
             }
             return null;
         }
 
         private static bool ValidateChecksum(Memory<byte> buff)
         {
-            byte chk = 0xFF;
             byte len = buff.Span[1];
-            for (int i = 1; i <= len; i++)
-                chk ^= buff.Span[i];
-            return (buff.Span[len + 1] == chk);
+            return (buff.Span[len + 1] == MemoryUtil.XOR(buff.Slice(1, len), 0xFF));
         }
 
-        private List<byte> GetPayload()
+        private Memory<byte> GetPayload()
         {
-            var buffer = new List<byte>
-            {
-                (byte)FrameType.SOF,
-                0x00,
-                (byte)DataType,
-                (byte)CommandID
-            };
-            buffer.AddRange(Payload.ToArray());
-            return buffer;
+            Memory<byte> ret = new byte[Payload.Length + 5];
+            ret.Span[0] = (byte)FrameType.SOF;
+            ret.Span[1] = (byte)(Payload.Length + 3);
+            ret.Span[2] = (byte)DataType;
+            ret.Span[3] = (byte)CommandID;
+            Payload.CopyTo(ret.Slice(4));
+            //Add checksum 
+            ret.Span[ret.Length - 1] = MemoryUtil.XOR(ret.Slice(1, ret.Length - 2), 0xFF);
+            return ret;
         }
 
-        public async Task WriteBytes(Stream stream, CancellationToken cancellationToken = default)
+        public async Task WriteBytes(SerialPort port, CancellationToken cancellationToken = default)
         {
             if (Type == FrameType.SOF)
             {
-                var payload = GetPayload();
+                Memory<byte> payload = GetPayload();
 
-                //Calculate length
-                payload[1] = (byte)(payload.Count - 1);
 
-                //Add checksum 
-                payload.Add(payload.Skip(1).Aggregate((byte)0xFF, (total, next) => total ^= next));
 
-                await stream.WriteAsync(payload.ToArray(), 0, payload.Count, cancellationToken);
+                while (reading || port.BytesToRead != 0)
+                    await Task.Delay(1, cancellationToken);
+                await port.BaseStream.WriteAsync(payload.ToArray(), 0, payload.Length, cancellationToken);
             }
             else
-                stream.WriteByte((byte)Type);
+                port.BaseStream.WriteByte((byte)Type);
         }
 
         public override string ToString()

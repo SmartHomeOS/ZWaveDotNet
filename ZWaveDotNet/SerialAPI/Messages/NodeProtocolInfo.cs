@@ -19,12 +19,12 @@ namespace ZWaveDotNet.SerialAPI.Messages
 {
     public class NodeProtocolInfo : Message
     {
-        public byte Capability { get; internal set; }
-        public byte Reserved { get; internal set; }
-        public BasicType BasicType { get; internal set; }
-        public GenericType GenericType { get; internal set; }
-        public SpecificType SpecificType { get; internal set; }
-        public NIFSecurity Security { get; internal set; }
+        public byte Capability { get; set; }
+        public byte Reserved { get; set; }
+        public BasicType BasicType { get; set; }
+        public GenericType GenericType { get; set; }
+        public SpecificType SpecificType { get; set; }
+        public NIFSecurity Security { get; set; }
 
         public NodeProtocolInfo() : base(Function.GetNodeProtocolInfo) { }
 

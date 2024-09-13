@@ -24,7 +24,7 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly float Value;
         public readonly Units Unit;
         public readonly RateType RateType;
-        public readonly TimeSpan ElapsedTime;
+        public readonly TimeSpan ElapsedTime = TimeSpan.Zero;
         public readonly float LastValue;
 
         internal MeterReport(Memory<byte> payload)
@@ -42,18 +42,16 @@ namespace ZWaveDotNet.CommandClassReports
             if (payload.Length >= size + 4)
             {
                 ushort secs = BinaryPrimitives.ReadUInt16BigEndian(payload.Slice(2 + size, 2).Span);
-                if (secs != 0xFFFF && secs != 0)
+                if (secs != 0)
                 {
+                    if (secs != 0xFFFF)
+                        ElapsedTime = TimeSpan.FromSeconds(secs);
                     LastValue = PayloadConverter.ToFloat(payload.Slice(4 + size), size, precision);
                     if (payload.Length > (2 * size) + 4)
                         scale2 = payload.Span[4 + (2* size)];
                 }
                 else if (payload.Length > size + 6)
                     scale2 = payload.Span[4 + size];
-            }
-            else
-            {
-                ElapsedTime = TimeSpan.Zero;
             }
             Unit = GetUnit(Type, scale, scale2);
         }
@@ -109,7 +107,7 @@ namespace ZWaveDotNet.CommandClassReports
 
         public override string ToString()
         {
-            return $"Type:{Type}, Value:\"{Value} {Unit}\", Last:\"{LastValue} {Unit}\"";
+            return $"Type:{Type}, Value:\"{Value} {Unit}\", Last:\"{LastValue} {Unit}\", Elapsed: {ElapsedTime}";
         }
     }
 }

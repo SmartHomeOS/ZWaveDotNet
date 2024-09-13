@@ -110,13 +110,13 @@ namespace ZWaveDotNet.CommandClasses
             else
                 entropy = controller.SecurityManager.GetEntropy(node.ID, false) ?? controller.SecurityManager.CreateEntropy(node.ID);
             NonceReport nonceGetReport = new NonceReport(NextSequence(), SOS, MOS, entropy);
-            Log.Verbose("Declaring SPAN out of sync");
+            Log.Warning("Declaring SPAN out of sync");
             await SendCommand(Security2Command.NonceReport, cancellationToken, nonceGetReport.GetBytes()).ConfigureAwait(false);
         }
 
         internal async Task KexFail(KexFailType type, CancellationToken cancellationToken = default)
         {
-            Log.Verbose($"Sending KEX Failure {type}");
+            Log.Error($"Sending KEX Failure {type}");
             controller.SecurityManager?.GetRequestedKeys(node.ID, true);
             if (type == KexFailType.KEX_FAIL_AUTH || type == KexFailType.KEX_FAIL_DECRYPT || type == KexFailType.KEX_FAIL_KEY_VERIFY || type == KexFailType.KEX_FAIL_KEY_GET)
             {
@@ -266,7 +266,7 @@ namespace ZWaveDotNet.CommandClasses
                 {
                     try
                     {
-                        Log.Verbose("Declaring SPAN failed and sending SOS");
+                        Log.Warning("Declaring SPAN failed and sending SOS");
                         controller.SecurityManager.PurgeRecords(msg.SourceNodeID, networkKey.Key);
                         using (CancellationTokenSource cts = new CancellationTokenSource(3000))
                         await controller.Nodes[msg.SourceNodeID].GetCommandClass<Security2>()!.SendNonceReport(true, false, false, cts.Token).ConfigureAwait(false);
@@ -284,13 +284,14 @@ namespace ZWaveDotNet.CommandClasses
                 groupId = decoded!.Value.Span[2];
                 Memory<byte> mpan = decoded.Value.Slice(3, 16);
                 //TODO - Process the MPAN
+                Log.Warning("TODO: Process MPAN");
                 decoded = decoded.Value.Slice(19);
             }
 
             msg.Update(decoded!.Value);
             msg.Flags |= ReportFlags.Security;
             msg.SecurityLevel = SecurityManager.TypeToKey(networkKey.Key);
-            Log.Warning("Decoded Message: " + msg.ToString());
+            Log.Verbose("Decoded Message: " + msg.ToString());
             return msg;
         }
 

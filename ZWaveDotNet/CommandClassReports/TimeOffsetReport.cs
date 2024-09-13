@@ -10,9 +10,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System.Buffers.Binary;
 using System.Data;
-using ZWaveDotNet.CommandClasses.Enums;
 using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.CommandClassReports

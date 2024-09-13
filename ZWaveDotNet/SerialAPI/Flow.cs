@@ -145,8 +145,8 @@ namespace ZWaveDotNet.SerialAPI
                         if (await SuccessfulAck(reader, cts.Token))
                             break;
                     }
-                    Log.Verbose($"Retransmit Attempt {attempt + 1}");
-                    await Task.Delay(100 + (1000 * attempt), cancellationToken);
+                    Log.Warning($"Retransmit Attempt {attempt + 1}");
+                    await Task.Delay(100 + Random.Shared.Next(1, 50) + (1000 * attempt), cancellationToken);
                 }
             }
             finally

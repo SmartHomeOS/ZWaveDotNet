@@ -19,7 +19,7 @@ namespace ZWaveDotNet.Enums
         AntiTheftUnlock = 0x7E,
         ApplicationCapability = 0x57,
         ApplicationStatus = 0x22,
-        AssocCommandConfiguration = 0x9B,
+        AssociationCommandConfiguration = 0x9B,
         Association = 0x85,
         AssociationGroupInformation = 0x59,
         Authentication = 0xA1,

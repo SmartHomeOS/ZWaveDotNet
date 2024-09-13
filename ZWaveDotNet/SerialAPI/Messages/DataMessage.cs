@@ -10,11 +10,11 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System.Buffers.Binary;
 using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.SerialAPI.Enums;
 using ZWaveDotNet.SerialAPI.Messages.Enums;
+using ZWaveDotNet.Util;
 
 
 namespace ZWaveDotNet.SerialAPI.Messages
@@ -55,35 +55,27 @@ namespace ZWaveDotNet.SerialAPI.Messages
             this.controller = controller;
         }
 
-        public override List<byte> GetPayload()
+        public override PayloadWriter GetPayload()
         {
-            List<byte> bytes = base.GetPayload();
+            PayloadWriter writer = base.GetPayload();
             if (Function == Function.SendDataBridge)
             {
                 if (controller.WideID)
-                {
-                    byte[] tmp = new byte[2];
-                    BinaryPrimitives.WriteUInt16BigEndian(tmp, SourceNodeID);
-                    bytes.AddRange(tmp);
-                }
+                    writer.Write(SourceNodeID);
                 else
-                    bytes.Add((byte)SourceNodeID);
+                    writer.Write((byte)SourceNodeID);
             }
             if (controller.WideID)
-            {
-                byte[] tmp = new byte[2];
-                BinaryPrimitives.WriteUInt16BigEndian(tmp, DestinationNodeID);
-                bytes.AddRange(tmp);
-            }
+                writer.Write(DestinationNodeID);
             else
-                bytes.Add((byte)DestinationNodeID);
-            bytes.Add((byte)Data.Count);
-            bytes.AddRange(Data);
-            bytes.Add((byte)Options);
+                writer.Write((byte)DestinationNodeID);
+            writer.Write((byte)Data.Count);
+            writer.Write(Data);
+            writer.Write((byte)Options);
             if (Function == Function.SendDataBridge)
-                bytes.AddRange(new byte[] { 0, 0, 0, 0 }); //Use default route
-            bytes.Add(SessionID);
-            return bytes;
+                writer.Seek(4); //Use default route
+            writer.Write(SessionID);
+            return writer;
         }
 
         public override string ToString()

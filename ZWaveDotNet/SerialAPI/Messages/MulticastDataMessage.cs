@@ -15,6 +15,7 @@ using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.SerialAPI.Enums;
 using ZWaveDotNet.SerialAPI.Messages.Enums;
+using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.SerialAPI.Messages
 {
@@ -93,36 +94,29 @@ namespace ZWaveDotNet.SerialAPI.Messages
             this.controller = controller;
         }
 
-        public override List<byte> GetPayload()
+        public override PayloadWriter GetPayload()
         {
-            byte[] tmp = new byte[2];
-            List<byte> bytes = base.GetPayload();
+            PayloadWriter writer = base.GetPayload();
             if (Function == Function.SendDataBridgeMulticast)
             {
                 if (controller.WideID)
-                {
-                    BinaryPrimitives.WriteUInt16BigEndian(tmp, controller.ControllerID);
-                    bytes.AddRange(tmp);
-                }
+                    writer.Write(controller.ControllerID);
                 else
-                    bytes.Add((byte)controller.ControllerID);
+                    writer.Write((byte)controller.ControllerID);
             }
-            bytes.Add((byte)DestinationNodeIDs.Length);
+            writer.Write((byte)DestinationNodeIDs.Length);
             foreach (ushort id in DestinationNodeIDs)
             {
                 if (controller.WideID)
-                {
-                    BinaryPrimitives.WriteUInt16BigEndian(tmp, id);
-                    bytes.AddRange(tmp);
-                }
+                    writer.Write(id);
                 else
-                    bytes.Add((byte)id);
+                    writer.Write((byte)id);
             }
-            bytes.Add((byte)Data.Length);
-            bytes.AddRange(Data.ToArray());
-            bytes.Add((byte)Options);
-            bytes.Add(SessionID);
-            return bytes;
+            writer.Write((byte)Data.Length);
+            writer.Write(Data);
+            writer.Write((byte)Options);
+            writer.Write(SessionID);
+            return writer;
         }
 
         public override string ToString()

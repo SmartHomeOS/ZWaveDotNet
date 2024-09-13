@@ -107,7 +107,7 @@ namespace ZWaveDotNet.Entities
             await Task.Delay(1500);
         }
 
-        public async ValueTask Start(CancellationToken cancellationToken = default)
+        public async ValueTask Start(string? nodeDbPath = null, CancellationToken cancellationToken = default)
         {
             SecurityManager = new SecurityManager(await GetRandom(32, cancellationToken));
             _ = await Task.Factory.StartNew(EventLoop, TaskCreationOptions.LongRunning);
@@ -131,6 +131,14 @@ namespace ZWaveDotNet.Entities
                     ControllerID = networkIds.Data.Span[4];
                 else
                     ControllerID = BinaryPrimitives.ReadUInt16BigEndian(networkIds.Data.Slice(4, 2).Span);
+            }
+
+            //Load NodeDB
+            if (nodeDbPath != null)
+            {
+                await ImportNodeDBAsync(nodeDbPath, cancellationToken);
+                foreach (var kvp in Nodes)
+                    kvp.Value.NodeFailed = await IsNodeFailed(kvp.Key, cancellationToken);
             }
 
             //Begin the controller interview
@@ -392,7 +400,7 @@ namespace ZWaveDotNet.Entities
                 if (Nodes.ContainsKey(node.ID))
                     Nodes[node.ID].Deserialize(node);
                 else
-                    Log.Warning($"Node {node.ID} was skipped as it no longer exists");
+                    Nodes[node.ID] = new Node(node, this);
             }
         }
 

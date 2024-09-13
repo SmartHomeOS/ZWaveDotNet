@@ -117,7 +117,7 @@ namespace ZWaveDotNet.CommandClasses
                         case Units.PowerFactor:
                             return 6;
                         default:
-                            return 0;
+                            return 7;
                     }
                 case MeterType.Gas:
                 case MeterType.Water:

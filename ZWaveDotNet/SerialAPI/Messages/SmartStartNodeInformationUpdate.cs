@@ -11,6 +11,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using ZWaveDotNet.SerialAPI.Messages.Enums;
+using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.SerialAPI.Messages
 {
@@ -27,13 +28,13 @@ namespace ZWaveDotNet.SerialAPI.Messages
             HomeID = payload.Slice(4, 4).ToArray();
         }
 
-        public override List<byte> GetPayload()
+        public override PayloadWriter GetPayload()
         {
-            List<byte> bytes = base.GetPayload();
-            bytes.Add(0x0);
-            bytes.Add((byte)RxStatus);
-            bytes.AddRange(HomeID);
-            return bytes;
+            PayloadWriter writer = base.GetPayload();
+            writer.Seek(1);
+            writer.Write((byte)RxStatus);
+            writer.Write(HomeID);
+            return writer;
         }
 
         public override string ToString()

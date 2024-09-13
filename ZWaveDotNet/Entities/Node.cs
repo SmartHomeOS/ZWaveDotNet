@@ -52,7 +52,7 @@ namespace ZWaveDotNet.Entities
         public bool Routing { get { return nodeInfo?.Routing ?? false; } }
         public SpecificType SpecificType { get { return nodeInfo?.SpecificType ?? SpecificType.Unknown; } }
         public GenericType GenericType { get { return nodeInfo?.GenericType ?? GenericType.Unknown; } }
-        public bool NodeFailed {  get {  return failed; } }
+        public bool NodeFailed {  get {  return failed; } internal set { failed = value; } }
         public bool Interviewed { get { return interviewed; } }
         public sbyte RSSI { get; private set; }
 
@@ -68,6 +68,14 @@ namespace ZWaveDotNet.Entities
                     AddCommandClass(cc);
             }
             AddCommandClass(CommandClass.NoOperation);
+        }
+
+        public Node(NodeJSON nodeJSON, Controller controller)
+        {
+            ID = nodeJSON.ID;
+            this.controller = controller;
+            Deserialize(nodeJSON);
+            nodeInfo = nodeJSON.NodeProtocolInfo;
         }
 
         private bool AddCommandClass(CommandClass cls, bool secure = false, byte version = 1)

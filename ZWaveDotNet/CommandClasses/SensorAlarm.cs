@@ -10,6 +10,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using System.Collections;
 using ZWaveDotNet.CommandClasses.Enums;
 using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.CommandClassReports.Enums;
@@ -38,6 +39,19 @@ namespace ZWaveDotNet.CommandClasses
         {
             ReportMessage response = await SendReceive(SensorAlarmCommand.Get, SensorAlarmCommand.Report, cancellationToken, Convert.ToByte(type));
             return new SensorAlarmReport(response.Payload);
+        }
+
+        public async Task<AlarmType[]> SupportedGet(CancellationToken cancellationToken)
+        {
+            List<AlarmType> types = new List<AlarmType>();
+            ReportMessage response = await SendReceive(SensorAlarmCommand.SupportedGet, SensorAlarmCommand.SupportedReport, cancellationToken);
+            BitArray supported = new BitArray(response.Payload.ToArray());
+            for (int i = 0; i < supported.Length; i++)
+            {
+                if (supported[i])
+                    types.Add((AlarmType)i);
+            }
+            return types.ToArray();
         }
 
         protected override async Task<SupervisionStatus> Handle(ReportMessage message)

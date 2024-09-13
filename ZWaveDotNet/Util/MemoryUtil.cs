@@ -54,6 +54,13 @@ namespace ZWaveDotNet.Util
             return ret;
         }
 
+        public static byte XOR(Memory<byte> a, byte start)
+        {
+            foreach (byte b in a.Span)
+                start ^= b;
+            return start;
+        }
+
         public static void Increment(Span<byte> mem)
         {
             for (int i = mem.Length - 1; i >= 0; i--)

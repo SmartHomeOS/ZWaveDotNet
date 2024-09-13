@@ -245,11 +245,10 @@ namespace ZWaveDotNet.CommandClasses
             DataMessage message = data.ToMessage();
             for (int i = 0; i < 3; i++)
             {
-                if (await AttemptTransmission(message, token, i == 2).ConfigureAwait(false) == false)
-                {
-                    Log.Error($"Controller Failed to Send Message: Retrying [Attempt {i+1}]...");
-                    await Task.Delay(100 + (1000 * i), token).ConfigureAwait(false);
-                }
+                if ((await AttemptTransmission(message, token, i == 2).ConfigureAwait(false)) == true)
+                    return;
+                Log.Error($"Controller Failed to Send Message: Retrying [Attempt {i + 1}]...");
+                await Task.Delay(100 + Random.Shared.Next(1, 25) + (1000 * i), token).ConfigureAwait(false);
             }
         }
 
