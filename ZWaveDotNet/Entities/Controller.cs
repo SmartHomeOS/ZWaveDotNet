@@ -568,7 +568,7 @@ namespace ZWaveDotNet.Entities
                     BinaryPrimitives.WriteUInt16BigEndian(pub.Slice(0, 2).Span, pin);
                 byte[] sharedSecret = SecurityManager!.CreateSharedSecret(pub);
                 var prk = AES.CKDFTempExtract(sharedSecret, SecurityManager.PublicKey, pub);
-                Log.Verbose("Temp Key: " + MemoryUtil.Print(prk));
+                Log.Verbose("Temp Key: " + MemoryUtil.Print(prk.AsSpan()));
                 SecurityManager.GrantKey(node.ID, SecurityManager.RecordType.ECDH_TEMP, prk, true);
                 using (CancellationTokenSource cts = new CancellationTokenSource(30000))
                 {
@@ -604,7 +604,7 @@ namespace ZWaveDotNet.Entities
                     {
                         if (msg is SmartStartPrime prime)
                         {
-                            Log.Information("Got Smart Start Prime: " + MemoryUtil.Print(prime.HomeID));
+                            Log.Information("Got Smart Start Prime: " + MemoryUtil.Print(prime.HomeID.AsSpan()));
                             foreach (Memory<byte> dsk in provisionList)
                             {
                                 byte[] nwiHomeId = new byte[4];

@@ -8,7 +8,7 @@ ANTITHEFT_UNLOCK | 0 | 1 | None
 **ASSOCIATION** | **3** | **3** | **Full**
 ASSOCIATION_COMMAND_CONFIGURATION | 0 | 1 | None
 ASSOCIATION_GRP_INFO | 0 | 3 | None
-BARRIER_OPERATOR | 0 | 1 | None
+**BARRIER_OPERATOR** | **1** | **1** | **Full**
 **BASIC** | **2** | **2** | **Full**
 **BASIC_TARIFF_INFO** | **1** | **1** | **Full**
 **BASIC_WINDOW_COVERING** | **1** | **1** | **Full**
@@ -17,12 +17,11 @@ BARRIER_OPERATOR | 0 | 1 | None
 CLIMATE_CONTROL_SCHEDULE | 0 | 1 | None
 **CLOCK** | **1** | **1** | **Full**
 *CONFIGURATION* | *1* | *4* | *Full*
-CONTROLLER_REPLICATION | 0 | 1 | None
 **CRC_16_ENCAP** | **1** | **1** | **Full**
 DCP_CONFIG | 0 | 1 | None
 DCP_MONITOR | 0 | 1 | None
 **DEVICE_RESET_LOCALLY** | **1** | **1** | **Full**
-DOOR_LOCK | 0 | 4 | None
+**DOOR_LOCK** | **4** | **4** | **Full**
 DOOR_LOCK_LOGGING | 0 | 1 | None
 **ENERGY_PRODUCTION** | **1** | **1** | **Full**
 ENTRY_CONTROL | 0 | 1 | None
@@ -36,7 +35,6 @@ ENTRY_CONTROL | 0 | 1 | None
 **HUMIDITY_CONTROL_OPERATING_STATE** | **1** | **1** | **Full**
 **HUMIDITY_CONTROL_SETPOINT** | **2** | **2** | **Full**
 **INDICATOR** | **4** | **4** | **Full**
-IP_ASSOCIATION | 0 | 1 | None
 IR_REPEATER | 0 | 1 | None
 IRRIGATION | 0 | 1 | None
 **LANGUAGE** | **1** | **1** | **Full**
@@ -100,5 +98,5 @@ USER_CODE | 0 | 2 | None
 **WINDOW_COVERING** | **1** | **1** | **Full**
 **ZWAVEPLUS_INFO** | **2** | **2** | **Full**
 
-- Full Support for 63/99 Command Classes.
-- Partial Support for 3/99 Command Classes.
+- Full Support for 65/97 Command Classes.
+- Partial Support for 3/97 Command Classes.
