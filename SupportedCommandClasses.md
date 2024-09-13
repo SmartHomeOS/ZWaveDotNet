@@ -87,7 +87,7 @@ TARIFF_TBL_MONITOR | 0 | 1 | None
 **THERMOSTAT_FAN_STATE** | **2** | **2** | **Full**
 **THERMOSTAT_MODE** | **3** | **3** | **Full**
 **THERMOSTAT_OPERATING_STATE** | **2** | **2** | **Full**
-THERMOSTAT_SETBACK | 0 | 1 | None
+**THERMOSTAT_SETBACK** | **1** | **1** | **Full**
 **THERMOSTAT_SETPOINT** | **3** | **3** | **Full**
 **TIME** | **2** | **2** | **Full**
 *TIME_PARAMETERS* | *1* | *2* | *Full*
@@ -98,5 +98,5 @@ USER_CODE | 0 | 2 | None
 **WINDOW_COVERING** | **1** | **1** | **Full**
 **ZWAVEPLUS_INFO** | **2** | **2** | **Full**
 
-- Full Support for 65/97 Command Classes.
+- Full Support for 66/97 Command Classes.
 - Partial Support for 3/97 Command Classes.

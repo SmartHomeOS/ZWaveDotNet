@@ -110,6 +110,8 @@ namespace ZWaveDotNet.CommandClasses
                     return new CRC16(node, endpoint);
                 case CommandClass.DeviceResetLocally:
                     return new DeviceResetLocally(node);
+                case CommandClass.DoorLock:
+                    return new DoorLock(node, endpoint);
                 case CommandClass.EnergyProduction:
                     return new EnergyProduction(node, endpoint);
                 case CommandClass.GeographicLocation:
@@ -198,6 +200,8 @@ namespace ZWaveDotNet.CommandClasses
                     return new ThermostatMode(node, endpoint);
                 case CommandClass.ThermostatOperatingState:
                     return new ThermostatOperatingState(node, endpoint);
+                case CommandClass.ThermostatSetback:
+                    return new ThermostatSetback(node, endpoint);
                 case CommandClass.ThermostatSetpoint:
                     return new ThermostatSetpoint(node, endpoint);
                 case CommandClass.Time:
