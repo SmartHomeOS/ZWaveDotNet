@@ -52,7 +52,7 @@ namespace ZWaveDotNet.CommandClasses
             {
                 BasicReport rpt = new BasicReport(message.Payload);
                 await FireEvent(Report, rpt);
-                Log.Information("Basic Report: " + rpt.ToString());
+                Log.Verbose("Basic Report: " + rpt.ToString());
                 return SupervisionStatus.Success;
             }
             return SupervisionStatus.NoSupport;

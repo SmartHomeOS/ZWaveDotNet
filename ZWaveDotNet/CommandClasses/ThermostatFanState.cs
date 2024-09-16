@@ -11,6 +11,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using ZWaveDotNet.CommandClasses.Enums;
+using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
@@ -21,7 +22,7 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.ThermostatFanState, 2)]
     public class ThermostatFanState : CommandClassBase
     {
-
+        public event CommandClassEvent<ThermostatFanStateReport>? Updated;
         public enum ThermostatFanStateCommand
         {
             Get = 0x02,
@@ -36,9 +37,14 @@ namespace ZWaveDotNet.CommandClasses
             return (FanState)(0xF & response.Payload.Span[0]);
         }
 
-        protected override Task<SupervisionStatus> Handle(ReportMessage message)
+        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
-            return Task.FromResult(SupervisionStatus.NoSupport);
+            if (message.Command == (byte)ThermostatFanStateCommand.Report)
+            {
+                await FireEvent(Updated, new ThermostatFanStateReport(message.Payload.Span));
+                return SupervisionStatus.Success;
+            }
+            return SupervisionStatus.NoSupport;
         }
     }
 }

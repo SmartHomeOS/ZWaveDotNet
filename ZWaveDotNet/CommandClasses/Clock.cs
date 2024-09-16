@@ -36,7 +36,7 @@ namespace ZWaveDotNet.CommandClasses
             return new ClockReport(response.Payload);
         }
 
-        public async Task Set(DayOfWeek dayOfWeek, byte hour, byte minute, CancellationToken cancellationToken = default)
+        public async Task Set(DayOfWeek dayOfWeek, int hour, int minute, CancellationToken cancellationToken = default)
         {
             await SendClock(dayOfWeek, hour, minute, ClockCommand.Set, cancellationToken);
         }
@@ -53,10 +53,10 @@ namespace ZWaveDotNet.CommandClasses
 
         public override async Task Interview(CancellationToken cancellationToken)
         {
-            await SendClock(DateTime.Now.DayOfWeek, (byte)DateTime.Now.Hour, (byte)DateTime.Now.Minute, ClockCommand.Report, cancellationToken);
+            await SendClock(DateTime.Now.DayOfWeek, DateTime.Now.Hour, DateTime.Now.Minute, ClockCommand.Report, cancellationToken);
         }
 
-        private async Task SendClock(DayOfWeek dayOfWeek, byte hour, byte minute, ClockCommand command, CancellationToken cancellationToken)
+        private async Task SendClock(DayOfWeek dayOfWeek, int hour, int minute, ClockCommand command, CancellationToken cancellationToken)
         {
             byte day = 0;
             switch (dayOfWeek)
@@ -84,7 +84,7 @@ namespace ZWaveDotNet.CommandClasses
                     break;
             }
 
-            byte[] payload = new byte[] { (byte)(hour & 0x1F), minute };
+            byte[] payload = new byte[] { (byte)(hour & 0x1F), (byte)minute };
             payload[0] |= (byte)(day << 5);
 
             await SendCommand(command, cancellationToken, payload);

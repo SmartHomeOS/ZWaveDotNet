@@ -61,6 +61,14 @@ namespace ZWaveDotNet.CommandClasses
             return new TimeOffsetReport(response.Payload);
         }
 
+        public override async Task Interview(CancellationToken cancellationToken)
+        {
+            TimeZoneInfo tz = TimeZoneInfo.Local;
+            TimeZoneInfo.AdjustmentRule[] rules = tz.GetAdjustmentRules();
+            if (rules.Length > 0)
+                await SetOffset(tz.BaseUtcOffset, (int)Math.Round(rules[0].DaylightDelta.TotalMinutes), rules[0].DateStart, rules[0].DateEnd, cancellationToken);
+        }
+
         public async Task SetOffset(TimeSpan utcOffset, int dstOffsetMins, DateTime dstStart, DateTime dstEnd, CancellationToken cancellationToken = default)
         {
             byte utcHours = (byte)(utcOffset.Hours & 0x7F);

@@ -33,8 +33,8 @@ namespace ZWaveDotNet.CommandClasses
             Report = 0x03,
             SupportedGet = 0x04,
             SupportedReport = 0x05,
-            CapabilitiesGet = 0x04,
-            CapabilitiesReport = 0x05
+            CapabilitiesGet = 0x09,
+            CapabilitiesReport = 0x0A
         }
 
         public ThermostatSetpoint(Node node, byte endpoint) : base(node, endpoint, CommandClass.ThermostatSetpoint) { }

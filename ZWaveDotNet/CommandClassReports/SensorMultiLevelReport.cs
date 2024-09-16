@@ -68,7 +68,7 @@ namespace ZWaveDotNet.CommandClassReports
                 case SensorType.SoilTemperature: return scale == 1 ? Units.degF : Units.degC;
                 case SensorType.SeismicIntensity: return seismicIntensityUnits[scale];
                 case SensorType.SeismicMagnitude: return seismicMagnitudeUnits[scale];
-                case SensorType.ElectricalResistivity: return Units.ohm;
+                case SensorType.ElectricalResistivity: return Units.ohmMeter;
                 case SensorType.ElectricalConductivity: return Units.siemensPerMeter;
                 case SensorType.Loudness: return scale == 1 ? Units.decibalA : Units.decibal;
                 case SensorType.Moisture: return moistureUnits[scale];
@@ -90,7 +90,7 @@ namespace ZWaveDotNet.CommandClassReports
                 case SensorType.FatMass: return Units.kg;
                 case SensorType.BoneMass: return Units.kg;
                 case SensorType.TotalBodyWater: return Units.kg;
-                case SensorType.BasisMetabolicRate: return Units.BMR;
+                case SensorType.BasalMetabolicRate: return Units.BMR;
                 case SensorType.BodyMassIndex: return Units.BMI;
                 case SensorType.AccelerationXAxis: return Units.metersPerSec2;
                 case SensorType.AccelerationYAxis: return Units.metersPerSec2;

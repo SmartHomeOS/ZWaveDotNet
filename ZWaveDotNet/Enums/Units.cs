@@ -70,7 +70,7 @@ namespace ZWaveDotNet.Enums
         Moment,
         mVolts,
         Newtons,
-        ohm,
+        ohmMeter,
         pCiPerLiter,
         Percent,
         PH,

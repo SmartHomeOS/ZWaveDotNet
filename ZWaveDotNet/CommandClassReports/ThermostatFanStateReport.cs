@@ -10,29 +10,27 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace ZWaveDotNet.CommandClasses.Enums
+using System.Data;
+using ZWaveDotNet.CommandClasses.Enums;
+using ZWaveDotNet.Util;
+
+namespace ZWaveDotNet.CommandClassReports
 {
-    public enum ThermostatModeType
+    public class ThermostatFanStateReport : ICommandClassReport
     {
-        OFF = 0x0,
-        HEAT = 0x01,
-        COOL = 0x02,
-        AUTO = 0x03,
-        AUXILIARY = 0x04,
-        /// <summary>
-        /// This mode is used to resume the last activate mode (different than OFF 0x00).
-        /// </summary>
-        RESUME = 0x05,
-        FAN = 0x06,
-        FURNACE = 0x07,
-        DRY = 0x08,
-        MOIST = 0x09,
-        AUTO_CHANGEOVER = 0x0A,
-        ENERGY_HEAT = 0x0B,
-        ENERGY_COOL = 0x0C,
-        AWAY_HEATING_OR_BOTH = 0x0D,
-        AWAY_COOLING = 0x0E,
-        FULL_POWER = 0x0F,
-        MANUFACTURER_SPECIFIC = 0x1F
+        public readonly FanState State;
+
+        internal ThermostatFanStateReport(ReadOnlySpan<byte> payload)
+        {
+            if (payload.Length == 0)
+                throw new DataException($"The Thermostat State Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
+
+            State = (FanState)payload[0];
+        }
+
+        public override string ToString()
+        {
+            return $"State:{State}";
+        }
     }
 }

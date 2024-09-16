@@ -64,7 +64,7 @@ namespace ZWaveDotNet.CommandClasses.Enums
         FatMass = 0x2F,
         BoneMass = 0x30,
         TotalBodyWater = 0x31,
-        BasisMetabolicRate = 0x32,
+        BasalMetabolicRate = 0x32,
         BodyMassIndex = 0x33,
         AccelerationXAxis = 0x34,
         AccelerationYAxis = 0x35,
