@@ -22,6 +22,7 @@ using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities.Enums;
 using ZWaveDotNet.Enums;
+using ZWaveDotNet.Provisioning;
 using ZWaveDotNet.Security;
 using ZWaveDotNet.SerialAPI;
 using ZWaveDotNet.SerialAPI.Enums;
@@ -400,7 +401,7 @@ namespace ZWaveDotNet.Entities
                 if (Nodes.ContainsKey(node.ID))
                     Nodes[node.ID].Deserialize(node);
                 else
-                    Nodes[node.ID] = new Node(node, this);
+                    Nodes[node.ID] = new Node(node, this); //TODO - Don't create nodes that don't exist (ex: loading nodes that have been excluded)
             }
         }
 
@@ -449,6 +450,11 @@ namespace ZWaveDotNet.Entities
                 throw new ArgumentException("Invalid DSK");
             provisionList.Add(DSK);
         }
+
+        /// <summary>
+        /// QR Code starting with "90"
+        /// </summary>
+        /// <param name="QRcode"></param>
         public void AddSmartStartNode(string QRcode)
         {
             QRParser parser = new QRParser(QRcode);

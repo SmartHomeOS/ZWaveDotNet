@@ -12,6 +12,7 @@
 
 using NUnit.Framework;
 using ZWaveDotNet.CommandClasses.Enums;
+using ZWaveDotNet.Provisioning;
 using ZWaveDotNet.Util;
 
 namespace UnitTests
