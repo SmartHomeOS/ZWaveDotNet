@@ -36,7 +36,7 @@ namespace ZWaveDotNet.CommandClasses
             Report = 0x05
         }
 
-        public async Task<SensorType[]> GetSupportedSensors(CancellationToken cancellationToken)
+        public async Task<SensorType[]> GetSupportedSensors(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(SensorMultiLevelCommand.SupportedGet, SensorMultiLevelCommand.SupportedReport, cancellationToken);
             List<SensorType> supportedTypes = new List<SensorType>();
@@ -49,7 +49,7 @@ namespace ZWaveDotNet.CommandClasses
             return supportedTypes.ToArray();
         }
 
-        public async Task<SensorMultiLevelReport> Get(SensorType type, CancellationToken cancellationToken)
+        public async Task<SensorMultiLevelReport> Get(SensorType type, CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(SensorMultiLevelCommand.Get, SensorMultiLevelCommand.Report, cancellationToken, (byte)type);
             return new SensorMultiLevelReport(response.Payload);

@@ -19,7 +19,7 @@ namespace ZWaveDotNet.CommandClasses.Enums
         General = 0x02,
         Luminance = 0x03,
         Power = 0x04,
-        RelativeHumidity = 0x05,
+        Humidity = 0x05,
         Velocity = 0x06,
         Direction = 0x07,
         AtmosphericPressure = 0x08,

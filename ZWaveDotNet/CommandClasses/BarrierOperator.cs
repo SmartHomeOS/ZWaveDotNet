@@ -54,7 +54,7 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(BarrierOperatorCommand.Set, cancellationToken, open ? (byte)0xFF : (byte)0x00);
         }
 
-        public async Task<BarrierSignal[]> GetSupportedSignals(CancellationToken cancellationToken)
+        public async Task<BarrierSignal[]> GetSupportedSignals(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(BarrierOperatorCommand.SupportedGet, BarrierOperatorCommand.SupportedReport, cancellationToken);
             List<BarrierSignal> supportedTypes = new List<BarrierSignal>();

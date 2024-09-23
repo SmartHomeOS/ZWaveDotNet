@@ -36,7 +36,7 @@ namespace ZWaveDotNet.CommandClasses
             SupportedReport = 0x04
         }
 
-        public async Task<HRVStatusParameter[]> GetSupportedParameters(CancellationToken cancellationToken)
+        public async Task<HRVStatusParameter[]> GetSupportedParameters(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(HRVStatusCommand.SupportedGet, HRVStatusCommand.SupportedReport, cancellationToken);
             List<HRVStatusParameter> supportedTypes = new List<HRVStatusParameter>();
@@ -49,7 +49,7 @@ namespace ZWaveDotNet.CommandClasses
             return supportedTypes.ToArray();
         }
 
-        public async Task<HRVStatusReport> Get(HRVStatusParameter type, CancellationToken cancellationToken)
+        public async Task<HRVStatusReport> Get(HRVStatusParameter type, CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(HRVStatusCommand.Get, HRVStatusCommand.Report, cancellationToken, (byte)type);
             return new HRVStatusReport(response.Payload);

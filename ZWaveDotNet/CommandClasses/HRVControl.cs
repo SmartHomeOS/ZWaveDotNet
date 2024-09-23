@@ -39,7 +39,7 @@ namespace ZWaveDotNet.CommandClasses
             SupportedReport = 0x0B
         }
 
-        public async Task<HRVModeType[]> GetSupportedParameters(CancellationToken cancellationToken)
+        public async Task<HRVModeType[]> GetSupportedParameters(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(HRVControlCommand.SupportedGet, HRVControlCommand.SupportedReport, cancellationToken);
             List<HRVModeType> supportedTypes = new List<HRVModeType>();
@@ -52,7 +52,7 @@ namespace ZWaveDotNet.CommandClasses
             return supportedTypes.ToArray();
         }
 
-        public async Task<HRVModeType> GetMode(CancellationToken cancellationToken)
+        public async Task<HRVModeType> GetMode(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(HRVControlCommand.ModeGet, HRVControlCommand.ModeReport, cancellationToken);
             return (HRVModeType)response.Payload.Span[0];
@@ -63,7 +63,7 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(HRVControlCommand.ModeSet, cancellationToken, (byte)mode);
         }
 
-        public async Task<byte> GetBypass(CancellationToken cancellationToken)
+        public async Task<byte> GetBypass(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(HRVControlCommand.BypassGet, HRVControlCommand.BypassReport, cancellationToken);
             return response.Payload.Span[0];
@@ -80,7 +80,7 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(HRVControlCommand.BypassSet, cancellationToken, amount);
         }
 
-        public async Task<byte> GetVentillationRate(CancellationToken cancellationToken)
+        public async Task<byte> GetVentillationRate(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(HRVControlCommand.VentRateGet, HRVControlCommand.VentRateReport, cancellationToken);
             return response.Payload.Span[0];

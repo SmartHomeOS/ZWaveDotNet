@@ -41,7 +41,7 @@ namespace ZWaveDotNet.CommandClasses
             return (ThermostatOperatingStateType)(response.Payload.Span[0]);
         }
 
-        public async Task<ThermostatOperatingStateType[]> GetSupportedLoggingStates(CancellationToken cancellationToken)
+        public async Task<ThermostatOperatingStateType[]> GetSupportedLoggingStates(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(ThermostatOperatingStateCommand.LoggingSupportedGet, ThermostatOperatingStateCommand.LoggingSupportedReport, cancellationToken);
             List<ThermostatOperatingStateType> supportedTypes = new List<ThermostatOperatingStateType>();

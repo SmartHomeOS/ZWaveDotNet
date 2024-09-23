@@ -35,13 +35,13 @@ namespace ZWaveDotNet.CommandClasses
 
         public SensorBinary(Node node, byte endpoint) : base(node, endpoint, CommandClass.SensorBinary) { }
 
-        public async Task<SensorBinaryReport> Get(SensorBinaryType sensorType, CancellationToken cancellationToken)
+        public async Task<SensorBinaryReport> Get(SensorBinaryType sensorType, CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(SensorBinaryCommand.Get, SensorBinaryCommand.Report, cancellationToken, (byte)sensorType);
             return new SensorBinaryReport(response.Payload);
         }
 
-        public async Task<SensorBinaryType[]> GetSensorType(CancellationToken cancellationToken)
+        public async Task<SensorBinaryType[]> GetSensorType(CancellationToken cancellationToken = default)
         {
             List<SensorBinaryType> types = new List<SensorBinaryType>();
             ReportMessage response = await SendReceive(SensorBinaryCommand.SupportedGet, SensorBinaryCommand.SupportedReport, cancellationToken);

@@ -47,9 +47,9 @@ namespace ZWaveDotNet.CommandClassReports
                 case SensorType.General: return scale == 1 ? Units.None : Units.Percent;
                 case SensorType.Luminance: return scale == 1 ? Units.lux : Units.Percent;
                 case SensorType.Power: return scale == 1 ? Units.BTUPerHour : Units.Watts;
-                case SensorType.RelativeHumidity: return Units.Percent;
+                case SensorType.Humidity: return scale == 1 ? Units.gramPerCubicMeter : Units.Percent;
                 case SensorType.Velocity: return scale == 1 ? Units.milesPerHour : Units.metersPerSec;
-                case SensorType.Direction: return Units.None;
+                case SensorType.Direction: return Units.deg;
                 case SensorType.AtmosphericPressure: return scale == 1 ? Units.inHg : Units.kPa;
                 case SensorType.BarometricPressure: return scale == 1 ? Units.inHg : Units.kPa;
                 case SensorType.SolarRadiation: return Units.WattsPerSquareMeter;
@@ -68,6 +68,7 @@ namespace ZWaveDotNet.CommandClassReports
                 case SensorType.SoilTemperature: return scale == 1 ? Units.degF : Units.degC;
                 case SensorType.SeismicIntensity: return seismicIntensityUnits[scale];
                 case SensorType.SeismicMagnitude: return seismicMagnitudeUnits[scale];
+                case SensorType.Ultraviolet: return Units.None;
                 case SensorType.ElectricalResistivity: return Units.ohmMeter;
                 case SensorType.ElectricalConductivity: return Units.siemensPerMeter;
                 case SensorType.Loudness: return scale == 1 ? Units.decibalA : Units.decibal;
@@ -90,7 +91,7 @@ namespace ZWaveDotNet.CommandClassReports
                 case SensorType.FatMass: return Units.kg;
                 case SensorType.BoneMass: return Units.kg;
                 case SensorType.TotalBodyWater: return Units.kg;
-                case SensorType.BasalMetabolicRate: return Units.BMR;
+                case SensorType.BasalMetabolicRate: return Units.Joule;
                 case SensorType.BodyMassIndex: return Units.BMI;
                 case SensorType.AccelerationXAxis: return Units.metersPerSec2;
                 case SensorType.AccelerationYAxis: return Units.metersPerSec2;
@@ -106,9 +107,10 @@ namespace ZWaveDotNet.CommandClassReports
                 case SensorType.DomesticHotWaterTemperature: return scale == 1 ? Units.degF : Units.degC;
                 case SensorType.OutsideTemperature: return scale == 1 ? Units.degF : Units.degC;
                 case SensorType.ExhaustTemperature: return scale == 1 ? Units.degF : Units.degC;
-                case SensorType.WaterAcidity: return Units.mgPerLiter;
-                case SensorType.WaterChlorineLevel: return Units.PH;
+                case SensorType.WaterAcidity: return Units.PH;
+                case SensorType.WaterChlorineLevel: return Units.mgPerLiter;
                 case SensorType.WaterOxidationReductionPotential: return Units.mVolts;
+                case SensorType.MotionDirection: return Units.deg;
                 case SensorType.AppliedForceOnTheSensor: return Units.Newtons;
                 case SensorType.ReturnAirTemperature: return scale == 1 ? Units.degF : Units.degC;
                 case SensorType.SupplyAirTemperature: return scale == 1 ? Units.degF : Units.degC;

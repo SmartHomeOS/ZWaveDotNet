@@ -41,7 +41,7 @@ namespace ZWaveDotNet.CommandClasses
             return new SensorAlarmReport(response.Payload);
         }
 
-        public async Task<AlarmType[]> SupportedGet(CancellationToken cancellationToken)
+        public async Task<AlarmType[]> SupportedGet(CancellationToken cancellationToken = default)
         {
             List<AlarmType> types = new List<AlarmType>();
             ReportMessage response = await SendReceive(SensorAlarmCommand.SupportedGet, SensorAlarmCommand.SupportedReport, cancellationToken);

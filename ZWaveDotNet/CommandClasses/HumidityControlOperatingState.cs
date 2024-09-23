@@ -11,6 +11,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using ZWaveDotNet.CommandClasses.Enums;
+using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
@@ -23,21 +24,28 @@ namespace ZWaveDotNet.CommandClasses
     {
         public HumidityControlOperatingState(Node node, byte endpoint) : base(node, endpoint, CommandClass.HumidityControlOperatingState) { }
 
+        public event CommandClassEvent<EnumReport<HumidityControlModeType>>? Updated;
+
         enum HumidityControlOperatingStateCommand
         {
             Get = 0x01,
             Report = 0x02,
         }
 
-        public async Task<HumidityControlModeType> Get(CancellationToken cancellationToken)
+        public async Task<HumidityControlModeType> Get(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(HumidityControlOperatingStateCommand.Get, HumidityControlOperatingStateCommand.Report, cancellationToken);
             return (HumidityControlModeType)response.Payload.Span[0];
         }
 
-        protected override Task<SupervisionStatus> Handle(ReportMessage message)
+        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
-            return Task.FromResult(SupervisionStatus.NoSupport);
+            if (message.Command == (byte)HumidityControlOperatingStateCommand.Report)
+            {
+                await FireEvent(Updated, new EnumReport<HumidityControlModeType>(message.Payload));
+                return SupervisionStatus.Success;
+            }
+            return SupervisionStatus.NoSupport;
         }
     }
 }

@@ -19,7 +19,7 @@ namespace ZWaveDotNet.CommandClassReports
 {
     public class HumiditySetpointReport : ICommandClassReport
     {
-        public readonly HRVStatusParameter StatusType;
+        public readonly HumidityControlModeType SetpointType;
         public readonly float Value;
         public readonly Units Unit;
 
@@ -28,7 +28,7 @@ namespace ZWaveDotNet.CommandClassReports
             if (payload.Length < 3)
                 throw new DataException($"The Humidity Setpoint Status Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
 
-            StatusType = (HRVStatusParameter)payload.Span[0];
+            SetpointType = (HumidityControlModeType)payload.Span[0];
             Value = PayloadConverter.ToFloat(payload.Slice(1), out byte scale, out _, out _);
             Unit = GetUnit(scale);
         }
@@ -43,7 +43,7 @@ namespace ZWaveDotNet.CommandClassReports
 
         public override string ToString()
         {
-            return $"Type:{StatusType}, Value:\"{Value} {Unit}\"";
+            return $"Type:{SetpointType}, Value:\"{Value} {Unit}\"";
         }
     }
 }

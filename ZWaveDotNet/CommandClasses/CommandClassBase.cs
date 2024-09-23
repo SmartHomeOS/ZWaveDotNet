@@ -307,7 +307,7 @@ namespace ZWaveDotNet.CommandClasses
             return await src.Task;
         }
 
-        protected async Task FireEvent<T>(CommandClassEvent<T>? evt, T? report) where T : ICommandClassReport?
+        protected async Task FireEvent<T>(CommandClassEvent<T>? evt, T? report) where T : ICommandClassReport
         {
             if (evt != null)
                 await evt.Invoke(node, new CommandClassEventArgs<T>(this, report));

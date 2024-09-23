@@ -29,7 +29,7 @@ namespace ZWaveDotNet.CommandClasses
             Report = 0x03
         }
 
-        public async Task<bool> Get(CancellationToken cancellationToken)
+        public async Task<bool> Get(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(LockCommand.Get, LockCommand.Report, cancellationToken);
             return response.Payload.Span[0] != 0x0;

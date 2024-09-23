@@ -57,7 +57,7 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(TimeParamCommand.Set, cancellationToken, payload);
         }
 
-        public override async Task Interview(CancellationToken cancellationToken)
+        public override async Task Interview(CancellationToken cancellationToken = default)
         {
             await Set(DateTime.UtcNow, cancellationToken);
         }

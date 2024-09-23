@@ -24,6 +24,7 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.HumidityControlSetpoint, 1, 2)]
     public class HumidityControlSetpoint : CommandClassBase
     {
+        public event CommandClassEvent<HumiditySetpointReport>? Updated;
         public HumidityControlSetpoint(Node node, byte endpoint) : base(node, endpoint, CommandClass.HumidityControlSetpoint) { }
 
         enum HumidityControlSetpointCommand
@@ -39,7 +40,7 @@ namespace ZWaveDotNet.CommandClasses
             CapabilitiesReport = 0x05,
         }
 
-        public async Task<HumidityControlModeType[]> GetSupportedModes(CancellationToken cancellationToken)
+        public async Task<HumidityControlModeType[]> GetSupportedModes(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(HumidityControlSetpointCommand.SupportedGet, HumidityControlSetpointCommand.SupportedReport, cancellationToken);
             List<HumidityControlModeType> supportedTypes = new List<HumidityControlModeType>();
@@ -52,13 +53,13 @@ namespace ZWaveDotNet.CommandClasses
             return supportedTypes.ToArray();
         }
 
-        public async Task<HumiditySetpointReport> Get(CancellationToken cancellationToken)
+        public async Task<HumiditySetpointReport> Get(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(HumidityControlSetpointCommand.Get, HumidityControlSetpointCommand.Report, cancellationToken);
             return new HumiditySetpointReport(response.Payload);
         }
 
-        public async Task<Units> GetSupportedUnits(HumidityControlModeType type, CancellationToken cancellationToken)
+        public async Task<Units> GetSupportedUnits(HumidityControlModeType type, CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(HumidityControlSetpointCommand.ScaleSupportedGet, HumidityControlSetpointCommand.ScaleSupportedReport, cancellationToken, (byte)type);
             if (response.Payload.Span[0] == 0)
@@ -67,7 +68,7 @@ namespace ZWaveDotNet.CommandClasses
                 return Units.gramPerCubicMeter;
         }
         
-        public async Task<HumiditySetpointCapabilitiesReport> GetSupportedRange(HumidityControlModeType type, CancellationToken cancellationToken)
+        public async Task<HumiditySetpointCapabilitiesReport> GetSupportedRange(HumidityControlModeType type, CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(HumidityControlSetpointCommand.CapabilitiesGet, HumidityControlSetpointCommand.CapabilitiesReport, cancellationToken, (byte)type);
             return new HumiditySetpointCapabilitiesReport(response.Payload);
@@ -95,9 +96,14 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(HumidityControlSetpointCommand.Set, cancellationToken, payload.Array!);
         }
 
-        protected override Task<SupervisionStatus> Handle(ReportMessage message)
+        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
-            return Task.FromResult(SupervisionStatus.NoSupport);
+            if (message.Command == (byte)HumidityControlSetpointCommand.Report)
+            {
+                await FireEvent(Updated, new HumiditySetpointReport(message.Payload));
+                return SupervisionStatus.Success;
+            }
+            return SupervisionStatus.NoSupport;
         }
     }
 }

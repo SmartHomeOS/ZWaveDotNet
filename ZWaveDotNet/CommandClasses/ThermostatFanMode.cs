@@ -50,7 +50,7 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(ThermostatFanModeCommand.Set, cancellationToken, cmd);
         }
 
-        public async Task<FanMode[]> GetSupportedModes(CancellationToken cancellationToken)
+        public async Task<FanMode[]> GetSupportedModes(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(ThermostatFanModeCommand.SupportedGet, ThermostatFanModeCommand.SupportedReport, cancellationToken);
             List<FanMode> supportedTypes = new List<FanMode>();

@@ -36,13 +36,13 @@ namespace ZWaveDotNet.CommandClasses
         }
         public Association(Node node, byte endpoint) : base(node, endpoint, CommandClass.Association) { }
 
-        public async Task<AssociationReport> Get(byte groupID, CancellationToken cancellationToken)
+        public async Task<AssociationReport> Get(byte groupID, CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(AssociationCommand.Get, AssociationCommand.Report, cancellationToken, groupID);
             return new AssociationReport(response.Payload);
         }
 
-        public async Task<byte> GetSpecific(CancellationToken cancellationToken)
+        public async Task<byte> GetSpecific(CancellationToken cancellationToken = default)
         {
             var response = await SendReceive(AssociationCommand.SpecificGroupGet, AssociationCommand.SpecificGroupReport, cancellationToken);
             return response.Payload.Span[0];
@@ -58,13 +58,13 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(AssociationCommand.Remove, cancellationToken, nodeIDs.Prepend(groupID).ToArray());
         }
 
-        public async Task<AssociationGroupsReport> GetGroups(CancellationToken cancellationToken)
+        public async Task<AssociationGroupsReport> GetGroups(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(AssociationCommand.GroupingsGet, AssociationCommand.GroupingsReport, cancellationToken);
             return new AssociationGroupsReport(response.Payload);
         }
 
-        public override async Task Interview(CancellationToken cancellationToken)
+        public override async Task Interview(CancellationToken cancellationToken = default)
         {
             await Add(LIFELINE_GROUP, cancellationToken, (byte)controller.ControllerID);
             Log.Information("Assigned Lifeline Group");

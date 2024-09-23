@@ -61,7 +61,7 @@ namespace ZWaveDotNet.CommandClasses
             return new TimeOffsetReport(response.Payload);
         }
 
-        public override async Task Interview(CancellationToken cancellationToken)
+        public override async Task Interview(CancellationToken cancellationToken = default)
         {
             TimeZoneInfo tz = TimeZoneInfo.Local;
             TimeZoneInfo.AdjustmentRule[] rules = tz.GetAdjustmentRules();

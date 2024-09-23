@@ -12,6 +12,7 @@
 
 using System.Collections;
 using ZWaveDotNet.CommandClasses.Enums;
+using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
@@ -22,6 +23,7 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.HumidityControlMode, 1, 1)]
     public class HumidityControlMode : CommandClassBase
     {
+        public event CommandClassEvent<EnumReport<HumidityControlModeType>>? Updated;
         public HumidityControlMode(Node node, byte endpoint) : base(node, endpoint, CommandClass.HumidityControlMode) { }
 
         enum HumidityControlModeCommand
@@ -33,7 +35,7 @@ namespace ZWaveDotNet.CommandClasses
             SupportedReport = 0x05
         }
 
-        public async Task<HumidityControlModeType[]> GetSupportedModes(CancellationToken cancellationToken)
+        public async Task<HumidityControlModeType[]> GetSupportedModes(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(HumidityControlModeCommand.SupportedGet, HumidityControlModeCommand.SupportedReport, cancellationToken);
             List<HumidityControlModeType> supportedTypes = new List<HumidityControlModeType>();
@@ -46,7 +48,7 @@ namespace ZWaveDotNet.CommandClasses
             return supportedTypes.ToArray();
         }
 
-        public async Task<HumidityControlModeType> Get(CancellationToken cancellationToken)
+        public async Task<HumidityControlModeType> Get(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(HumidityControlModeCommand.Get, HumidityControlModeCommand.Report, cancellationToken);
             return (HumidityControlModeType)response.Payload.Span[0];
@@ -57,9 +59,14 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(HumidityControlModeCommand.Set, cancellationToken, (byte)mode);
         }
 
-        protected override Task<SupervisionStatus> Handle(ReportMessage message)
+        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
-            return Task.FromResult(SupervisionStatus.NoSupport);
+            if (message.Command == (byte)HumidityControlModeCommand.Report)
+            {
+                await FireEvent(Updated, new EnumReport<HumidityControlModeType>(message.Payload));
+                return SupervisionStatus.Success;
+            }
+            return SupervisionStatus.NoSupport;
         }
     }
 }
