@@ -75,9 +75,9 @@ namespace ZWaveDotNet.Entities
             flow = new Flow(port);
             BroadcastNode = new Node(Node.BROADCAST_ID, this, null, new CommandClass[] 
             { 
-                CommandClass.Basic, CommandClass.BasicWindowCovering, CommandClass.GeographicLocation, CommandClass.Language,CommandClass.SceneActivation,
+                CommandClass.BarrierOperator, CommandClass.Basic, CommandClass.BasicWindowCovering, CommandClass.GeographicLocation, CommandClass.Language,CommandClass.SceneActivation,
                 CommandClass.SilenceAlarm, CommandClass.SwitchAll, CommandClass.SwitchBinary, CommandClass.SwitchColor, CommandClass.SwitchMultiLevel,
-                CommandClass.SwitchToggleBinary, CommandClass.SwitchToggleMultiLevel, CommandClass.WindowCovering //TODO - Barrier Operator
+                CommandClass.SwitchToggleBinary, CommandClass.SwitchToggleMultiLevel, CommandClass.WindowCovering
             });
             APIVersion = new System.Version();
         }
