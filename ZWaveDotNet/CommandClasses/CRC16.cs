@@ -55,7 +55,7 @@ namespace ZWaveDotNet.CommandClasses
             Memory<byte> payload = msg.Payload.Slice(0, msg.Payload.Length - 2);
             if (crc == null)
                 crc = new CRC16_CCITT();
-            var chk = crc.ComputeChecksum(payload);
+            var chk = crc.ComputeChecksum(payload.Span);
             if (msg.Payload.Span[msg.Payload.Length - 2] != chk[0] || msg.Payload.Span[msg.Payload.Length - 1] != chk[1])
                 throw new InvalidDataException("Invalid Checksum");
 

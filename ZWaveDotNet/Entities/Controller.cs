@@ -102,10 +102,10 @@ namespace ZWaveDotNet.Entities
         internal SecurityManager? SecurityManager { get; private set; }
         internal bool WideID { get { return flow.WideID; } private set { flow.WideID = value; } }
 
-        public async Task Reset()
+        public async Task Reset(CancellationToken token = default)
         {
-            await flow.SendUnacknowledged(Function.SoftReset);
-            await Task.Delay(1500);
+            await flow.SendUnacknowledged(Function.SoftReset, token);
+            await Task.Delay(1500, token);
         }
 
         public async ValueTask Start(string? nodeDbPath = null, CancellationToken cancellationToken = default)

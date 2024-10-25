@@ -41,7 +41,7 @@ namespace ZWaveDotNet.Util
         {
             ushort crc = INIT;
             for (int i = 0; i < bytes.Count; i++)
-                crc = (ushort)(crc << 8 ^ table[crc >> 8 ^ 0xff & bytes[i]]);
+                crc = (ushort)((crc << 8) ^ table[(crc >> 8) ^ 0xff & bytes[i]]);
 
             if (BitConverter.IsLittleEndian)
                 return new byte[] { (byte)(crc >> 8), (byte)(crc & 0xFF) };
@@ -49,11 +49,11 @@ namespace ZWaveDotNet.Util
                 return new byte[] { (byte)(crc & 0xFF), (byte)(crc >> 8) };
         }
 
-        public byte[] ComputeChecksum(Memory<byte> bytes)
+        public byte[] ComputeChecksum(ReadOnlySpan<byte> bytes)
         {
             ushort crc = INIT;
             for (int i = 0; i < bytes.Length; i++)
-                crc = (ushort)(crc << 8 ^ table[crc >> 8 ^ 0xff & bytes.Span[i]]);
+                crc = (ushort)((crc << 8) ^ table[(crc >> 8) ^ (0xff & bytes[i])]);
 
             if (BitConverter.IsLittleEndian)
                 return new byte[] { (byte)(crc >> 8), (byte)(crc & 0xFF) };

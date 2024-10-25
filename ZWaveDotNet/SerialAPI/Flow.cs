@@ -31,7 +31,7 @@ namespace ZWaveDotNet.SerialAPI
             unsolicited = port.CreateReader();
         }
 
-        public async Task SendUnacknowledged(Function function, params byte[] payload)
+        public async Task SendUnacknowledged(Function function, CancellationToken cancellation = default, params byte[] payload)
         {
             try
             {
@@ -133,9 +133,9 @@ namespace ZWaveDotNet.SerialAPI
 
         private async Task SendAcknowledgedIntl(Channel<Frame> reader, Frame frame, CancellationToken cancellationToken)
         {
+            await portLock.WaitAsync(cancellationToken);
             try
             {
-                await portLock.WaitAsync(cancellationToken);
                 for (int attempt = 0; attempt < 3; attempt++)
                 {
                     using (CancellationTokenSource timeout = new CancellationTokenSource(1600))

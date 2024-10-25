@@ -24,7 +24,7 @@ namespace UnitTests
             Memory<byte> payload = MemoryUtil.From("C2A2150D0303020B01");
             Memory<byte> expected = MemoryUtil.From("2C66");
             CRC16_CCITT crc = new CRC16_CCITT();
-            byte[] result = crc.ComputeChecksum(payload);
+            byte[] result = crc.ComputeChecksum(payload.Span);
             Assert.That(expected.ToArray(), Is.EqualTo(result).AsCollection);
         }
     }
