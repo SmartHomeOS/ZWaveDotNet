@@ -58,10 +58,10 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(SwitchAllCommand.Off, cancellationToken);
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        protected override Task<SupervisionStatus> Handle(ReportMessage message)
         {
             //None
-            return SupervisionStatus.NoSupport;
+            return Task.FromResult(SupervisionStatus.NoSupport);
         }
     }
 }

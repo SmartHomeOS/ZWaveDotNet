@@ -43,10 +43,10 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(AlarmSilenceCommand.Set, cancellationToken, payload);
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        protected override Task<SupervisionStatus> Handle(ReportMessage message)
         {
             //Not Needed
-            return SupervisionStatus.NoSupport;
+            return Task.FromResult(SupervisionStatus.NoSupport);
         }
     }
 }

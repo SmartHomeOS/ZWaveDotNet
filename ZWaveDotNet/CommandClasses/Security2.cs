@@ -299,7 +299,8 @@ namespace ZWaveDotNet.CommandClasses
             msg.Update(decoded!.Value);
             msg.Flags |= ReportFlags.Security;
             msg.SecurityLevel = SecurityManager.TypeToKey(networkKey.Key);
-            Log.Verbose("Decoded Message: " + msg.ToString());
+            if ((msg.Flags & ReportFlags.Transport) == ReportFlags.Transport)
+                Log.Debug("Decoded Transport Message: " + msg.ToString());
             return msg;
         }
 
@@ -394,7 +395,7 @@ namespace ZWaveDotNet.CommandClasses
                 case Security2Command.NetworkKeyGet:
                     if (controller.SecurityManager == null)
                         return SupervisionStatus.Fail;
-                    if (message.IsMulticastMethod())
+                    if (message.IsMulticastMethod)
                         return SupervisionStatus.Fail;
                     if (message.SecurityLevel != SecurityKey.None || (message.Flags & ReportFlags.Security) != ReportFlags.Security)
                     {
@@ -454,7 +455,7 @@ namespace ZWaveDotNet.CommandClasses
                 case Security2Command.NonceGet:
                     if (controller.SecurityManager == null)
                         return SupervisionStatus.Fail;
-                    if (message.IsMulticastMethod())
+                    if (message.IsMulticastMethod)
                         return SupervisionStatus.Fail;
                     if (!controller.SecurityManager.IsSequenceNew(message.SourceNodeID, message.Payload.Span[0]))
                     {
@@ -471,7 +472,7 @@ namespace ZWaveDotNet.CommandClasses
                 case Security2Command.NonceReport:
                     if (controller.SecurityManager == null)
                         return SupervisionStatus.Fail;
-                    if (message.IsMulticastMethod())
+                    if (message.IsMulticastMethod)
                         return SupervisionStatus.Fail;
                     SecurityManager.NetworkKey? networkKey = controller.SecurityManager.GetHighestKey(message.SourceNodeID);
                     if (networkKey == null)
@@ -491,7 +492,7 @@ namespace ZWaveDotNet.CommandClasses
                 case Security2Command.TransferEnd:
                     if (controller.SecurityManager == null)
                         return SupervisionStatus.Fail;
-                    if (message.IsMulticastMethod())
+                    if (message.IsMulticastMethod)
                         return SupervisionStatus.Fail;
                     if (message.SecurityLevel != SecurityKey.None || (message.Flags & ReportFlags.Security) != ReportFlags.Security)
                     {

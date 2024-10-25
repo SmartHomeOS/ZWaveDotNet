@@ -262,7 +262,7 @@ namespace ZWaveDotNet.CommandClasses
 
         private async Task<bool> AttemptTransmission(DataMessage message, CancellationToken cancellationToken, bool ex = false)
         {
-            DataCallback dc = await controller.Flow.SendAcknowledgedResponseCallback(message, cancellationToken).ConfigureAwait(false);
+            DataCallback dc = await controller.Flow.SendAcknowledgedResponseCallback(message, b => b != 0x0, cancellationToken).ConfigureAwait(false);
             if (dc.Status != TransmissionStatus.CompleteOk && dc.Status != TransmissionStatus.CompleteNoAck && dc.Status != TransmissionStatus.CompleteVerified)
             {
                 if (!ex)

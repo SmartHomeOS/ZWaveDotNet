@@ -75,9 +75,11 @@ namespace ZWaveDotNet.SerialAPI
             }
         }
 
-        public bool IsMulticastMethod()
+        public bool IsMulticastMethod
         {
-            return ((Flags & ReportFlags.Broadcast) == ReportFlags.Broadcast || (Flags & ReportFlags.Multicast) == ReportFlags.Multicast);
+            get {
+                return ((Flags & ReportFlags.Broadcast) == ReportFlags.Broadcast || (Flags & ReportFlags.Multicast) == ReportFlags.Multicast);
+            }
         }
 
         public override string ToString()

@@ -92,10 +92,10 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(ConfigurationCommand.Set, cancellationToken, new[] { parameter, size }.Concat(values).ToArray());
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        protected override Task<SupervisionStatus> Handle(ReportMessage message)
         {
             //Not Used
-            return SupervisionStatus.NoSupport;
+            return Task.FromResult(SupervisionStatus.NoSupport);
         }
     }
 }

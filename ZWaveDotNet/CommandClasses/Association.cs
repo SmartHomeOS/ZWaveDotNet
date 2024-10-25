@@ -70,10 +70,10 @@ namespace ZWaveDotNet.CommandClasses
             Log.Information("Assigned Lifeline Group");
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        protected override Task<SupervisionStatus> Handle(ReportMessage message)
         {
             //Nothing Unsolicited
-            return SupervisionStatus.NoSupport;
+            return Task.FromResult(SupervisionStatus.NoSupport);
         }
     }
 }

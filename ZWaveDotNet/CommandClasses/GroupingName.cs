@@ -44,10 +44,10 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(GroupNameCommand.SetName, cancellationToken, (byte[]) payload.ToArray().Prepend(group));
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        protected override Task<SupervisionStatus> Handle(ReportMessage message)
         {
             //No unsolicited message
-            return SupervisionStatus.NoSupport;
+            return Task.FromResult(SupervisionStatus.NoSupport);
         }
     }
 }

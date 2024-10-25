@@ -61,10 +61,10 @@ namespace ZWaveDotNet.CommandClasses
             return response.Payload.Span[1];
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        protected override Task<SupervisionStatus> Handle(ReportMessage message)
         {
             //Everything should be get/response
-            return SupervisionStatus.NoSupport;
+            return Task.FromResult(SupervisionStatus.NoSupport);
         }
     }
 }

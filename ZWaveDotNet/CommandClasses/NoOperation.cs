@@ -28,14 +28,14 @@ namespace ZWaveDotNet.CommandClasses
         {
             CommandMessage data = new CommandMessage(controller, node.ID, (byte)(endpoint & 0x7F), commandClass, 0x0);
             data.Payload.RemoveAt(1); //This class sends no command
-            DataCallback dc = await controller.Flow.SendAcknowledgedResponseCallback(data.ToMessage(), cancellationToken);
+            DataCallback dc = await controller.Flow.SendAcknowledgedResponseCallback(data.ToMessage(), b => b != 0x0, cancellationToken);
             return (dc.Status == TransmissionStatus.CompleteOk || dc.Status == TransmissionStatus.CompleteNoAck || dc.Status == TransmissionStatus.CompleteVerified);
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        protected override Task<SupervisionStatus> Handle(ReportMessage message)
         {
             //Ignore This
-            return SupervisionStatus.NoSupport;
+            return Task.FromResult(SupervisionStatus.NoSupport);
         }
     }
 }

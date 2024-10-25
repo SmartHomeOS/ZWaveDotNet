@@ -65,7 +65,7 @@ namespace ZWaveDotNet.CommandClasses
         {
             if (msg.Payload.Length < 3)
                 throw new ArgumentException("Report is truncated");
-            if (msg.IsMulticastMethod())
+            if (msg.IsMulticastMethod)
                 throw new InvalidDataException("Multicast Messages cannot be Supervision GET");
            
             msg.SessionID = (byte)(msg.Payload.Span[0] & 0x3F);

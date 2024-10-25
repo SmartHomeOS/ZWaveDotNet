@@ -10,6 +10,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using Serilog;
 using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.CommandClassReports
@@ -30,6 +31,8 @@ namespace ZWaveDotNet.CommandClassReports
                 Entropy = payload.Slice(2);
             else
                 Entropy = new byte[0];
+            if (Entropy.Length > 16)
+                Log.Warning("Extra entropy bytes received. Length: " + Entropy.Length);
         }
 
         public NonceReport(byte sequence, bool sos, bool mos, Memory<byte> entropy)

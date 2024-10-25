@@ -119,9 +119,6 @@ namespace ZWaveDotNet.SerialAPI
             if (Type == FrameType.SOF)
             {
                 Memory<byte> payload = GetPayload();
-
-
-
                 while (reading || port.BytesToRead != 0)
                     await Task.Delay(1, cancellationToken);
                 await port.BaseStream.WriteAsync(payload.ToArray(), 0, payload.Length, cancellationToken);

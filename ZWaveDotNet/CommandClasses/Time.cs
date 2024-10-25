@@ -80,10 +80,10 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(TimeCommand.TimeOffsetSet, cancellationToken, utcHours, (byte)utcOffset.Minutes, offsetMins, (byte)dstStart.Month, (byte)dstStart.Day, (byte)dstStart.Hour, (byte)dstEnd.Month, (byte)dstEnd.Day, (byte)dstEnd.Hour);
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        protected override Task<SupervisionStatus> Handle(ReportMessage message)
         {
             //None
-            return SupervisionStatus.NoSupport;
+            return Task.FromResult(SupervisionStatus.NoSupport);
         }
     }
 }

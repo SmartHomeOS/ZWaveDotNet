@@ -65,10 +65,10 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(command, cancellationToken, payload.ToArray());
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        protected override Task<SupervisionStatus> Handle(ReportMessage message)
         {
             //No unsolicited message
-            return SupervisionStatus.NoSupport;
+            return Task.FromResult(SupervisionStatus.NoSupport);
         }
     }
 }

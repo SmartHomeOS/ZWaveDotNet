@@ -388,7 +388,7 @@ namespace ZWaveDotNet.Entities
                         }
                         catch (Exception e)
                         {
-                            Log.Warning(e, "Failed to query S2");
+                            Log.Information(e, "Failed to query S2 Unauth");
                             controller.SecurityManager.RevokeKey(ID, SecurityManager.RecordType.S2UnAuth);
                         }
                         controller.SecurityManager.GrantKey(ID, SecurityManager.RecordType.S2Auth, controller.NetworkKeyS2Auth);
@@ -417,7 +417,7 @@ namespace ZWaveDotNet.Entities
                         }
                         catch (Exception e)
                         {
-                            Log.Warning(e, "Failed to query S2");
+                            Log.Information(e, "Failed to query S2 Auth");
                             controller.SecurityManager.RevokeKey(ID, SecurityManager.RecordType.S2Auth);
                         }
                         controller.SecurityManager.GrantKey(ID, SecurityManager.RecordType.S2Access, controller.NetworkKeyS2Access);
@@ -446,7 +446,7 @@ namespace ZWaveDotNet.Entities
                         }
                         catch (Exception e)
                         {
-                            Log.Warning(e, "Failed to query S2");
+                            Log.Information(e, "Failed to query S2 Access");
                             controller.SecurityManager.RevokeKey(ID, SecurityManager.RecordType.S2Access);
                         }
                     }

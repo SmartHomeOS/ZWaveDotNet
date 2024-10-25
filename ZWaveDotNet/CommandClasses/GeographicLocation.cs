@@ -47,10 +47,10 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(GeographicLocationCommand.Set, cancellationToken, location.ToBytes());
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        protected override Task<SupervisionStatus> Handle(ReportMessage message)
         {
             //Nothing to implement
-            return SupervisionStatus.NoSupport;
+            return Task.FromResult(SupervisionStatus.NoSupport);
         }
     }
 }

@@ -39,9 +39,9 @@ namespace ZWaveDotNet.CommandClasses
             return new EnergyProductionReport(response.Payload);
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        protected override Task<SupervisionStatus> Handle(ReportMessage message)
         {
-            return SupervisionStatus.NoSupport;
+            return Task.FromResult(SupervisionStatus.NoSupport);
         }
     }
 }

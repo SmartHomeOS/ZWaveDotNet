@@ -35,10 +35,10 @@ namespace ZWaveDotNet.CommandClasses
             return new ZWavePlusInfo(resp.Payload);
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        protected override Task<SupervisionStatus> Handle(ReportMessage message)
         {
             //Not Used
-            return SupervisionStatus.NoSupport;
+            return Task.FromResult(SupervisionStatus.NoSupport);
         }
     }
 }

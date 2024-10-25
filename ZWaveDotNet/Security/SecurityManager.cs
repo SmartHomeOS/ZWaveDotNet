@@ -413,7 +413,7 @@ namespace ZWaveDotNet.Security
             }
 
             List<SpanRecord> stack = new List<SpanRecord>();
-            spanRecords.Add(nodeId, stack);
+            spanRecords.TryAdd(nodeId, stack);
             return stack;
         }
 
