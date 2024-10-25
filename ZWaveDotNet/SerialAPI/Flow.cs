@@ -17,7 +17,7 @@ using ZWaveDotNet.SerialAPI.Messages;
 
 namespace ZWaveDotNet.SerialAPI
 {
-    public class Flow
+    public class Flow : IDisposable
     {
         private readonly Port port;
         private readonly Channel<Frame> unsolicited;
@@ -95,12 +95,12 @@ namespace ZWaveDotNet.SerialAPI
             }
         }
 
-        public async Task<DataCallback> SendAcknowledgedResponseCallback(DataMessage message, CancellationToken token = default)
+        public async Task<DataCallback> SendAcknowledgedResponseCallback(CallbackBase message, Func<byte, bool> success, CancellationToken token = default)
         {
             Frame frame = new Frame(FrameType.SOF, DataFrameType.Request, message.Function, message.GetPayload());
             var reader = port.CreateReader();
             try {
-                return await SendAcknowledgedResponseCallbackIntl(reader, frame, message.SessionID, token).ConfigureAwait(false);
+                return await SendAcknowledgedResponseCallbackIntl(reader, frame, message.SessionID, success, token).ConfigureAwait(false);
             }
             finally {
                 port.DisposeReader(reader);
@@ -112,11 +112,11 @@ namespace ZWaveDotNet.SerialAPI
             return GetMessage(await unsolicited.Reader.ReadAsync().ConfigureAwait(false));
         }
 
-        private async Task<DataCallback> SendAcknowledgedResponseCallbackIntl(Channel<Frame> reader, Frame frame, byte sessionId, CancellationToken token = default)
+        private async Task<DataCallback> SendAcknowledgedResponseCallbackIntl(Channel<Frame> reader, Frame frame, byte sessionId, Func<byte, bool> success, CancellationToken token = default)
         {
             await SendAcknowledgedIntl(reader, frame, token);
             Frame status = await GetAcknowledgedResponseIntl(reader, token).ConfigureAwait(false);
-            if (!new Response(status.Payload, status.CommandID).Success)
+            if (!new Response(status.Payload, status.CommandID, success).Success)
                 throw new Exception("Failed to transmit command");
             while (!token.IsCancellationRequested)
             {
@@ -215,6 +215,13 @@ namespace ZWaveDotNet.SerialAPI
                 }
             }
             return new PayloadMessage(frame.Payload, frame.CommandID);
+        }
+
+        public void Dispose()
+        {
+            portLock.Dispose();
+            port.Dispose();
+            GC.SuppressFinalize(this);
         }
     }
 }

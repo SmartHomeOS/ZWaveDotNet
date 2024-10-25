@@ -26,6 +26,7 @@ using ZWaveDotNet.Security;
 using ZWaveDotNet.SerialAPI;
 using ZWaveDotNet.SerialAPI.Enums;
 using ZWaveDotNet.SerialAPI.Messages;
+using static ZWaveDotNet.Entities.Controller;
 
 namespace ZWaveDotNet.Entities
 {
@@ -34,7 +35,7 @@ namespace ZWaveDotNet.Entities
         public const ushort BROADCAST_ID = 0xFFFF;
         public const ushort UNINITIALIZED_ID = 0x0000;
 
-        public event EventHandler? InterviewComplete;
+        public event NodeEventHandler? InterviewComplete;
 
         public readonly ushort ID;
         protected readonly Controller controller;
@@ -512,7 +513,8 @@ namespace ZWaveDotNet.Entities
                 await cc.Interview(cancellationToken).ConfigureAwait(false);
             Log.Information($"Interview Complete [{ID}]");
             this.interviewed = true;
-            InterviewComplete?.Invoke(this, new EventArgs());
+            if (InterviewComplete != null)
+                await InterviewComplete.Invoke(this);
         }
 
         private async Task RequestS0(CancellationToken cancellationToken)

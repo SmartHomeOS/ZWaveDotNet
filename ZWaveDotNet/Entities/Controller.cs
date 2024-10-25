@@ -32,15 +32,19 @@ using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.Entities
 {
-    public class Controller
+    public class Controller : IDisposable
     {
         public Dictionary<ushort, Node> Nodes = new Dictionary<ushort, Node>();
+        public CancellationTokenSource running = new CancellationTokenSource();
+        public delegate Task NodeEventHandler(Node node);
+        public delegate Task ApplicationUpdateEventHandler(Controller controller, ApplicationUpdateEventArgs args);
+        public delegate Task NodeInfoEventHandler(Node? node, ApplicationUpdateEventArgs args);
 
-        public event EventHandler<ApplicationUpdateEventArgs>? SmartStartNodeAvailable;
-        public event EventHandler<ApplicationUpdateEventArgs>? NodeInfoUpdated;
-        public event EventHandler? SecurityBootstrapComplete;
-        public event EventHandler? NodeReady;
-        public event EventHandler? NodeExcluded;
+        public event ApplicationUpdateEventHandler? SmartStartNodeAvailable;
+        public event NodeInfoEventHandler? NodeInfoUpdated;
+        public event NodeEventHandler? SecurityBootstrapComplete;
+        public event NodeEventHandler? NodeReady;
+        public event NodeEventHandler? NodeExcluded;
         public event EventHandler? InclusionStopped;
 
         private readonly Flow flow;
@@ -488,11 +492,22 @@ namespace ZWaveDotNet.Entities
             await flow.SendAcknowledged(Function.AddNodeToNetwork, cancellationToken, (byte)mode, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0);
         }
 
+        /// <summary>
+        /// Stop the inclusion operation
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task StopInclusion(CancellationToken cancellationToken = default)
         {
             await flow.SendAcknowledged(Function.AddNodeToNetwork, cancellationToken, (byte)AddRemoveNodeMode.StopNetworkIncludeExclude, 0x1);
         }
 
+        /// <summary>
+        /// Exlcude the first node to enter exclusion mode
+        /// </summary>
+        /// <param name="networkWide"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task StartExclusion(bool networkWide = true, CancellationToken cancellationToken = default)
         {
             AddRemoveNodeMode mode = AddRemoveNodeMode.AnyNode | AddRemoveNodeMode.UseNormalPower;
@@ -501,9 +516,48 @@ namespace ZWaveDotNet.Entities
             await flow.SendAcknowledged(Function.RemoveNodeFromNetwork, cancellationToken, (byte)mode, 0x1);
         }
 
+        /// <summary>
+        /// Exclude only the node specified
+        /// </summary>
+        /// <param name="nodeId"></param>
+        /// <param name="networkWide"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public async Task StartExclusion(ushort nodeId, bool networkWide = true, CancellationToken cancellationToken = default)
+        {
+            byte[] idBytes = NodeIDToBytes(nodeId);
+            AddRemoveNodeMode mode = AddRemoveNodeMode.AnyNode | AddRemoveNodeMode.UseNormalPower;
+            if (networkWide)
+                mode |= AddRemoveNodeMode.UseNetworkWide;
+            if (WideID)
+                await flow.SendAcknowledged(Function.RemoveNodeIdFromNetwork, cancellationToken, (byte)mode, idBytes[0], idBytes[1], 0x1);
+            else
+                await flow.SendAcknowledged(Function.RemoveNodeIdFromNetwork, cancellationToken, (byte)mode, idBytes[0], 0x1);
+        }
+
+        /// <summary>
+        /// Stop the exclusion operation
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task StopExclusion(CancellationToken cancellationToken = default)
         {
             await flow.SendAcknowledged(Function.RemoveNodeFromNetwork, cancellationToken, (byte)AddRemoveNodeMode.StopNetworkIncludeExclude, 0x1);
+        }
+
+        public async Task<bool> RemoveFailedNode(ushort nodeId, CancellationToken cancellationToken = default)
+        {
+            DataCallback? dc = null;
+            try
+            {
+                Log.Information("Removing failed node " + nodeId);
+                ControllerOperation operation = new ControllerOperation(this, nodeId, Function.RemoveFailedNodeId);
+                dc = await flow.SendAcknowledgedResponseCallback(operation, b => b == 0x1, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception e) { Log.Error(e, "Failed to remove node"); }
+            if (dc == null)
+                return false;
+            return (int)dc.Status == 0x1;
         }
 
         private async Task<bool> BootstrapUnsecure(Node node)
@@ -511,7 +565,8 @@ namespace ZWaveDotNet.Entities
             await Task.Delay(1000); //Give including node a chance to get ready
             Log.Information("Included without Security. Moving to interview");
             await node.Interview(true).ConfigureAwait(false);
-            NodeReady?.Invoke(node, new EventArgs());
+            if (NodeReady != null)
+                await NodeReady.Invoke(node);
             return true;
         }
 
@@ -527,7 +582,8 @@ namespace ZWaveDotNet.Entities
                     await sec0.SchemeGet(cts.Token).ConfigureAwait(false);
                     _ = Task.Run(() => sec0.KeySet(cts.Token));
                     await sec0.WaitForKeyVerified(cts.Token).ConfigureAwait(false);
-                    SecurityBootstrapComplete?.Invoke(node, new EventArgs());
+                    if (SecurityBootstrapComplete != null)
+                        await SecurityBootstrapComplete.Invoke(node);
                 }
                 catch (Exception e)
                 {
@@ -537,7 +593,8 @@ namespace ZWaveDotNet.Entities
                 }
             }
             await node.Interview(true).ConfigureAwait(false);
-            NodeReady?.Invoke(node, new EventArgs());
+            if (NodeReady != null)
+                await NodeReady.Invoke(node);
             return true;
         }
 
@@ -583,7 +640,8 @@ namespace ZWaveDotNet.Entities
                     _ = Task.Run(() => sec2.SendPublicKey(requestedKeys.ClientSideAuth, cts.Token));
                     await sec2.WaitForBootstrap(cts.Token).ConfigureAwait(false);
                 }
-                SecurityBootstrapComplete?.Invoke(node, new EventArgs());
+                if (SecurityBootstrapComplete != null)
+                    await SecurityBootstrapComplete.Invoke(node);
             }
             catch (Exception e)
             {
@@ -597,14 +655,15 @@ namespace ZWaveDotNet.Entities
                 return false;
             }
             await node.Interview(true).ConfigureAwait(false);
-            NodeReady?.Invoke(node, new EventArgs());
+            if (NodeReady != null)
+                await NodeReady.Invoke(node);
             return true;
         }
         #endregion Inclusion
 
         private async Task EventLoop()
         {
-            while (true)
+            while (!running.IsCancellationRequested)
             {
                 try
                 {
@@ -635,14 +694,15 @@ namespace ZWaveDotNet.Entities
                         }
                         else if (msg is SmartStartNodeInformationUpdate ssniu)
                         {
-                            SmartStartNodeAvailable?.Invoke(this, new ApplicationUpdateEventArgs(ssniu));
+                            if (SmartStartNodeAvailable != null)
+                                await SmartStartNodeAvailable.Invoke(this, new ApplicationUpdateEventArgs(ssniu));
                         }
                         else
                         {
                             if (Nodes.TryGetValue(au.NodeId, out Node? node))
                                 node.HandleApplicationUpdate(au);
                             if (au is NodeInformationUpdate niu && NodeInfoUpdated != null)
-                                NodeInfoUpdated.Invoke(node, new ApplicationUpdateEventArgs(niu));
+                                await NodeInfoUpdated.Invoke(node, new ApplicationUpdateEventArgs(niu));
                         }
                         Log.Debug(au.ToString());
                     }
@@ -683,13 +743,13 @@ namespace ZWaveDotNet.Entities
                                 }
                             }
                         }
-                        else if (inc.Function == Function.RemoveNodeFromNetwork && inc.NodeID > 0)
+                        else if ((inc.Function == Function.RemoveNodeFromNetwork || inc.Function == Function.RemoveNodeIdFromNetwork) && inc.NodeID > 0)
                         {
                             if (Nodes.Remove(inc.NodeID, out Node? node))
                             {
                                 node.NodeFailed = true;
                                 if (NodeExcluded != null)
-                                    NodeExcluded.Invoke(node, EventArgs.Empty);
+                                    await NodeExcluded.Invoke(node);
                                 Log.Information($"Successfully excluded node {inc.NodeID}");
                             }
                             if (inc.Status == InclusionExclusionStatus.OperationComplete)
@@ -700,7 +760,6 @@ namespace ZWaveDotNet.Entities
                 {
                     Log.Error(e, "Unhandled Message Processing Exception");
                 }
-                //Log.Information(msg.ToString());
             }
         }
 
@@ -744,6 +803,14 @@ namespace ZWaveDotNet.Entities
             ret.AppendLine($" - LR: {SupportsLongRange}\nNodes: ");
             ret.AppendLine(string.Join('\n', Nodes.Values));
             return ret.ToString();
+        }
+
+        public void Dispose()
+        {
+            running.Cancel();
+            flow.Dispose();
+            nodeListLock.Dispose();
+            GC.SuppressFinalize(this);
         }
     }
 }

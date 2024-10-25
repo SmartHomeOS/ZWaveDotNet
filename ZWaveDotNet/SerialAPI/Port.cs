@@ -18,7 +18,7 @@ using ZWaveDotNet.SerialAPI.Enums;
 
 namespace ZWaveDotNet.SerialAPI
 {
-    public class Port
+    public class Port : IDisposable
     {
         private readonly SerialPort port;
         private readonly Channel<Frame> tx = Channel.CreateUnbounded<Frame>();
@@ -109,6 +109,12 @@ namespace ZWaveDotNet.SerialAPI
             {
                 Log.Error(io, "Failed to read from port");
             }
+        }
+
+        public void Dispose()
+        {
+            port.Dispose();
+            GC.SuppressFinalize(this);
         }
     }
 }

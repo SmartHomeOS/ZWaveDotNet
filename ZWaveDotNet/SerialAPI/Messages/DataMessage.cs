@@ -19,40 +19,19 @@ using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.SerialAPI.Messages
 {
-    public class DataMessage : Message
+    public class DataMessage : CallbackBase
     {
-        private static object callbackSync = new object();
-        public readonly ushort DestinationNodeID;
         public readonly ushort SourceNodeID;
         public List<byte> Data;
         public readonly TransmitOptions Options;
-        public readonly byte SessionID;
-        private readonly Controller controller;
 
-        private static byte callbackID = 1;
-
-        public DataMessage(Controller controller, ushort nodeId, List<byte> data, bool callback, bool exploreNPDUs) : base(controller.ControllerType == LibraryType.BridgeController ? Function.SendDataBridge : Function.SendData)
+        public DataMessage(Controller controller, ushort nodeId, List<byte> data, bool callback, bool exploreNPDUs) : base(controller, nodeId, callback, controller.ControllerType == LibraryType.BridgeController ? Function.SendDataBridge : Function.SendData)
         {
             SourceNodeID = controller.ControllerID;
-            DestinationNodeID = nodeId;
             Data = data;
             Options = TransmitOptions.RequestAck | TransmitOptions.AutoRouting;
             if (exploreNPDUs)
                 Options |= TransmitOptions.ExploreNPDUs;
-           
-                if (callback)
-                {
-                    lock (callbackSync)
-                    {
-                        SessionID = callbackID++;
-                        if (callbackID == 0)
-                            callbackID++;
-                    }
-                }
-                else
-                    SessionID = 0;
-
-            this.controller = controller;
         }
 
         public override PayloadWriter GetPayload()
@@ -80,7 +59,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
 
         public override string ToString()
         {
-            return base.ToString() + $"Data To {DestinationNodeID} - Payload {BitConverter.ToString(Data.ToArray())}";
+            return base.ToString() + $" - Payload {BitConverter.ToString(Data.ToArray())}";
         }
     }
 

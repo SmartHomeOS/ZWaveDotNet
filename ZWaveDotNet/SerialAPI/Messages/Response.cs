@@ -17,6 +17,12 @@ namespace ZWaveDotNet.SerialAPI.Messages
     public class Response : Message
     {
         public readonly bool Success;
+        public Response(Memory<byte> payload, Function function, Func<byte, bool> success) : base(function)
+        {
+            if (payload.Length == 0)
+                throw new InvalidDataException("Empty Response received");
+            Success = success(payload.Span[0]);
+        }
         public Response(Memory<byte> payload, Function function) : base(function)
         {
             if (payload.Length == 0)

@@ -53,10 +53,26 @@ namespace ExampleConsole
 
             //Start the controller interview
             Console.WriteLine("Interviewing Controller...");
-            await controller.Start();
-
             if (File.Exists("nodecache.db"))
-                await controller.ImportNodeDBAsync("nodecache.db");
+            {
+                await controller.Start("nodecache.db");
+                foreach (KeyValuePair<ushort, Node> node in controller.Nodes)
+                {
+                    if (node.Value.Interviewed)
+                    {
+                        ReadyList.Add(node.Value.ID);
+                        InterviewList.Add(node.Value.ID);
+                        AttachListeners(node.Value);
+                    }
+                    if (node.Value.NodeFailed)
+                    {
+                        if (await controller.RemoveFailedNode(node.Value.ID))
+                            Log.Information("Removed failed node " + node.Value.ID);
+                    }
+                }
+            }
+            else
+                await controller.Start();
 
             _ = Task.Factory.StartNew(MainLoop);
             await InputLoop();
@@ -67,12 +83,12 @@ namespace ExampleConsole
             currentMode = Mode.Display;
         }
 
-        private static void Controller_NodeExcluded(object? sender, EventArgs e)
+        private static Task Controller_NodeExcluded(Node node)
         {
-            Node node = (Node)sender!;
             InterviewList.Remove(node.ID);
             ReadyList.Remove(node.ID);
             currentMode = Mode.Display;
+            return Task.CompletedTask;
         }
 
         private static async Task InputLoop()
@@ -113,9 +129,8 @@ namespace ExampleConsole
             }
         }
 
-        private static async void Controller_NodeReady(object? sender, EventArgs e)
+        private static async Task Controller_NodeReady(Node node)
         {
-            Node node = (Node)sender!;
             InterviewList.Add(node.ID);
             ReadyList.Add(node.ID);
             await controller!.ExportNodeDBAsync("nodecache.db");
@@ -140,19 +155,19 @@ namespace ExampleConsole
                 node.GetCommandClass<SwitchBinary>()!.SwitchReport += Node_Updated;
         }
 
-        private static async Task Node_Updated<T>(Node sender, CommandClassEventArgs<T> args) where T : ICommandClassReport
+        private static Task Node_Updated<T>(Node sender, CommandClassEventArgs<T> args) where T : ICommandClassReport
         {
             if (args.Report == null)
-                return;
+                return Task.CompletedTask;
             if (Reports.Count > 10)
                 Reports.RemoveFirst();
             Reports.AddLast($"{DateTime.Now.ToLongTimeString()} Node {sender.ID}: {args.Report.ToString()!}");
+            return Task.CompletedTask;
         }
 
-        private static async void Controller_NodeInfoUpdated(object? sender, ApplicationUpdateEventArgs e)
+        private static async Task Controller_NodeInfoUpdated(Node node, ApplicationUpdateEventArgs e)
         {
-            Node? node = (Node?)sender;
-            if (node != null && !InterviewList.Contains(node.ID))
+            if (!InterviewList.Contains(node.ID))
             {
                 InterviewList.Add(node.ID);
                 node.InterviewComplete += Node_InterviewComplete;
@@ -160,9 +175,8 @@ namespace ExampleConsole
             }
         }
 
-        private static async void Node_InterviewComplete(object? sender, EventArgs e)
+        private static async Task Node_InterviewComplete(Node node)
         {
-            Node node = (Node)sender!;
             ReadyList.Add(node.ID);
             await controller!.ExportNodeDBAsync("nodecache.db");
             AttachListeners(node);
@@ -195,7 +209,7 @@ namespace ExampleConsole
             Console.WriteLine();
             if (currentMode == Mode.Display)
             {
-                Console.WriteLine("Press I to enter Inclusion mode, E to enter Exclusion mode or S to Stop");
+                Console.WriteLine("Press I to enter Inclusion mode, E to enter Exclusion mode");
                 Console.WriteLine("Last 10 Node Reports:");
                 foreach (string report in Reports)
                     Console.WriteLine(report);
@@ -203,12 +217,12 @@ namespace ExampleConsole
             else if (currentMode == Mode.Inclusion)
             {
                 Console.WriteLine("- Inclusion Mode Active -");
-                Console.WriteLine("Press the Pairing button on your device");
+                Console.WriteLine("Press the Pairing button on your device or S to Stop");
             }
             else
             {
                 Console.WriteLine("- Exclusion Mode Active -");
-                Console.WriteLine("Press the Pairing button on your device");
+                Console.WriteLine("Press the Pairing button on your device or S to Stop");
             }
         }
     }

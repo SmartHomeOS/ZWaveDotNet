@@ -24,7 +24,7 @@ namespace ZWaveDotNet.CommandClasses
     {
         private static readonly CRC16_CCITT crc = new CRC16_CCITT();
         private static readonly Dictionary<int,Memory<byte>> buffers = new Dictionary<int,Memory<byte>>();
-        private static readonly Dictionary<int, List<Range>> segments = new Dictionary<int, List<Range>>();
+        private static readonly Dictionary<int, HashSet<Range>> segments = new Dictionary<int, HashSet<Range>>();
 
         public enum TransportServiceCommand
         {
@@ -73,7 +73,7 @@ namespace ZWaveDotNet.CommandClasses
                     sessionId = (byte)((msg.Payload.Span[1] & 0xF0) >> 4);
                     Log.Information($"Length: {datagramLen}, session: {sessionId}");
                     if (!ValidateChecksum(msg.Command, msg.Payload.Span))
-                        Log.Error("Invalid Checksum");
+                        return null;
                     if ((msg.Payload.Span[1] & 0x8) == 0x8)
                     {
                         //No extensions are defined yet
@@ -87,7 +87,7 @@ namespace ZWaveDotNet.CommandClasses
                     msg.Payload.Slice(0, msg.Payload.Length - 2).CopyTo(buff);
                     key = GetKey(msg.SourceNodeID, sessionId);
                     buffers.Add(key, buff);
-                    List<Range> ranges = new List<Range>
+                    HashSet<Range> ranges = new HashSet<Range>
                     {
                         new Range(0, msg.Payload.Length - 2)
                     };
@@ -101,7 +101,7 @@ namespace ZWaveDotNet.CommandClasses
                     ushort datagramOffset = (ushort)(((msg.Payload.Span[1] & 0x7) << 8) | msg.Payload.Span[2]);
                     Log.Information($"Length: {datagramLen}, session: {sessionId}, offset: {datagramOffset}");
                     if (!ValidateChecksum(msg.Command, msg.Payload.Span))
-                        Log.Error("Invalid Checksum");
+                        return null;
                     if ((msg.Payload.Span[1] & 0x8) == 0x8)
                     {
                         //No extensions are defined yet
@@ -164,7 +164,7 @@ namespace ZWaveDotNet.CommandClasses
             ushort current = 0;
             int key = GetKey(sourceNodeId, sessionId);
             CancellationTokenSource cts = new CancellationTokenSource(5000);
-            if (segments.TryGetValue(key, out List<Range>? value))
+            if (segments.TryGetValue(key, out HashSet<Range>? value))
             {
                 foreach (Range range in value)
                 {
