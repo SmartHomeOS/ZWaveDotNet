@@ -165,9 +165,9 @@ namespace ExampleConsole
             return Task.CompletedTask;
         }
 
-        private static async Task Controller_NodeInfoUpdated(Node node, ApplicationUpdateEventArgs e)
+        private static async Task Controller_NodeInfoUpdated(Node? node, ApplicationUpdateEventArgs e)
         {
-            if (!InterviewList.Contains(node.ID))
+            if (node != null && !InterviewList.Contains(node.ID))
             {
                 InterviewList.Add(node.ID);
                 node.InterviewComplete += Node_InterviewComplete;

@@ -91,12 +91,12 @@ TARIFF_TBL_MONITOR | 0 | 1 | None
 **THERMOSTAT_SETPOINT** | **3** | **3** | **Full**
 **TIME** | **2** | **2** | **Full**
 *TIME_PARAMETERS* | *1* | *2* | *Full*
-*TRANSPORT_SERVICE* | *2* | *2* | *Partial*
+**TRANSPORT_SERVICE** | **2** | **2** | **Full**
 USER_CODE | 0 | 2 | None
 **VERSION** | **3** | **3** | **Full**
 **WAKE_UP** | **3** | **3** | **Full**
 **WINDOW_COVERING** | **1** | **1** | **Full**
 **ZWAVEPLUS_INFO** | **2** | **2** | **Full**
 
-- Full Support for 66/97 Command Classes.
-- Partial Support for 3/97 Command Classes.
+- Full Support for 67/97 Command Classes.
+- Partial Support for 2/97 Command Classes.

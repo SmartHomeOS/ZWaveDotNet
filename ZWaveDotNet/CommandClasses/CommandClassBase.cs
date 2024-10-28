@@ -249,8 +249,14 @@ namespace ZWaveDotNet.CommandClasses
                 else
                     throw new InvalidOperationException("Security required but no keys are available");
             }
-
+            
             DataMessage message = data.ToMessage();
+            if (data.Payload.Count > 51)
+            {
+                await TransportService.Transmit(message, token);
+                return;
+            }
+            
             for (int i = 0; i < 3; i++)
             {
                 if ((await AttemptTransmission(message, token, i == 2).ConfigureAwait(false)) == true)
@@ -260,7 +266,7 @@ namespace ZWaveDotNet.CommandClasses
             }
         }
 
-        private async Task<bool> AttemptTransmission(DataMessage message, CancellationToken cancellationToken, bool ex = false)
+        protected async Task<bool> AttemptTransmission(DataMessage message, CancellationToken cancellationToken, bool ex = false)
         {
             DataCallback dc = await controller.Flow.SendAcknowledgedResponseCallback(message, b => b != 0x0, cancellationToken).ConfigureAwait(false);
             if (dc.Status != TransmissionStatus.CompleteOk && dc.Status != TransmissionStatus.CompleteNoAck && dc.Status != TransmissionStatus.CompleteVerified)
