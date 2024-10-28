@@ -44,7 +44,12 @@ namespace ZWaveDotNet.CommandClasses
 
         internal async Task RequestRetransmission(byte sessionId, ushort offset, CancellationToken cancellationToken = default)
         {
-            await SendCommand(TransportServiceCommand.FragmentWait, cancellationToken, (byte)((sessionId << 4) | (offset >> 8)), (byte)(0xFF & offset));
+            await SendCommand(TransportServiceCommand.FragmentRequest, cancellationToken, (byte)((sessionId << 4) | (offset >> 8)), (byte)(0xFF & offset));
+        }
+
+        internal async Task Wait(byte sessionId, byte pendingSegments, CancellationToken cancellationToken = default)
+        {
+            await SendCommand(TransportServiceCommand.FragmentWait, cancellationToken, pendingSegments);
         }
 
         public static bool IsEncapsulated(ReportMessage msg)
