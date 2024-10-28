@@ -123,7 +123,6 @@ namespace ZWaveDotNet.Entities
         internal async Task HandleApplicationCommand(ApplicationCommand cmd)
         {
             ReportMessage? msg = new ReportMessage(cmd);
-            Log.Verbose(msg.ToString());
             RSSI = msg.RSSI;
 
             //Encapsulation Order (inner to outer) - MultiCommand, Supervision, Multichannel, security, transport, crc16
@@ -133,19 +132,19 @@ namespace ZWaveDotNet.Entities
             {
                 if (TransportService.IsEncapsulated(msg))
                 {
-                    msg = await TransportService.Process(msg, controller).ConfigureAwait(false);
+                    msg = await TransportService.Process(msg, controller);
                     if (msg == null)
                         return; //Not Complete Yet
                 }
                 if (Security0.IsEncapsulated(msg))
                 {
-                    msg = await Security0.Free(msg, controller).ConfigureAwait(false);
+                    msg = await Security0.Free(msg, controller);
                     if (msg == null)
                         return;
                 }
                 if (Security2.IsEncapsulated(msg))
                 {
-                    msg = await Security2.Free(msg, controller).ConfigureAwait(false);
+                    msg = await Security2.Free(msg, controller);
                     if (msg == null)
                         return;
                 }
@@ -161,7 +160,7 @@ namespace ZWaveDotNet.Entities
                 SupervisionStatus status = SupervisionStatus.Success;
                 foreach (ReportMessage r in msgs)
                 {
-                    SupervisionStatus cmdStatus = await HandleReport(r).ConfigureAwait(false);
+                    SupervisionStatus cmdStatus = await HandleReport(r);
                     if (cmdStatus == SupervisionStatus.Fail)
                         status = cmdStatus;
                     else if (cmdStatus == SupervisionStatus.NoSupport && status != SupervisionStatus.Fail)

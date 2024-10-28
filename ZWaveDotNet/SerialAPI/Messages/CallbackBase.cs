@@ -21,7 +21,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
         public readonly byte SessionID;
         public readonly ushort DestinationNodeID;
 
-        protected readonly Controller controller;
+        public readonly Controller controller;
         private static byte callbackID = 1;
 
         public CallbackBase(Controller controller, ushort nodeId, bool callback, Function operation) : base(operation)

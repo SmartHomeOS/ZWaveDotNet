@@ -131,10 +131,10 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(IndicatorCommand.Set, cancellationToken, payload);
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        protected override Task<SupervisionStatus> Handle(ReportMessage message)
         {
             Log.Error("Unexpected Indicator Report Received: " + message.ToString());
-            return SupervisionStatus.NoSupport;
+            return Task.FromResult(SupervisionStatus.NoSupport);
         }
     }
 }

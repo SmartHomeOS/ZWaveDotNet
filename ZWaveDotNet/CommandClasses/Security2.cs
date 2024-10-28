@@ -299,8 +299,6 @@ namespace ZWaveDotNet.CommandClasses
             msg.Update(decoded!.Value);
             msg.Flags |= ReportFlags.Security;
             msg.SecurityLevel = SecurityManager.TypeToKey(networkKey.Key);
-            if ((msg.Flags & ReportFlags.Transport) == ReportFlags.Transport)
-                Log.Debug("Decoded Transport Message: " + msg.ToString());
             return msg;
         }
 
@@ -351,9 +349,11 @@ namespace ZWaveDotNet.CommandClasses
                     Log.Warning("Mixed Entropy: " + MemoryUtil.Print(MEI));
                     break;
                 case Security2Ext.MGRP:
+                    Log.Warning("Ignoring MGRP");
                     groupId = payload.Span[2];
                     break;
                 case Security2Ext.MOS:
+                    Log.Warning("Ignoring MOS");
                     //TODO - Send MPAN
                     break;
                 default:

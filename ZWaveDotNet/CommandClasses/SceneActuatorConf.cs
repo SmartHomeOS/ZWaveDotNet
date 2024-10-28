@@ -49,9 +49,9 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(SceneActuatorConfCommand.Set, cancellationToken, sceneId, PayloadConverter.GetByte(duration), level != null ? (byte)0x40 : (byte)0x0, level != null ? (byte)level : (byte)0x0);
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        protected override Task<SupervisionStatus> Handle(ReportMessage message)
         {
-            return SupervisionStatus.NoSupport;
+            return Task.FromResult(SupervisionStatus.NoSupport);
         }
     }
 }

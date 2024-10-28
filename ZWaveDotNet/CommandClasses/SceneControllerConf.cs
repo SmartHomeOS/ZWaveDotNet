@@ -52,9 +52,9 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(SceneActuatorConfCommand.Set, cancellationToken, groupId, sceneId, PayloadConverter.GetByte(duration));
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        protected override Task<SupervisionStatus> Handle(ReportMessage message)
         {
-            return SupervisionStatus.NoSupport;
+            return Task.FromResult(SupervisionStatus.NoSupport);
         }
     }
 }

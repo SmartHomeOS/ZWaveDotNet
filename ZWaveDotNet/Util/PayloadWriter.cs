@@ -45,11 +45,7 @@ namespace ZWaveDotNet.Util
 
         public void Write(List<byte> bytes)
         {
-            #if NET7_0_OR_GREATER
-                bytes.CopyTo(data.Slice(pos).Span);
-            #else
-                bytes.ToArray().CopyTo(data.Slice(pos));
-            #endif
+            bytes.CopyTo(data.Slice(pos).Span);
             pos += bytes.Count;
         }
 

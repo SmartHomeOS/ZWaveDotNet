@@ -714,10 +714,9 @@ namespace ZWaveDotNet.Entities
                     else if (msg is ApplicationCommand cmd)
                     {
                         if (Nodes.TryGetValue(cmd.SourceNodeID, out Node? node))
-                            _ = Task.Factory.StartNew(async() => { try { await node.HandleApplicationCommand(cmd); } catch (Exception e) { Log.Error(e, "Unhandled"); } }, CancellationToken.None, TaskCreationOptions.RunContinuationsAsynchronously, TaskScheduler.Default);
+                            _ = Task.Factory.StartNew(async() => { try { await node.HandleApplicationCommand(cmd); } catch (Exception e) { Log.Error(e, "Unhandled"); } }, running.Token, TaskCreationOptions.RunContinuationsAsynchronously, TaskScheduler.Default);
                         else
                             Log.Warning("Node " + cmd.SourceNodeID + " not found");
-                        Log.Verbose(cmd.ToString());
                     }
                     else if (msg is InclusionStatus inc)
                     {
