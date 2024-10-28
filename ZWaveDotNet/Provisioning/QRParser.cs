@@ -30,6 +30,13 @@ namespace ZWaveDotNet.Provisioning
 
         public ushort? MaxInclusionRequestInterval { get; private set; }
 
+        public ushort PIN
+        { 
+            get {
+                return BinaryPrimitives.ReadUInt16BigEndian(DSK.AsSpan().Slice(0, 2));
+            } 
+        }
+
         public QRParser(string digitString)
         {
             if (digitString.Length < 52)
