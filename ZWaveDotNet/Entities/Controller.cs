@@ -13,6 +13,7 @@
 using Serilog;
 using System.Buffers.Binary;
 using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -62,8 +63,28 @@ namespace ZWaveDotNet.Entities
         {
             if (string.IsNullOrEmpty(port))
                 throw new ArgumentNullException(nameof(port));
+            SetKeys(s0Key, s2unauth, s2auth, s2access);
+            flow = new Flow(port);
+            BroadcastNode = new Node(Node.BROADCAST_ID, this, null, new CommandClass[] 
+            { 
+                CommandClass.BarrierOperator, CommandClass.Basic, CommandClass.BasicWindowCovering, CommandClass.GeographicLocation, CommandClass.Language,CommandClass.SceneActivation,
+                CommandClass.SilenceAlarm, CommandClass.SwitchAll, CommandClass.SwitchBinary, CommandClass.SwitchColor, CommandClass.SwitchMultiLevel,
+                CommandClass.SwitchToggleBinary, CommandClass.SwitchToggleMultiLevel, CommandClass.WindowCovering
+            });
+            APIVersion = new System.Version();
+        }
+
+        [MemberNotNull(["tempA", "tempE", "AuthenticationKey", "EncryptionKey", "NetworkKeyS0", "NetworkKeyS2UnAuth", "NetworkKeyS2Auth", "NetworkKeyS2Access"])]
+        public void SetKeys(byte[] s0Key, byte[] s2unauth, byte[] s2auth, byte[] s2access)
+        {
             if (s0Key == null || s0Key.Length != 16)
                 throw new ArgumentException("16 byte s0 key required", nameof(s0Key));
+            if (s2unauth == null || s2unauth.Length != 16)
+                throw new ArgumentException("16 byte s2unauth key required", nameof(s2unauth));
+            if (s2auth == null || s2auth.Length != 16)
+                throw new ArgumentException("16 byte s2auth key required", nameof(s2auth));
+            if (s2access == null || s2access.Length != 16)
+                throw new ArgumentException("16 byte s2access key required", nameof(s2access));
             using (Aes aes = Aes.Create())
             {
                 aes.Key = AES.EMPTY_IV;
@@ -77,14 +98,6 @@ namespace ZWaveDotNet.Entities
             NetworkKeyS2UnAuth = s2unauth;
             NetworkKeyS2Auth = s2auth;
             NetworkKeyS2Access = s2access;
-            flow = new Flow(port);
-            BroadcastNode = new Node(Node.BROADCAST_ID, this, null, new CommandClass[] 
-            { 
-                CommandClass.BarrierOperator, CommandClass.Basic, CommandClass.BasicWindowCovering, CommandClass.GeographicLocation, CommandClass.Language,CommandClass.SceneActivation,
-                CommandClass.SilenceAlarm, CommandClass.SwitchAll, CommandClass.SwitchBinary, CommandClass.SwitchColor, CommandClass.SwitchMultiLevel,
-                CommandClass.SwitchToggleBinary, CommandClass.SwitchToggleMultiLevel, CommandClass.WindowCovering
-            });
-            APIVersion = new System.Version();
         }
 
         public ushort ID { get; private set; }
