@@ -27,12 +27,12 @@ namespace ZWaveDotNet.Security
         {
             if (sending)
             {
-                sender = controller.ControllerID;
+                sender = controller.ID;
                 destination = node.ID;
             }
             else
             {
-                destination = controller.ControllerID;
+                destination = controller.ID;
                 sender = node.ID;
             }
             homeId = controller.HomeID;

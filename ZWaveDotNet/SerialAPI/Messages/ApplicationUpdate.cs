@@ -10,6 +10,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using System.Buffers.Binary;
 using ZWaveDotNet.SerialAPI.Enums;
 using ZWaveDotNet.Util;
 
@@ -35,16 +36,18 @@ namespace ZWaveDotNet.SerialAPI.Messages
         public ApplicationUpdateType UpdateType;
         public ushort NodeId;
 
-        public ApplicationUpdate(Memory<byte> payload) : base(Function.ApplicationUpdate)
+        public ApplicationUpdate(Memory<byte> payload, bool wideId) : base(Function.ApplicationUpdate)
         {
             if (payload.Length == 0)
                 throw new InvalidDataException("Empty ApplicationUpdate received");
             UpdateType = (ApplicationUpdateType)payload.Span[0];
-            if (payload.Length  > 1)
+            if (wideId && payload.Length > 2)
+                NodeId = BinaryPrimitives.ReadUInt16BigEndian(payload.Span.Slice(1, 2));
+            else if (payload.Length > 1)
                 NodeId = payload.Span[1];
         }
 
-        public static ApplicationUpdate From(Memory<byte> payload)
+        public static ApplicationUpdate From(Memory<byte> payload, bool wideId)
         {
             if (payload.Length == 0)
                 throw new InvalidDataException("Empty ApplicationUpdate received");
@@ -52,12 +55,12 @@ namespace ZWaveDotNet.SerialAPI.Messages
             {
                 case ApplicationUpdateType.SmartStartHomeIdReceivedLR:
                 case ApplicationUpdateType.SmartStartHomeIdReceived:
-                    return new SmartStartPrime(payload);
+                    return new SmartStartPrime(payload, wideId);
                 case ApplicationUpdateType.SmartStartNodeInfoReceived:
-                    return new SmartStartNodeInformationUpdate(payload);
+                    return new SmartStartNodeInformationUpdate(payload, wideId);
                 case ApplicationUpdateType.NodeAdded:
                 case ApplicationUpdateType.NodeInfoReceived:
-                    return new NodeInformationUpdate(payload);
+                    return new NodeInformationUpdate(payload, wideId);
                 case ApplicationUpdateType.NodeRemoved:
                 case ApplicationUpdateType.RoutingPending:
                 case ApplicationUpdateType.SUCIDChanged:
@@ -65,7 +68,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
                 case ApplicationUpdateType.NodeInfoRequestFailed:
                 case ApplicationUpdateType.NopPowerReceived:
                 default:
-                    return new ApplicationUpdate(payload);
+                    return new ApplicationUpdate(payload, wideId);
             }
         }
 
@@ -73,6 +76,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
         {
             PayloadWriter stream = base.GetPayload();
             stream.Write((byte)UpdateType);
+            stream.Write((byte)NodeId);
             return stream;
         }
 

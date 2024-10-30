@@ -66,7 +66,7 @@ namespace ZWaveDotNet.CommandClasses
 
         public override async Task Interview(CancellationToken cancellationToken = default)
         {
-            await Add(LIFELINE_GROUP, cancellationToken, (byte)controller.ControllerID);
+            await Add(LIFELINE_GROUP, cancellationToken, (byte)controller.ID);
             Log.Information("Assigned Lifeline Group");
         }
 

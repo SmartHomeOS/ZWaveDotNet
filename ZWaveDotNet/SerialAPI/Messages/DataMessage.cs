@@ -27,7 +27,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
 
         public DataMessage(Controller controller, ushort nodeId, List<byte> data, bool callback, bool exploreNPDUs) : base(controller, nodeId, callback, controller.ControllerType == LibraryType.BridgeController ? Function.SendDataBridge : Function.SendData)
         {
-            SourceNodeID = controller.ControllerID;
+            SourceNodeID = controller.ID;
             Data = data;
             Options = TransmitOptions.RequestAck | TransmitOptions.AutoRouting;
             if (exploreNPDUs)

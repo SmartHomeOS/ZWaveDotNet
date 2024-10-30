@@ -90,7 +90,7 @@ namespace ZWaveDotNet.CommandClasses
             new Random().NextBytes(sendersNonce);
             payload.Insert(0, 0x0); //Sequenced = False
             byte[] encrypted = EncryptDecryptPayload(payload.ToArray(), sendersNonce, receiversNonce, controller.tempE);
-            byte[] mac = AES.ComputeMAC(controller.ControllerID, node.ID, (byte)Security0Command.MessageEncap, sendersNonce, receiversNonce, encrypted, controller.tempA);
+            byte[] mac = AES.ComputeMAC(controller.ID, node.ID, (byte)Security0Command.MessageEncap, sendersNonce, receiversNonce, encrypted, controller.tempA);
 
             byte[] securePayload = new byte[17 + encrypted.Length];
             Array.Copy(sendersNonce, 0, securePayload, 0, 8);
@@ -113,7 +113,7 @@ namespace ZWaveDotNet.CommandClasses
             new Random().NextBytes(sendersNonce);
             payload.Insert(0, 0x0); //Sequenced = False
             byte[] encrypted = EncryptDecryptPayload(payload.ToArray(), sendersNonce, receiversNonce, controller.EncryptionKey);
-            byte[] mac = AES.ComputeMAC(controller.ControllerID, node.ID, (byte)Security0Command.MessageEncap, sendersNonce, receiversNonce, encrypted, controller.AuthenticationKey);
+            byte[] mac = AES.ComputeMAC(controller.ID, node.ID, (byte)Security0Command.MessageEncap, sendersNonce, receiversNonce, encrypted, controller.AuthenticationKey);
 
             byte[] securePayload = new byte[17 + encrypted.Length];
             Array.Copy(sendersNonce, 0, securePayload, 0, 8);
@@ -142,7 +142,7 @@ namespace ZWaveDotNet.CommandClasses
             }
             byte[] sendersNonce = msg.Payload.Slice(0, 8).ToArray();
             byte[] payload = msg.Payload.Slice(8, msg.Payload.Length - 17).ToArray();
-            byte[] computedMAC = AES.ComputeMAC(msg.SourceNodeID, controller.ControllerID, msg.Command, sendersNonce, (Memory<byte>)receiversNonce, payload, controller.AuthenticationKey);
+            byte[] computedMAC = AES.ComputeMAC(msg.SourceNodeID, controller.ID, msg.Command, sendersNonce, (Memory<byte>)receiversNonce, payload, controller.AuthenticationKey);
             if (!msg.Payload.Slice(msg.Payload.Length - 8, 8).Span.SequenceEqual(computedMAC))
             {
                 Log.Error("Invalid MAC");

@@ -49,7 +49,8 @@ namespace ExampleConsole
             controller.NodeInfoUpdated += Controller_NodeInfoUpdated;
             controller.NodeReady += Controller_NodeReady;
             controller.NodeExcluded += Controller_NodeExcluded;
-            controller.InclusionStopped += Controller_InclusionStopped;
+            controller.NodeIncluded += Controller_InclusionSucceeded;
+            controller.NodeInclusionFailed += Controller_NodeInclusionFailed;
 
             //Start the controller interview
             Console.WriteLine("Interviewing Controller...");
@@ -78,9 +79,15 @@ namespace ExampleConsole
             await InputLoop();
         }
 
-        private static void Controller_InclusionStopped(object? sender, EventArgs e)
+        private static void Controller_NodeInclusionFailed(object? sender, EventArgs e)
         {
             currentMode = Mode.Display;
+        }
+
+        private static Task Controller_InclusionSucceeded(Node node)
+        {
+            currentMode = Mode.Display;
+            return Task.CompletedTask;
         }
 
         private static Task Controller_NodeExcluded(Node node)
@@ -196,7 +203,7 @@ namespace ExampleConsole
             if (currentMode == Mode.UserInput)
                 return;
             Console.Clear();
-            Console.Write($"ZWaveDotNet v{Version} - Controller #{controller!.ControllerID} {(controller!.IsConnected ? "Connected" : "Disconnected")}");
+            Console.Write($"ZWaveDotNet v{Version} - Controller #{controller!.ID} {(controller!.IsConnected ? "Connected" : "Disconnected")}");
             Console.Write($" - v{controller.APIVersion.Major} ({region})");
             Console.Write($"{(controller!.SupportsLongRange ? " [LR]" : "")}");
             Console.Write($"{(controller!.Primary ? " [Primary]" : "")}");

@@ -45,7 +45,8 @@ namespace ZWaveDotNet.Entities
         public event NodeEventHandler? SecurityBootstrapComplete;
         public event NodeEventHandler? NodeReady;
         public event NodeEventHandler? NodeExcluded;
-        public event EventHandler? InclusionStopped;
+        public event NodeEventHandler? NodeIncluded;
+        public event EventHandler? NodeInclusionFailed;
 
         private readonly Flow flow;
         internal byte[] tempA;
@@ -86,7 +87,7 @@ namespace ZWaveDotNet.Entities
             APIVersion = new System.Version();
         }
 
-        public ushort ControllerID { get; private set; }
+        public ushort ID { get; private set; }
         public uint HomeID { get; private set; }
         public bool SupportsLongRange { get; private set; }
         public Node BroadcastNode { get; private set; }
@@ -133,9 +134,9 @@ namespace ZWaveDotNet.Entities
             {
                 HomeID = BinaryPrimitives.ReadUInt32BigEndian(networkIds.Data.Slice(0, 4).Span);
                 if (networkIds.Data.Span.Length == 5)
-                    ControllerID = networkIds.Data.Span[4];
+                    ID = networkIds.Data.Span[4];
                 else
-                    ControllerID = BinaryPrimitives.ReadUInt16BigEndian(networkIds.Data.Slice(4, 2).Span);
+                    ID = BinaryPrimitives.ReadUInt16BigEndian(networkIds.Data.Slice(4, 2).Span);
             }
 
             //Load NodeDB
@@ -151,14 +152,14 @@ namespace ZWaveDotNet.Entities
             {
                 Primary = (init.Capability & InitData.ControllerCapability.PrimaryController) == InitData.ControllerCapability.PrimaryController;
                 SIS = (init.Capability & InitData.ControllerCapability.SIS) == InitData.ControllerCapability.SIS;
-                foreach (ushort id in init.NodeIDs)
+                foreach (ushort nodeId in init.NodeIDs)
                 {
-                    if (id != ControllerID && !Nodes.ContainsKey(id))
+                    if (nodeId != ID && !Nodes.ContainsKey(nodeId))
                     {
-                        bool failed = await IsNodeFailed(id, cancellationToken);
-                        NodeProtocolInfo nodeInfo = await GetNodeProtocolInfo(id, cancellationToken);
-                        Nodes.Add(id, new Node(id, this, nodeInfo, null, failed));
-                        await flow.SendAcknowledgedResponse(Function.RequestNodeInfo, CancellationToken.None, NodeIDToBytes(id));
+                        bool failed = await IsNodeFailed(nodeId, cancellationToken);
+                        NodeProtocolInfo nodeInfo = await GetNodeProtocolInfo(nodeId, cancellationToken);
+                        Nodes.Add(nodeId, new Node(nodeId, this, nodeInfo, null, failed));
+                        await flow.SendAcknowledgedResponse(Function.RequestNodeInfo, CancellationToken.None, NodeIDToBytes(nodeId));
                     }
                 }
             }
@@ -381,7 +382,7 @@ namespace ZWaveDotNet.Entities
             ControllerJSON json = new ControllerJSON
             {
                 HomeID = HomeID,
-                ID = ControllerID,
+                ID = ID,
                 DbVersion = 1,
                 Nodes = new NodeJSON[Nodes.Count]
             };
@@ -396,7 +397,7 @@ namespace ZWaveDotNet.Entities
 
         private void Deserialize(ControllerJSON json)
         {
-            if (HomeID != json.HomeID || ControllerID != json.ID)
+            if (HomeID != json.HomeID || ID != json.ID)
                 throw new InvalidDataException("Node DB is for a different network");
             if (json.DbVersion != 0x1)
                 throw new InvalidDataException($"Unsupported Node DB Version {json.DbVersion}");
@@ -540,9 +541,9 @@ namespace ZWaveDotNet.Entities
         /// </summary>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public async Task StopExclusion(CancellationToken cancellationToken = default)
+        public async Task StopExclusion(bool specificNode = false, CancellationToken cancellationToken = default)
         {
-            await flow.SendAcknowledged(Function.RemoveNodeFromNetwork, cancellationToken, (byte)AddRemoveNodeMode.StopNetworkIncludeExclude, 0x1);
+            await flow.SendAcknowledged(specificNode ? Function.RemoveNodeIdFromNetwork : Function.RemoveNodeFromNetwork, cancellationToken, (byte)AddRemoveNodeMode.StopNetworkIncludeExclude, 0x1);
         }
 
         public async Task<bool> RemoveFailedNode(ushort nodeId, CancellationToken cancellationToken = default)
@@ -733,17 +734,24 @@ namespace ZWaveDotNet.Entities
                                 await StopInclusion();
                             else if (inc.Status == InclusionExclusionStatus.OperationComplete)
                             {
-                                InclusionStopped?.Invoke(this, EventArgs.Empty);
                                 if (inc.NodeID > 0 && Nodes.TryGetValue(inc.NodeID, out Node? node))
                                 {
+                                    NodeIncluded?.Invoke(node);
                                     Log.Information("Added " + node.ToString());
                                     if (SecurityManager != null)
                                         await Task.Factory.StartNew(() => ExecuteStrategy(node)).ConfigureAwait(false);
                                 }
+                                else if (NodeInclusionFailed != null)
+                                    NodeInclusionFailed.Invoke(this, EventArgs.Empty);
                             }
                         }
-                        else if ((inc.Function == Function.RemoveNodeFromNetwork || inc.Function == Function.RemoveNodeIdFromNetwork) && inc.NodeID > 0)
+                        else if (inc.Function == Function.RemoveNodeFromNetwork || inc.Function == Function.RemoveNodeIdFromNetwork)
                         {
+                            if (inc.NodeID == 0)
+                            {
+                                Log.Error("Received node removal with zero ID. Status: " + inc.Status);
+                                continue;
+                            }
                             if (Nodes.Remove(inc.NodeID, out Node? node))
                             {
                                 node.NodeFailed = true;
@@ -751,8 +759,8 @@ namespace ZWaveDotNet.Entities
                                     await NodeExcluded.Invoke(node);
                                 Log.Information($"Successfully excluded node {inc.NodeID}");
                             }
-                            if (inc.Status == InclusionExclusionStatus.OperationComplete)
-                                await StopExclusion();
+                            if (inc.Status == InclusionExclusionStatus.OperationComplete || inc.Status == InclusionExclusionStatus.OperationFailed)
+                                await StopExclusion(inc.Function == Function.RemoveNodeIdFromNetwork);
                         }
                     }
                 }catch(Exception e)
@@ -794,7 +802,7 @@ namespace ZWaveDotNet.Entities
         public override string ToString()
         {
             StringBuilder ret = new StringBuilder();
-            ret.Append($"Controller {ControllerID} v{APIVersion.Major}");
+            ret.Append($"Controller {ID} v{APIVersion.Major}");
             if (Primary)
                 ret.Append("[Primary] ");
             if (SIS)

@@ -26,17 +26,18 @@ namespace ZWaveDotNet.SerialAPI.Messages
         public readonly GenericType GenericType;
         public readonly SpecificType SpecificType;
 
-        public SmartStartPrime(Memory<byte> payload) : base(payload)
+        public SmartStartPrime(Memory<byte> payload, bool wideId) : base(payload, wideId)
         {
             if (payload.Length < 11)
                 throw new InvalidDataException("SmartStartPrime should be at least 11 bytes");
-            RxStatus = (ReceiveStatus)payload.Span[2];
-            HomeID = payload.Slice(3, 4).ToArray();
+            int pos = wideId ? 3 : 2;
+            RxStatus = (ReceiveStatus)payload.Span[pos];
+            HomeID = payload.Slice(pos + 1, 4).ToArray();
             //byte len = payload.Span[7];
-            BasicType = (BasicType)payload.Span[8];
-            GenericType = (GenericType)payload.Span[9];
-            SpecificType = SpecificTypeMapping.Get(GenericType, payload.Span[10]);
-            CommandClasses = PayloadConverter.GetCommandClasses(payload.Slice(11)).ToArray();
+            BasicType = (BasicType)payload.Span[pos + 6];
+            GenericType = (GenericType)payload.Span[pos + 7];
+            SpecificType = SpecificTypeMapping.Get(GenericType, payload.Span[pos + 8]);
+            CommandClasses = PayloadConverter.GetCommandClasses(payload.Slice(pos + 9)).ToArray();
         }
 
         public override PayloadWriter GetPayload()

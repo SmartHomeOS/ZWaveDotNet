@@ -454,7 +454,6 @@ namespace ZWaveDotNet.Entities
                 else
                 {
                     //Whatever keys we have is what the device has
-                    Log.Information("Requesting secure classes");
                     if (key != null && key.Key == SecurityManager.RecordType.S0 && commandClasses.ContainsKey(CommandClass.Security0))
                         await RequestS0(cancellationToken).ConfigureAwait(false);
                     else if (key != null && commandClasses.ContainsKey(CommandClass.Security2))
@@ -575,7 +574,7 @@ namespace ZWaveDotNet.Entities
                 return bytes;
             }
             else
-                return new byte[] { (byte)id };
+                return [(byte)id];
         }
     }
 }

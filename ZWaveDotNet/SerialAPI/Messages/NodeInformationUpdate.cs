@@ -23,15 +23,16 @@ namespace ZWaveDotNet.SerialAPI.Messages
         public readonly GenericType GenericType;
         public readonly SpecificType SpecificType;
 
-        public NodeInformationUpdate(Memory<byte> payload) : base(payload)
+        public NodeInformationUpdate(Memory<byte> payload, bool wideId) : base(payload, wideId)
         {
             if (payload.Length < 6)
                 throw new InvalidDataException("NodeInformation should be at least 6 bytes");
+            int pos = wideId ? 4 : 3;
             //byte len = payload.Span[2];
-            BasicType = (BasicType)payload.Span[3];
-            GenericType = (GenericType)payload.Span[4];
-            SpecificType = SpecificTypeMapping.Get(GenericType, payload.Span[5]);
-            CommandClasses = PayloadConverter.GetCommandClasses(payload.Slice(6)).ToArray();
+            BasicType = (BasicType)payload.Span[pos++];
+            GenericType = (GenericType)payload.Span[pos++];
+            SpecificType = SpecificTypeMapping.Get(GenericType, payload.Span[pos++]);
+            CommandClasses = PayloadConverter.GetCommandClasses(payload.Slice(pos)).ToArray();
         }
 
         public override PayloadWriter GetPayload()

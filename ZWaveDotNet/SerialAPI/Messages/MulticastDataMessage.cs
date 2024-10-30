@@ -100,9 +100,9 @@ namespace ZWaveDotNet.SerialAPI.Messages
             if (Function == Function.SendDataBridgeMulticast)
             {
                 if (controller.WideID)
-                    writer.Write(controller.ControllerID);
+                    writer.Write(controller.ID);
                 else
-                    writer.Write((byte)controller.ControllerID);
+                    writer.Write((byte)controller.ID);
             }
             writer.Write((byte)DestinationNodeIDs.Length);
             foreach (ushort id in DestinationNodeIDs)

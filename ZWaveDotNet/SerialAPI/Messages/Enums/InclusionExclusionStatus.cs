@@ -19,6 +19,7 @@ namespace ZWaveDotNet.SerialAPI.Messages.Enums
         OperationOngoingEndNode = 0x3,
         OperationOngoingController = 0x4,
         OperationProtocolComplete = 0x5,
-        OperationComplete = 0x6
+        OperationComplete = 0x6,
+        OperationFailed = 0x7
     }
 }

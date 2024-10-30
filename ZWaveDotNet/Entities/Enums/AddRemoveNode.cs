@@ -16,7 +16,9 @@ namespace ZWaveDotNet.Entities.Enums
     public enum AddRemoveNodeMode : byte
     {
         AnyNode = 0x01,
+        [Obsolete]
         Controller = 0x02,
+        [Obsolete]
         EndNode = 0x03,
         Existing = 0x04,
         StopNetworkIncludeExclude = 0x05,
