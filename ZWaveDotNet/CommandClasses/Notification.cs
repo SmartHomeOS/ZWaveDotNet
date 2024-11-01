@@ -21,6 +21,10 @@ using ZWaveDotNet.SerialAPI;
 
 namespace ZWaveDotNet.CommandClasses
 {
+    /// <summary>
+    /// The Notification Command Class is used to advertise events or states, such as movement detection, door open/close or system failure.
+    /// The Notification Command Class supersedes the Alarm Command Class.
+    /// </summary>
     [CCVersion(CommandClass.Notification, 3, 8)]
     public class Notification : CommandClassBase
     {
@@ -41,24 +45,50 @@ namespace ZWaveDotNet.CommandClasses
 
         public Notification(Node node, byte endpoint) : base(node, endpoint, CommandClass.Notification) { }
 
+        /// <summary>
+        /// <b>Push Mode</b>: This command is used to request if the unsolicited transmission of a specific Notification Type is enabled.
+        /// <b>Pull Mode</b>: This command is used to retrieve the next Notification from the receiving node’s queue.
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<NotificationReport> Get(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(NotificationCommand.Get, NotificationCommand.Report, cancellationToken, (byte)0x0, FIRST_AVAILABLE, (byte)0x0);
             return new NotificationReport(response.Payload);
         }
 
+        /// <summary>
+        /// Version 3
+        /// <b>Push Mode</b>: This command is used to enable or disable the unsolicited transmission of a specific Notification Type.
+        /// <b>Pull Mode</b>: This command is used to clear a persistent Notification in the notification queue.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="enabled"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task Set(NotificationType type, bool enabled, CancellationToken cancellationToken = default)
         {
             byte status = enabled ? (byte)0xFF : (byte)0x00;
             await SendCommand(NotificationCommand.Set, cancellationToken, (byte)type, status);
         }
 
+        /// <summary>
+        /// This command is used to request supported Notification Types.
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<AlarmSupportedReport> SupportedGet(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(NotificationCommand.SupportedGet, NotificationCommand.SupportedReport, cancellationToken);
             return new AlarmSupportedReport(response.Payload);
         }
 
+        /// <summary>
+        /// This command is used to request the supported Notifications for a specified Notification Type.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<NotificationState[]> EventSupportedGet(NotificationType type, CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(NotificationCommand.EventSupportedGet, NotificationCommand.EventSupportedReport, cancellationToken, (byte)type);

@@ -21,6 +21,10 @@ using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.CommandClasses
 {
+    /// <summary>
+    /// The <b>Wake Up Command Class</b> allows a battery-powered device to notify another device (always listening),
+    /// that it is awake and ready to receive any queued commands.
+    /// </summary>
     [CCVersion(CommandClass.WakeUp, 1, 3)]
     public class WakeUp : CommandClassBase
     {
@@ -40,24 +44,46 @@ namespace ZWaveDotNet.CommandClasses
 
         public WakeUp(Node node, byte endpoint) : base(node, endpoint, CommandClass.WakeUp) { }
 
+        /// <summary>
+        /// <b>Version 1</b>: This command is used to request the Wake Up Interval and destination of a node.
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<WakeUpIntervalReport> GetInterval(CancellationToken cancellationToken = default)
         {
             ReportMessage message = await SendReceive(WakeUpCommand.IntervalGet, WakeUpCommand.IntervalReport, cancellationToken);
             return new WakeUpIntervalReport(message.Payload);
         }
 
-        public async Task SetInterval(TimeSpan interval, byte targetNodeID, CancellationToken cancellationToken = default)
+        /// <summary>
+        /// <b>Version 1</b>: This command is used to configure the Wake Up interval and destination of a node.
+        /// </summary>
+        /// <param name="interval"></param>
+        /// <param name="targetNodeID"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public async Task SetInterval(TimeSpan interval, ushort targetNodeID, CancellationToken cancellationToken = default)
         {
             byte[] seconds = PayloadConverter.FromUInt24((uint)interval.TotalSeconds);
-            await SendCommand(WakeUpCommand.IntervalSet, cancellationToken, seconds[0], seconds[1], seconds[2], targetNodeID);
+            await SendCommand(WakeUpCommand.IntervalSet, cancellationToken, seconds[0], seconds[1], seconds[2], (byte)targetNodeID);
         }
 
+        /// <summary>
+        /// <b>Version 1</b>: This command is used to notify a supporting node that it MAY return to sleep to minimize power consumption.
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task NoMoreInformation(CancellationToken cancellationToken = default)
         {
             Log.Information($"Node {node.ID} returned to sleep");
             await SendCommand(WakeUpCommand.NoMoreInformation, cancellationToken);
         }
 
+        /// <summary>
+        /// <b>Version 2</b>: This command is used to request the Wake Up Interval capabilities of a node.
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<WakeUpIntervalCapabilitiesReport> GetIntervalCapabilities(CancellationToken cancellationToken = default)
         {
             ReportMessage message = await SendReceive(WakeUpCommand.IntervalCapabilitiesGet, WakeUpCommand.IntervalCapabilitiesReport, cancellationToken);

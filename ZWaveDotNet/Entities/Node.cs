@@ -32,6 +32,7 @@ namespace ZWaveDotNet.Entities
 {
     public class Node
     {
+        protected enum InterviewState { None, Started, Complete };
         public const ushort BROADCAST_ID = 0xFFFF;
         public const ushort UNINITIALIZED_ID = 0x0000;
 
@@ -42,7 +43,7 @@ namespace ZWaveDotNet.Entities
         protected readonly NodeProtocolInfo? nodeInfo;
         protected bool lr;
         protected bool failed;
-        protected bool interviewed;
+        protected InterviewState interviewed;
         
         protected ConcurrentDictionary<CommandClass, CommandClassBase> commandClasses = new ConcurrentDictionary<CommandClass, CommandClassBase>();
         protected List<EndPoint> endPoints = new List<EndPoint>();
@@ -54,7 +55,7 @@ namespace ZWaveDotNet.Entities
         public SpecificType SpecificType { get { return nodeInfo?.SpecificType ?? SpecificType.Unknown; } }
         public GenericType GenericType { get { return nodeInfo?.GenericType ?? GenericType.Unknown; } }
         public bool NodeFailed {  get {  return failed; } internal set { failed = value; } }
-        public bool Interviewed { get { return interviewed; } }
+        public bool Interviewed { get { return interviewed == InterviewState.Complete; } }
         public sbyte RSSI { get; private set; }
 
         public Node(ushort id, Controller controller, NodeProtocolInfo? nodeInfo, CommandClass[]? commandClasses = null, bool failed = false)
@@ -258,7 +259,7 @@ namespace ZWaveDotNet.Entities
 
         public void Deserialize(NodeJSON json)
         {
-            interviewed = json.Interviewed;
+            interviewed = json.Interviewed ? InterviewState.Complete : InterviewState.None;
             foreach (CommandClassJson cc in json.CommandClasses)
                 AddCommandClass(cc.CommandClass, cc.Secure, cc.Version);
 
@@ -303,7 +304,8 @@ namespace ZWaveDotNet.Entities
                 {
                     try
                     {
-                        //TODO - Make sure we abort this if interview is already in progress
+                        if (interviewed > InterviewState.None)
+                            return;
                         while (!commandClasses.ContainsKey(CommandClass.WakeUp))
                             await Task.Delay(3000).ConfigureAwait(false); //TODO - Improve this
                         await ((WakeUp)commandClasses[CommandClass.WakeUp]).WaitForAwake().ConfigureAwait(false);
@@ -312,7 +314,6 @@ namespace ZWaveDotNet.Entities
                             using (CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeout.Token))
                                 await Interview(newlyIncluded, key, cts.Token).ConfigureAwait(false);
                         }
-                        await ((WakeUp)commandClasses[CommandClass.WakeUp]).NoMoreInformation().ConfigureAwait(false);
                     }
                     catch(Exception ex)
                     {
@@ -325,6 +326,7 @@ namespace ZWaveDotNet.Entities
         {
             if (controller.SecurityManager != null && !failed)
             {
+                interviewed = InterviewState.Started;
                 if (!newlyIncluded && key == null)
                 {
                     //We need to try keys one at a time
@@ -510,7 +512,7 @@ namespace ZWaveDotNet.Entities
             foreach (CommandClassBase cc in commandClasses.Values)
                 await cc.Interview(cancellationToken).ConfigureAwait(false);
             Log.Information($"Interview Complete [{ID}]");
-            this.interviewed = true;
+            this.interviewed = InterviewState.Complete;
             if (InterviewComplete != null)
                 await InterviewComplete.Invoke(this);
         }
