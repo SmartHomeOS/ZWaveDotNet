@@ -19,6 +19,9 @@ using ZWaveDotNet.SerialAPI;
 
 namespace ZWaveDotNet.CommandClasses
 {
+    /// <summary>
+    /// The Battery Command Class is used to request and report battery levels for a given device.
+    /// </summary>
     [CCVersion(CommandClass.Battery, 3)]
     public class Battery : CommandClassBase
     {
@@ -34,12 +37,22 @@ namespace ZWaveDotNet.CommandClasses
 
         public Battery(Node node, byte endpoint) : base(node, endpoint, CommandClass.Battery) { }
 
+        /// <summary>
+        /// <b>Version 1</b>: The Battery Get Command is used to request the level of a battery.
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<BatteryLevelReport> GetLevel(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(BatteryCommand.Get, BatteryCommand.Report, cancellationToken);
             return new BatteryLevelReport(response.Payload);
         }
 
+        /// <summary>
+        /// <b>Version 2</b>: This command is used to query the health of the battery, particularly the battery temperature and maximum capacity.
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<BatteryHealthReport> GetHealth(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(BatteryCommand.HealthGet, BatteryCommand.HealthReport, cancellationToken);

@@ -21,9 +21,21 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly byte LevelPercent;
         public readonly bool IsLow;
         public readonly BatteryChargingState State;
+        /// <summary>
+        /// This field indicates if the battery is rechargeable or not.
+        /// </summary>
         public readonly bool Rechargable;
+        /// <summary>
+        /// The battery is utilized for back-up purposes of a mains powered connected device
+        /// </summary>
         public readonly bool Backup;
+        /// <summary>
+        /// Overheating is detected at the battery
+        /// </summary>
         public readonly bool Overheating;
+        /// <summary>
+        /// Battery fluid is low and should be refilled
+        /// </summary>
         public readonly bool LowFluid;
         public readonly bool ReplaceSoon;
         public readonly bool ReplaceNow;
@@ -36,7 +48,7 @@ namespace ZWaveDotNet.CommandClassReports
                 throw new DataException($"Battery Level Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
 
             IsLow = payload.Span[0] == 0xFF;
-            LevelPercent = IsLow ? (byte)0x00 : payload.Span[0];
+            LevelPercent = IsLow ? (byte)5 : payload.Span[0];
             if (payload.Length > 2)
             {
                 State = (BatteryChargingState)(payload.Span[1] >> 6);

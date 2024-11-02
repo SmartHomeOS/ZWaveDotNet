@@ -14,8 +14,17 @@ namespace ZWaveDotNet.CommandClassReports.Enums
 {
     public enum DeviceSpecificType : byte
     {
-        OEM_ID = 0,
+        /// <summary>
+        /// The device default serial number
+        /// </summary>
+        Default = 0,
+        /// <summary>
+        /// Device Serial Number
+        /// </summary>
         Serial = 1,
+        /// <summary>
+        /// Pseudo random number
+        /// </summary>
         Random = 2
     }
 }

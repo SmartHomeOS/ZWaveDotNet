@@ -14,8 +14,17 @@ namespace ZWaveDotNet.CommandClassReports.Enums
 {
     public enum RateType : byte
     {
+        /// <summary>
+        /// Version 1
+        /// </summary>
         Default = 0x0,
+        /// <summary>
+        /// Version 4: Import / Consumed
+        /// </summary>
         Import = 0x1,
+        /// <summary>
+        /// Version 4: Export / Produced
+        /// </summary>
         Export = 0x2
     }
 }

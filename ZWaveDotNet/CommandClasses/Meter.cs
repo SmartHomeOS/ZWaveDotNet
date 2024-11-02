@@ -20,6 +20,10 @@ using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.CommandClasses
 {
+    /// <summary>
+    /// The Meter Command Class is used to advertise instantaneous and accumulated numerical readings.
+    /// The Command Class is intended for accumulated values in physical units from a water meter or metering device(gas, electric etc.) and thereby enabling some automatic meter reading capabilities.
+    /// </summary>
     [CCVersion(CommandClass.Meter, 1, 6)]
     public class Meter : CommandClassBase
     {
@@ -36,12 +40,25 @@ namespace ZWaveDotNet.CommandClasses
 
         public Meter(Node node, byte endpoint) : base(node, endpoint, CommandClass.Meter) { }
 
+        /// <summary>
+        /// <b>Version 1</b>: This command is used to request the current meter reading to a supporting node.
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<MeterReport> Get(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(MeterCommand.Get, MeterCommand.Report, cancellationToken);
             return new MeterReport(response.Payload);
         }
 
+        /// <summary>
+        /// <b>Version 2</b>: This command is used to request the current meter reading to a supporting node.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="unit"></param>
+        /// <param name="rate"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<MeterReport> Get(MeterType type, Units unit, RateType rate, CancellationToken cancellationToken = default)
         {
             byte scale2 = 0;
@@ -53,17 +70,36 @@ namespace ZWaveDotNet.CommandClasses
             return new MeterReport(response.Payload);
         }
 
+        /// <summary>
+        /// <b>Version 2</b>: This command is used to request the supported scales in a sub meter.
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<MeterSupportedReport> GetSupported(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(MeterCommand.SupportedGet, MeterCommand.SupportedReport, cancellationToken);
             return new MeterSupportedReport(response.Payload);
         }
 
+        /// <summary>
+        /// <b>Version 2</b>: This command is used to reset all accumulated values stored at the receiving node.
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task Reset(CancellationToken cancellationToken = default)
         {
             await SendCommand(MeterCommand.Reset, cancellationToken);
         }
 
+        /// <summary>
+        /// <b>Version 6</b>: This command is used to reset the accumulated values stored at the receiving node.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="rate"></param>
+        /// <param name="unit"></param>
+        /// <param name="value"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task Reset(MeterType type, RateType rate, Units unit, float value, CancellationToken cancellationToken = default)
         {
             byte scale2 = 0;

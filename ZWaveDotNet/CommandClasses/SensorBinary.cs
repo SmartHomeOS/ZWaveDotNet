@@ -20,6 +20,9 @@ using ZWaveDotNet.SerialAPI;
 
 namespace ZWaveDotNet.CommandClasses
 {
+    /// <summary>
+    /// The Binary Sensor Command Class is used to realize binary sensors, such as movement sensors.
+    /// </summary>
     [CCVersion(CommandClass.SensorBinary, 1, 2)]
     public class SensorBinary : CommandClassBase
     {
@@ -35,12 +38,23 @@ namespace ZWaveDotNet.CommandClasses
 
         public SensorBinary(Node node, byte endpoint) : base(node, endpoint, CommandClass.SensorBinary) { }
 
+        /// <summary>
+        /// <b>Version 1</b>: This command is used to request the status of a sensor.
+        /// </summary>
+        /// <param name="sensorType"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<SensorBinaryReport> Get(SensorBinaryType sensorType, CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(SensorBinaryCommand.Get, SensorBinaryCommand.Report, cancellationToken, (byte)sensorType);
             return new SensorBinaryReport(response.Payload);
         }
 
+        /// <summary>
+        /// <b>Version 2</b>: This command is used to request the supported sensor types from the binary sensor device.
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<SensorBinaryType[]> GetSensorType(CancellationToken cancellationToken = default)
         {
             List<SensorBinaryType> types = new List<SensorBinaryType>();

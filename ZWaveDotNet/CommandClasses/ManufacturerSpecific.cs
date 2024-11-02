@@ -18,6 +18,9 @@ using ZWaveDotNet.SerialAPI;
 
 namespace ZWaveDotNet.CommandClasses
 {
+    /// <summary>
+    /// The Manufacturer Specific Command Class is used to advertise manufacturer specific information
+    /// </summary>
     [CCVersion(CommandClass.ManufacturerSpecific, 2)]
     public class ManufacturerSpecific : CommandClassBase
     {
@@ -31,12 +34,23 @@ namespace ZWaveDotNet.CommandClasses
 
         public ManufacturerSpecific(Node node, byte endpoint) : base(node, endpoint, CommandClass.ManufacturerSpecific) { }
 
+        /// <summary>
+        /// <b>Version 1</b>: This command is used to request manufacturer specific information from another node.
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<ManufacturerSpecificReport> Get(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(ManufacturerSpecificCommand.Get, ManufacturerSpecificCommand.Report, cancellationToken);
             return new ManufacturerSpecificReport(response.Payload);
         }
 
+        /// <summary>
+        /// <b>Version 2</b>: This command is used to request device specific information.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<ManufacturerSpecificDeviceReport> SpecificGet(DeviceSpecificType type, CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(ManufacturerSpecificCommand.DeviceSpecificGet, ManufacturerSpecificCommand.DeviceSpecificReport, cancellationToken, (byte)type);

@@ -19,14 +19,16 @@ using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
-using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.CommandClasses
 {
+    /// <summary>
+    /// The Indicator Command Class is used to help end users to monitor the operation or condition of the application provided by a supporting node.
+    /// </summary>
     [CCVersion(CommandClass.Indicator, 4)]
     public class Indicator : CommandClassBase
     {
-        //public event CommandClassEvent? Report;
+        public event CommandClassEvent<IndicatorReport>? Report;
         
         enum IndicatorCommand : byte
         {
@@ -42,7 +44,7 @@ namespace ZWaveDotNet.CommandClasses
         public Indicator(Node node, byte endpoint) : base(node, endpoint, CommandClass.Indicator) { }
 
         /// <summary>
-        /// A Version 1 Get
+        /// <b>Version 1</b>: This command is used to request the state of the indicator resource.
         /// </summary>
         /// <param name="cancellationToken"></param>
         /// <returns>True if the indicator is active</returns>
@@ -56,35 +58,30 @@ namespace ZWaveDotNet.CommandClasses
             return response.Payload.Length > 0 && response.Payload.Span[0] == 0x0;
         }
 
-        public async Task<(IndicatorID indicator, IndicatorProperty property, byte value)[]> Get(IndicatorID indicator, CancellationToken cancellationToken = default)
+        /// <summary>
+        /// <b>Version 2</b>: This command is used to request the state of an indicator.
+        /// </summary>
+        /// <param name="indicator"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        /// <exception cref="MethodAccessException"></exception>
+        /// <exception cref="DataException"></exception>
+        public async Task<IndicatorReport> Get(IndicatorID indicator, CancellationToken cancellationToken = default)
         {
             if (node.ID == Node.BROADCAST_ID)
                 throw new MethodAccessException("GET methods may not be called on broadcast nodes");
 
             ReportMessage response = await SendReceive(IndicatorCommand.Get, IndicatorCommand.Report, cancellationToken, (byte)indicator);
-            if (response.Payload.Length == 0)
-                throw new DataException($"The Indicator Report was not in the expected format. Payload: {MemoryUtil.Print(response.Payload)}");
-            if (response.Payload.Length == 1 || (response.Payload.Span[1] & 0x1F) == 0x0)
-            {
-                //Version 1
-                return new[] { (IndicatorID.Any, IndicatorProperty.MultiLevel, response.Payload.Span[0]) };
-            }
-            else
-            {
-                var ret = new (IndicatorID indicator, IndicatorProperty property, byte value)[response.Payload.Span[1] &0x1F];
-                Memory<byte> ptr = response.Payload.Slice(2);
-                for (int i = 0; i < ret.Length; i++)
-                {
-                    ret[i] = ((IndicatorID)ptr.Span[0], (IndicatorProperty)ptr.Span[1], ptr.Span[2]);
-                    if (ptr.Length > 3)
-                        ptr = ptr.Slice(3);
-                    else
-                        break;
-                }
-                return ret;
-            }
+            return new IndicatorReport(response.Payload.Span);
         }
 
+        /// <summary>
+        /// <b>Version 2</b>: This command is used to request the supported properties of an indicator.
+        /// </summary>
+        /// <param name="indicator"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        /// <exception cref="MethodAccessException"></exception>
         public async Task<IndicatorSupportedReport> GetSupported(IndicatorID indicator, CancellationToken cancellationToken = default)
         {
             if (node.ID == Node.BROADCAST_ID)
@@ -94,6 +91,13 @@ namespace ZWaveDotNet.CommandClasses
             return new IndicatorSupportedReport(response.Payload);
         }
 
+        /// <summary>
+        /// <b>Version 4</b>: This command is used to request a detailed description of the appearance and use of an Indicator ID
+        /// </summary>
+        /// <param name="indicator"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        /// <exception cref="MethodAccessException"></exception>
         public async Task<string> GetDescription(IndicatorID indicator, CancellationToken cancellationToken = default)
         {
             if (node.ID == Node.BROADCAST_ID)
@@ -106,7 +110,7 @@ namespace ZWaveDotNet.CommandClasses
         }
 
         /// <summary>
-        /// A Version 1 Set
+        /// <b>Version 1</b>: This command is used to enable or disable the indicator resource.
         /// </summary>
         /// <param name="active"></param>
         /// <param name="cancellationToken"></param>
@@ -116,6 +120,13 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(IndicatorCommand.Set, cancellationToken, active ? (byte)0xFF : (byte)0x00);
         }
 
+        /// <summary>
+        /// <b>Version 2</b>: This command is used to manipulate one or more indicator resources at a supporting node.
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <param name="values"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
         public async Task Set(CancellationToken cancellationToken, params (IndicatorID indicator, IndicatorProperty property, byte value)[] values)
         {
             if (values.Length == 0)
@@ -131,10 +142,16 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(IndicatorCommand.Set, cancellationToken, payload);
         }
 
-        protected override Task<SupervisionStatus> Handle(ReportMessage message)
+        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
-            Log.Error("Unexpected Indicator Report Received: " + message.ToString());
-            return Task.FromResult(SupervisionStatus.NoSupport);
+            if (message.Command == (byte)IndicatorCommand.Report)
+            {
+                IndicatorReport report = new IndicatorReport(message.Payload.Span);
+                await FireEvent(Report, report);
+                Log.Information(report.ToString());
+                return SupervisionStatus.Success;
+            }
+            return SupervisionStatus.NoSupport;
         }
     }
 }
