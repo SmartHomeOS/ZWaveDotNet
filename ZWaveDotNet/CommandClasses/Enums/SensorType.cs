@@ -17,7 +17,7 @@ namespace ZWaveDotNet.CommandClasses.Enums
         Undefined = 0x00,
         Temperature = 0x01,
         General = 0x02,
-        Luminance = 0x03,
+        Illuminance = 0x03,
         Power = 0x04,
         Humidity = 0x05,
         Velocity = 0x06,

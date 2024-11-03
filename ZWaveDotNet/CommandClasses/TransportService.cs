@@ -108,7 +108,7 @@ namespace ZWaveDotNet.CommandClasses
             {
                 if ((await AttemptTransmission(msg, token, i == 2).ConfigureAwait(false)) == true)
                     return;
-                Log.Error($"Controller Failed to Send Message: Retrying [Attempt {i + 1}]...");
+                Log.Error($"Transport Service Failed to Send Message: Retrying [Attempt {i + 1}]...");
                 await Task.Delay(100 + Random.Shared.Next(1, 25) + (1000 * i), token).ConfigureAwait(false);
             }
         }

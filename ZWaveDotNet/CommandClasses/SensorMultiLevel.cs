@@ -21,6 +21,9 @@ using ZWaveDotNet.SerialAPI;
 
 namespace ZWaveDotNet.CommandClasses
 {
+    /// <summary>
+    /// The Multilevel Sensor Command Class is used to advertise numerical sensor readings..
+    /// </summary>
     [CCVersion(CommandClass.SensorMultiLevel, 1, 11)]
     public class SensorMultiLevel : CommandClassBase
     {
@@ -30,15 +33,22 @@ namespace ZWaveDotNet.CommandClasses
 
         enum SensorMultiLevelCommand
         {
-            SupportedGet = 0x01,
-            SupportedReport = 0x02,
+            SupportedSensorGet = 0x01,
+            SupportedSensorReport = 0x02,
+            SupportedGetScale = 0x03,
             Get = 0x04,
-            Report = 0x05
+            Report = 0x05,
+            SupportedReportScale = 0x06
         }
 
+        /// <summary>
+        /// <b>Version 5</b>: This command is used to request the supported Sensor Types from a supporting node.
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<SensorType[]> GetSupportedSensors(CancellationToken cancellationToken = default)
         {
-            ReportMessage response = await SendReceive(SensorMultiLevelCommand.SupportedGet, SensorMultiLevelCommand.SupportedReport, cancellationToken);
+            ReportMessage response = await SendReceive(SensorMultiLevelCommand.SupportedSensorGet, SensorMultiLevelCommand.SupportedSensorReport, cancellationToken);
             List<SensorType> supportedTypes = new List<SensorType>();
             BitArray bits = new BitArray(response.Payload.ToArray());
             for (byte i = 0; i < bits.Length; i++)
@@ -49,9 +59,48 @@ namespace ZWaveDotNet.CommandClasses
             return supportedTypes.ToArray();
         }
 
-        public async Task<SensorMultiLevelReport> Get(SensorType type, CancellationToken cancellationToken = default)
+        /// <summary>
+        /// <b>Version 5</b>: This command is used to retrieve the supported scales of the specific sensor type from the Multilevel Sensor device.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public async Task<Units[]> GetSupportedUnits(SensorType type, CancellationToken cancellationToken = default)
         {
-            ReportMessage response = await SendReceive(SensorMultiLevelCommand.Get, SensorMultiLevelCommand.Report, cancellationToken, (byte)type);
+            ReportMessage response = await SendReceive(SensorMultiLevelCommand.SupportedGetScale, SensorMultiLevelCommand.SupportedReportScale, cancellationToken, (byte)type);
+            HashSet<Units> supportedUnits = new HashSet<Units>();
+            BitArray bits = new BitArray(response.Payload.ToArray());
+            for (byte i = 0; i < bits.Length; i++)
+            {
+                if (bits[i])
+                    supportedUnits.Add(SensorMultiLevelReport.GetUnit(type, i));
+            }
+            return supportedUnits.ToArray();
+        }
+
+        /// <summary>
+        /// <b>Version 1</b>: This command is used to request the current reading from a multilevel sensor.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public async Task<SensorMultiLevelReport> Get(CancellationToken cancellationToken = default)
+        {
+            ReportMessage response = await SendReceive(SensorMultiLevelCommand.Get, SensorMultiLevelCommand.Report, cancellationToken);
+            return new SensorMultiLevelReport(response.Payload);
+        }
+
+        /// <summary>
+        /// <b>Version 5</b>: This command is used to request the current reading from a multilevel sensor.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public async Task<SensorMultiLevelReport> Get(SensorType type, Units unit, CancellationToken cancellationToken = default)
+        {
+            byte scale = SensorMultiLevelReport.GetScale(type, unit);
+            scale = (byte)(scale << 3);
+            ReportMessage response = await SendReceive(SensorMultiLevelCommand.Get, SensorMultiLevelCommand.Report, cancellationToken, (byte)type, scale);
             return new SensorMultiLevelReport(response.Payload);
         }
 

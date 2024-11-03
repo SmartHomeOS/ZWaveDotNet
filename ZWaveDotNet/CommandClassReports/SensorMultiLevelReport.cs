@@ -33,7 +33,17 @@ namespace ZWaveDotNet.CommandClassReports
             Unit = GetUnit(SensorType, scale);
         }
 
-        private static Units GetUnit(SensorType type, byte scale)
+        internal static byte GetScale(SensorType type, Units unit)
+        {
+            for (byte scale = 0; scale < 5; scale++)
+            {
+                if (GetUnit(type, scale) == unit)
+                    return scale;
+            }
+            throw new ArgumentException($"Unit {unit} does not exist for sensor {type}");
+        }
+
+        internal static Units GetUnit(SensorType type, byte scale)
         {
             var tankCapacityUnits = new[] { Units.liters, Units.cubicMeters, Units.USGallons };
             var distanceUnits = new[] { Units.meters, Units.centimeters, Units.feet };
@@ -43,50 +53,50 @@ namespace ZWaveDotNet.CommandClassReports
 
             switch (type)
             {
-                case SensorType.Temperature: return scale == 1 ? Units.degF : Units.degC;
-                case SensorType.General: return scale == 1 ? Units.None : Units.Percent;
-                case SensorType.Luminance: return scale == 1 ? Units.lux : Units.Percent;
-                case SensorType.Power: return scale == 1 ? Units.BTUPerHour : Units.Watts;
-                case SensorType.Humidity: return scale == 1 ? Units.gramPerCubicMeter : Units.Percent;
-                case SensorType.Velocity: return scale == 1 ? Units.milesPerHour : Units.metersPerSec;
+                case SensorType.Temperature: return BinaryChoice(scale, Units.degF, Units.degC);
+                case SensorType.General: return BinaryChoice(scale, Units.None, Units.Percent);
+                case SensorType.Illuminance: return BinaryChoice(scale, Units.lux, Units.Percent);
+                case SensorType.Power: return BinaryChoice(scale, Units.BTUPerHour, Units.Watts);
+                case SensorType.Humidity: return BinaryChoice(scale, Units.gramPerCubicMeter, Units.Percent);
+                case SensorType.Velocity: return BinaryChoice(scale, Units.milesPerHour, Units.metersPerSec);
                 case SensorType.Direction: return Units.deg;
-                case SensorType.AtmosphericPressure: return scale == 1 ? Units.inHg : Units.kPa;
-                case SensorType.BarometricPressure: return scale == 1 ? Units.inHg : Units.kPa;
+                case SensorType.AtmosphericPressure: return BinaryChoice(scale, Units.inHg, Units.kPa);
+                case SensorType.BarometricPressure: return BinaryChoice(scale, Units.inHg, Units.kPa);
                 case SensorType.SolarRadiation: return Units.WattsPerSquareMeter;
-                case SensorType.DewPoint: return scale == 1 ? Units.degF : Units.degC;
-                case SensorType.RainRate: return scale == 1 ? Units.inPerHour : Units.mmPerHour;
-                case SensorType.TideLevel: return scale == 1 ? Units.feet : Units.meters;
-                case SensorType.Weight: return scale == 1 ? Units.lb : Units.kg;
-                case SensorType.Voltage: return scale == 1 ? Units.mVolts : Units.Volts;
-                case SensorType.Current: return scale == 1 ? Units.mAmps : Units.Amps;
+                case SensorType.DewPoint: return BinaryChoice(scale, Units.degF, Units.degC);
+                case SensorType.RainRate: return BinaryChoice(scale, Units.inPerHour, Units.mmPerHour);
+                case SensorType.TideLevel: return BinaryChoice(scale, Units.feet, Units.meters);
+                case SensorType.Weight: return BinaryChoice(scale, Units.lb, Units.kg);
+                case SensorType.Voltage: return BinaryChoice(scale, Units.mVolts, Units.Volts);
+                case SensorType.Current: return BinaryChoice(scale, Units.mAmps, Units.Amps);
                 case SensorType.CO2: return Units.ppm;
-                case SensorType.AirFlow: return scale == 1 ? Units.cubicFeetPerMinute : Units.cubicMetersPerHour;
-                case SensorType.TankCapacity: return tankCapacityUnits[scale];
-                case SensorType.Distance: return distanceUnits[scale];
-                case SensorType.Rotation: return scale == 1 ? Units.Hz : Units.RPM;
-                case SensorType.WaterTemperature: return scale == 1 ? Units.degF : Units.degC;
-                case SensorType.SoilTemperature: return scale == 1 ? Units.degF : Units.degC;
-                case SensorType.SeismicIntensity: return seismicIntensityUnits[scale];
-                case SensorType.SeismicMagnitude: return seismicMagnitudeUnits[scale];
+                case SensorType.AirFlow: return BinaryChoice(scale, Units.cubicFeetPerMinute, Units.cubicMetersPerHour);
+                case SensorType.TankCapacity: return scale > 2 ? Units.None : tankCapacityUnits[scale];
+                case SensorType.Distance: return scale > 2 ? Units.None : distanceUnits[scale];
+                case SensorType.Rotation: return BinaryChoice(scale, Units.Hz, Units.RPM);
+                case SensorType.WaterTemperature: return BinaryChoice(scale, Units.degF, Units.degC);
+                case SensorType.SoilTemperature: return BinaryChoice(scale, Units.degF, Units.degC);
+                case SensorType.SeismicIntensity: return scale > 3 ? Units.None : seismicIntensityUnits[scale];
+                case SensorType.SeismicMagnitude: return scale > 3 ? Units.None : seismicMagnitudeUnits[scale];
                 case SensorType.Ultraviolet: return Units.None;
                 case SensorType.ElectricalResistivity: return Units.ohmMeter;
                 case SensorType.ElectricalConductivity: return Units.siemensPerMeter;
-                case SensorType.Loudness: return scale == 1 ? Units.decibalA : Units.decibal;
-                case SensorType.Moisture: return moistureUnits[scale];
-                case SensorType.Frequency: return scale == 1 ? Units.kHz : Units.Hz;
+                case SensorType.Loudness: return BinaryChoice(scale, Units.decibalA, Units.decibal);
+                case SensorType.Moisture: return scale > 3 ? Units.None : moistureUnits[scale];
+                case SensorType.Frequency: return BinaryChoice(scale, Units.kHz, Units.Hz);
                 case SensorType.Time: return Units.seconds;
-                case SensorType.TargetTemperature: return scale == 1 ? Units.degF : Units.degC;
-                case SensorType.ParticulateMatter25: return scale == 1 ? Units.ugPerCubicMeter : Units.molPerCubicMeter;
+                case SensorType.TargetTemperature: return BinaryChoice(scale, Units.degF, Units.degC);
+                case SensorType.ParticulateMatter25: return BinaryChoice(scale, Units.ugPerCubicMeter, Units.molPerCubicMeter);
                 case SensorType.FormaldehydeLevel: return Units.molPerCubicMeter;
-                case SensorType.RadonConcentration: return scale == 1 ? Units.pCiPerLiter : Units.bqPerCubicMeter;
+                case SensorType.RadonConcentration: return BinaryChoice(scale, Units.pCiPerLiter, Units.bqPerCubicMeter);
                 case SensorType.MethaneDensity: return Units.molPerCubicMeter;
-                case SensorType.VolatileOrganicCompoundLevel: return scale == 1 ? Units.ppm : Units.molPerCubicMeter;
-                case SensorType.CarbonMonoxideLevel: return scale == 1 ? Units.ppm : Units.molPerCubicMeter;
+                case SensorType.VolatileOrganicCompoundLevel: return BinaryChoice(scale, Units.ppm, Units.molPerCubicMeter);
+                case SensorType.CarbonMonoxideLevel: return BinaryChoice(scale, Units.ppm, Units.molPerCubicMeter);
                 case SensorType.SoilHumidity: return Units.Percent;
                 case SensorType.SoilReactivity: return Units.PH;
                 case SensorType.SoilSalinity: return Units.molPerCubicMeter;
                 case SensorType.HeartRate: return Units.BPM;
-                case SensorType.BloodPressure: return scale == 1 ? Units.diastolicmmHg : Units.systolicmmHg;
+                case SensorType.BloodPressure: return BinaryChoice(scale, Units.diastolicmmHg, Units.systolicmmHg);
                 case SensorType.MuscleMass: return Units.kg;
                 case SensorType.FatMass: return Units.kg;
                 case SensorType.BoneMass: return Units.kg;
@@ -99,28 +109,28 @@ namespace ZWaveDotNet.CommandClassReports
                 case SensorType.SmokeDensity: return Units.Percent;
                 case SensorType.WaterFlow: return Units.litersPerHour;
                 case SensorType.WaterPressure: return Units.kPa;
-                case SensorType.RFSignalStrength: return scale == 1 ? Units.dbPerMilliwatt : Units.RSSI;
-                case SensorType.ParticulateMatter10: return scale == 1 ? Units.ugPerCubicMeter : Units.molPerCubicMeter;
+                case SensorType.RFSignalStrength: return BinaryChoice(scale, Units.dbPerMilliwatt, Units.RSSI);
+                case SensorType.ParticulateMatter10: return BinaryChoice(scale, Units.ugPerCubicMeter, Units.molPerCubicMeter);
                 case SensorType.RespiratoryRate: return Units.BPM;
                 case SensorType.RelativeModulationLevel: return Units.Percent;
-                case SensorType.BoilerWaterTemperature: return scale == 1 ? Units.degF : Units.degC;
-                case SensorType.DomesticHotWaterTemperature: return scale == 1 ? Units.degF : Units.degC;
-                case SensorType.OutsideTemperature: return scale == 1 ? Units.degF : Units.degC;
-                case SensorType.ExhaustTemperature: return scale == 1 ? Units.degF : Units.degC;
+                case SensorType.BoilerWaterTemperature: return BinaryChoice(scale, Units.degF, Units.degC);
+                case SensorType.DomesticHotWaterTemperature: return BinaryChoice(scale, Units.degF, Units.degC);
+                case SensorType.OutsideTemperature: return BinaryChoice(scale, Units.degF, Units.degC);
+                case SensorType.ExhaustTemperature: return BinaryChoice(scale, Units.degF, Units.degC);
                 case SensorType.WaterAcidity: return Units.PH;
                 case SensorType.WaterChlorineLevel: return Units.mgPerLiter;
                 case SensorType.WaterOxidationReductionPotential: return Units.mVolts;
                 case SensorType.MotionDirection: return Units.deg;
                 case SensorType.AppliedForceOnTheSensor: return Units.Newtons;
-                case SensorType.ReturnAirTemperature: return scale == 1 ? Units.degF : Units.degC;
-                case SensorType.SupplyAirTemperature: return scale == 1 ? Units.degF : Units.degC;
-                case SensorType.EvaporatorCoilTemperature: return scale == 1 ? Units.degF : Units.degC;
-                case SensorType.CondenserCoilTemperature: return scale == 1 ? Units.degF : Units.degC;
-                case SensorType.LiquidLineTemperature: return scale == 1 ? Units.degF : Units.degC;
-                case SensorType.DischargeLineTemperature: return scale == 1 ? Units.degF : Units.degC;
-                case SensorType.SuctionPressure: return scale == 1 ? Units.psi : Units.kPa;
-                case SensorType.DischargePressure: return scale == 1 ? Units.psi : Units.kPa;
-                case SensorType.DefrostTemperature: return scale == 1 ? Units.degF : Units.degC;
+                case SensorType.ReturnAirTemperature: return BinaryChoice(scale, Units.degF, Units.degC);
+                case SensorType.SupplyAirTemperature: return BinaryChoice(scale, Units.degF, Units.degC);
+                case SensorType.EvaporatorCoilTemperature: return BinaryChoice(scale, Units.degF, Units.degC);
+                case SensorType.CondenserCoilTemperature: return BinaryChoice(scale, Units.degF, Units.degC);
+                case SensorType.LiquidLineTemperature: return BinaryChoice(scale, Units.degF, Units.degC);
+                case SensorType.DischargeLineTemperature: return BinaryChoice(scale, Units.degF, Units.degC);
+                case SensorType.SuctionPressure: return BinaryChoice(scale, Units.psi, Units.kPa);
+                case SensorType.DischargePressure: return BinaryChoice(scale, Units.psi, Units.kPa);
+                case SensorType.DefrostTemperature: return BinaryChoice(scale, Units.degF, Units.degC);
                 case SensorType.Ozone: return Units.ugPerCubicMeter;
                 case SensorType.SulfurDioxide: return Units.ugPerCubicMeter;
                 case SensorType.NitrogenDioxide: return Units.ugPerCubicMeter;
@@ -129,6 +139,13 @@ namespace ZWaveDotNet.CommandClassReports
                 case SensorType.ParticulateMatter1: return Units.ugPerCubicMeter;
                 default: return Units.None;
             }
+        }
+
+        private static Units BinaryChoice(byte scale, Units one, Units zero)
+        {
+            if (scale > 1)
+                return Units.None;
+            return scale == 1 ? one : zero;
         }
 
         public override string ToString()
