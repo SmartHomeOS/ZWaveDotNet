@@ -20,6 +20,10 @@ using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.CommandClasses
 {
+    /// <summary>
+    /// The All Switch Command Class is used to switch all devices on or off.
+    /// Devices may be excluded/included from the all on/all off functionality.
+    /// </summary>
     [CCVersion(CommandClass.SwitchAll)]
     public class SwitchAll : CommandClassBase
     {
@@ -34,6 +38,12 @@ namespace ZWaveDotNet.CommandClasses
 
         public SwitchAll(Node node, byte endpoint) : base(node, endpoint, CommandClass.SwitchAll) {  }
 
+        /// <summary>
+        /// <b>Version 1</b>: This command is used to ask a device if it is included or excluded from the all on/all off functionality.
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        /// <exception cref="DataException"></exception>
         public async Task<SwitchAllMode> Get(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(SwitchAllCommand.Get, SwitchAllCommand.Report, cancellationToken);
@@ -43,16 +53,34 @@ namespace ZWaveDotNet.CommandClasses
             return (SwitchAllMode)response.Payload.Span[0];
         }
 
+        /// <summary>
+        /// <b>Version 1</b>: This command is used to instruct a device if it is included or excluded from the all on/all off functionality.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task Set(SwitchAllMode value, CancellationToken cancellationToken = default)
         {
             await SendCommand(SwitchAllCommand.Set, cancellationToken, (byte)value);
         }
 
+        /// <summary>
+        /// <b>Version 1</b>: This command is used to inform a switch that it SHOULD be turned on.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task On(bool value, CancellationToken cancellationToken = default)
         {
             await SendCommand(SwitchAllCommand.On, cancellationToken);
         }
 
+        /// <summary>
+        /// <b>Version 1</b>: This command is used to inform a switch that it SHOULD be turned off.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task Off(bool value, CancellationToken cancellationToken = default)
         {
             await SendCommand(SwitchAllCommand.Off, cancellationToken);

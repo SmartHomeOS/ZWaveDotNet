@@ -20,6 +20,9 @@ using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.CommandClasses
 {
+    /// <summary>
+    /// The Binary Switch Command Class is used to control the On/Off state of supporting nodes
+    /// </summary>
     [CCVersion(CommandClass.SwitchBinary, 2)]
     public class SwitchBinary : CommandClassBase
     {
@@ -33,6 +36,12 @@ namespace ZWaveDotNet.CommandClasses
 
         public SwitchBinary(Node node, byte endpoint) : base(node, endpoint, CommandClass.SwitchBinary) { }
 
+        /// <summary>
+        /// <b>Version 1</b>: This command is used to request the current On/Off state from a node.
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        /// <exception cref="MethodAccessException"></exception>
         public async Task<SwitchBinaryReport> Get(CancellationToken cancellationToken = default)
         {
             if (node.ID == Node.BROADCAST_ID)
@@ -41,11 +50,24 @@ namespace ZWaveDotNet.CommandClasses
             return new SwitchBinaryReport(msg.Payload);
         }
 
+        /// <summary>
+        /// <b>Version 1</b>: This command is used to set the On/Off state at the receiving node.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task Set(bool value, CancellationToken cancellationToken = default)
         {
             await SendCommand(SwitchBinaryCommand.Set, cancellationToken, value ? (byte)0xFF : (byte)0x00);
         }
 
+        /// <summary>
+        /// <b>Version 2</b>: This command is used to set the binary state at the receiving node.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="duration"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task Set(bool value, TimeSpan duration, CancellationToken cancellationToken = default)
         {
             byte time = 0;
