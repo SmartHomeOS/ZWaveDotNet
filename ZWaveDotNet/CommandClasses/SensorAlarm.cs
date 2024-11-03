@@ -11,15 +11,20 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System.Collections;
+using System.Data;
 using ZWaveDotNet.CommandClasses.Enums;
 using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
+using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.CommandClasses
 {
+    /// <summary>
+    /// The Alarm Sensor Command Class is used to realize Sensor Alarms
+    /// </summary>
     [CCVersion(CommandClass.SensorAlarm)]
     public class SensorAlarm : CommandClassBase
     {
@@ -35,17 +40,31 @@ namespace ZWaveDotNet.CommandClasses
 
         public SensorAlarm(Node node, byte endpoint) : base(node, endpoint, CommandClass.SensorAlarm)  { }
 
+        /// <summary>
+        /// <b>Version 1</b>: This command is used to request the status of a sensor.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<SensorAlarmReport> Get(AlarmType type, CancellationToken cancellationToken = default)
         {
-            ReportMessage response = await SendReceive(SensorAlarmCommand.Get, SensorAlarmCommand.Report, cancellationToken, Convert.ToByte(type));
+            ReportMessage response = await SendReceive(SensorAlarmCommand.Get, SensorAlarmCommand.Report, cancellationToken, (byte)type);
             return new SensorAlarmReport(response.Payload);
         }
 
+        /// <summary>
+        /// <b>Version 1</b>: This command is used to report the supported sensor types from the device.
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<AlarmType[]> SupportedGet(CancellationToken cancellationToken = default)
         {
             List<AlarmType> types = new List<AlarmType>();
             ReportMessage response = await SendReceive(SensorAlarmCommand.SupportedGet, SensorAlarmCommand.SupportedReport, cancellationToken);
-            BitArray supported = new BitArray(response.Payload.ToArray());
+            if (response.Payload.Length < 1)
+                throw new DataException($"The Alarm Supported Report was not in the expected format. Payload: {MemoryUtil.Print(response.Payload)}");
+            byte len = response.Payload.Span[0];
+            BitArray supported = new BitArray(response.Payload.Slice(1).ToArray());
             for (int i = 0; i < supported.Length; i++)
             {
                 if (supported[i])

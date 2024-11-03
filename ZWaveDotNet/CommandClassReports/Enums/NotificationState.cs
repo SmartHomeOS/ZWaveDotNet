@@ -67,13 +67,13 @@ namespace ZWaveDotNet.CommandClassReports.Enums
         WaterAlarmIdle = 0x0500,
         LeakDetected = 0x0501,
         LeakDetectedUnknownLocation = 0x0502,
-        LevelDropDetected = 0x0503,
-        LevelDropDetectedUnknownLocation = 0x0504,
-        ReplaceFilter = 0x0505,
-        FlowAlarm = 0x0506,
-        PressureAlarm = 0x0507,
-        TemperatureAlarm = 0x0508,
-        LevelAlarm = 0x0509,
+        WaterLevelDropDetected = 0x0503,
+        WaterLevelDropDetectedUnknownLocation = 0x0504,
+        ReplaceWaterFilter = 0x0505,
+        WaterFlowAlarm = 0x0506,
+        WaterPressureAlarm = 0x0507,
+        WaterTemperatureAlarm = 0x0508,
+        WaterLevelAlarm = 0x0509,
         SumpActive = 0x050A,
         SumpFailure = 0x050B,
 
@@ -105,6 +105,9 @@ namespace ZWaveDotNet.CommandClassReports.Enums
         WindowDoorHandleOpen = 0x0618,
         WindowDoorHandleClosed = 0x0619,
         UserCodeEnteredViaKeypad = 0x0620,
+        LockWithUserCode = 0x0621,
+        UnlockWithUserCode = 0x0622,
+        NonAccessCredential = 0x0633,
         BarrierInitializing = 0x0640,
         BarrierForceExceeded = 0x0641,
         BarrierMotorTimeExceeded = 0x0642,
@@ -116,7 +119,7 @@ namespace ZWaveDotNet.CommandClassReports.Enums
         BarrierObstacle = 0x0648,
         BarrierSupervisoryError = 0x0649,
         BarrierSensorLowBattery = 0x064A,
-        BarrierWiriingShort = 0x064B,
+        BarrierWiringShort = 0x064B,
         BarrierNonZWave = 0x064C,
 
         //Home Security
@@ -219,6 +222,7 @@ namespace ZWaveDotNet.CommandClassReports.Enums
         MasterValveShortCircuit = 0x0F04,
         ValveCurrentAlarmStatus = 0x0F05,
         MasterValveCurrentAlarmStatus = 0x0F06,
+        ValveJammed = 0x0F07,
 
         //Weather - TODO
 
