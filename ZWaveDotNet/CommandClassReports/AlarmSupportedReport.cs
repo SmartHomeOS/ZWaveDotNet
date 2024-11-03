@@ -19,7 +19,7 @@ namespace ZWaveDotNet.CommandClassReports
 {
     public class AlarmSupportedReport : ICommandClassReport
     {
-        public readonly bool CustomV1Types;
+        public readonly bool SupportsV1Types;
         public readonly NotificationType[] SupportedAlarms;
 
         internal AlarmSupportedReport(Memory<byte> payload)
@@ -27,9 +27,10 @@ namespace ZWaveDotNet.CommandClassReports
             if (payload.Length < 1)
                 throw new DataException($"The Alarm Supported Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
 
-            CustomV1Types = (payload.Span[0] & 0x80) == 0x80;
+            SupportsV1Types = (payload.Span[0] & 0x80) == 0x80;
+            byte len = (byte)(payload.Span[0] & 0x1F);
             List<NotificationType> types = new List<NotificationType>();
-            BitArray bitmask = new BitArray(payload.Slice(1).ToArray());
+            BitArray bitmask = new BitArray(payload.Slice(1, len).ToArray());
             for (int i = 0; i < bitmask.Length; i++)
             {
                 if (bitmask[i])

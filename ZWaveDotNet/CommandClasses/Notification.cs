@@ -12,12 +12,14 @@
 
 using Serilog;
 using System.Collections;
+using System.Data;
 using ZWaveDotNet.CommandClasses.Enums;
 using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
+using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.CommandClasses
 {
@@ -46,7 +48,7 @@ namespace ZWaveDotNet.CommandClasses
         public Notification(Node node, byte endpoint) : base(node, endpoint, CommandClass.Notification) { }
 
         /// <summary>
-        /// <b>Push Mode</b>: This command is used to request if the unsolicited transmission of a specific Notification Type is enabled.
+        /// <b>Push Mode</b>: This command is used to request if the unsolicited transmission of a Notification Type is enabled.
         /// <b>Pull Mode</b>: This command is used to retrieve the next Notification from the receiving node’s queue.
         /// </summary>
         /// <param name="cancellationToken"></param>
@@ -54,7 +56,30 @@ namespace ZWaveDotNet.CommandClasses
         public async Task<NotificationReport> Get(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(NotificationCommand.Get, NotificationCommand.Report, cancellationToken, (byte)0x0, FIRST_AVAILABLE, (byte)0x0);
-            return new NotificationReport(response.Payload);
+            return new NotificationReport(response.SourceNodeID, response.SourceEndpoint, response.RSSI, response.Payload);
+        }
+
+        /// <summary>
+        /// <b>Push Mode</b>: This command is used to request if the unsolicited transmission of a specific Notification Type is enabled.
+        /// <b>Pull Mode</b>: This command is used to retrieve the next Notification from the receiving node’s queue.
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public async Task<NotificationReport> Get(NotificationType type, CancellationToken cancellationToken = default)
+        {
+            ReportMessage response = await SendReceive(NotificationCommand.Get, NotificationCommand.Report, cancellationToken, (byte)0x0, (byte)type, (byte)0x0);
+            return new NotificationReport(response.SourceNodeID, response.SourceEndpoint, response.RSSI, response.Payload);
+        }
+
+        /// <summary>
+        /// <b>Push Mode</b>: This command is used to request if the unsolicited transmission of a specific Notification Type and State is enabled.
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public async Task<NotificationReport> Get(NotificationState state, CancellationToken cancellationToken = default)
+        {
+            ReportMessage response = await SendReceive(NotificationCommand.Get, NotificationCommand.Report, cancellationToken, (byte)0x0, (byte)((ushort)state >> 8), (byte)((ushort)state & 0xFF));
+            return new NotificationReport(response.SourceNodeID, response.SourceEndpoint, response.RSSI, response.Payload);
         }
 
         /// <summary>
@@ -93,13 +118,16 @@ namespace ZWaveDotNet.CommandClasses
         {
             ReportMessage response = await SendReceive(NotificationCommand.EventSupportedGet, NotificationCommand.EventSupportedReport, cancellationToken, (byte)type);
 
-            byte len = (byte)(response.Payload.Span[0] & 0x1F);
-            BitArray array = new BitArray(response.Payload.Slice(1).ToArray());
+            byte len = (byte)(response.Payload.Span[1] & 0x1F);
+            if (response.Payload.Length < len + 2)
+                throw new DataException($"The Notification Event Supported Report was not in the expected format. Payload: {MemoryUtil.Print(response.Payload)}");
+            BitArray array = new BitArray(response.Payload.Slice(2, len).ToArray());
             List<NotificationState> states = new List<NotificationState>();
-            for (byte i = 0; i < len; i++)
+            ushort reportedType = (ushort)(response.Payload.Span[0] << 8);
+            for (byte i = 0; i < array.Length; i++)
             {
                 if (array[i])
-                    states.Add((NotificationState)(((int)type << 8) | i));
+                    states.Add((NotificationState)(reportedType | i));
             }
             return states.ToArray();
         }
@@ -108,7 +136,7 @@ namespace ZWaveDotNet.CommandClasses
         {
             if (message.Command == (byte)NotificationCommand.Report)
             {
-                NotificationReport report = new NotificationReport(message.Payload);
+                NotificationReport report = new NotificationReport(message.SourceNodeID, message.SourceEndpoint, message.RSSI, message.Payload);
                 await FireEvent(Updated, report);
                 Log.Information(report.ToString());
                 return SupervisionStatus.Success;
