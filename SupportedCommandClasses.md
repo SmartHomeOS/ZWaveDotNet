@@ -16,7 +16,7 @@ ASSOCIATION_GRP_INFO | 0 | 3 | None
 **CENTRAL_SCENE** | **3** | **3** | **Full**
 CLIMATE_CONTROL_SCHEDULE | 0 | 1 | None
 **CLOCK** | **1** | **1** | **Full**
-*CONFIGURATION* | *1* | *4* | *Full*
+**CONFIGURATION** | **4** | **4** | **Full**
 **CRC_16_ENCAP** | **1** | **1** | **Full**
 DCP_CONFIG | 0 | 1 | None
 DCP_MONITOR | 0 | 1 | None

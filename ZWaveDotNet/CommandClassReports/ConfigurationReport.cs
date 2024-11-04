@@ -28,7 +28,7 @@ namespace ZWaveDotNet.CommandClassReports
                 throw new DataException($"The Configuration Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
 
             Parameter = payload.Span[0];
-            Size = payload.Span[1];
+            Size = (byte)(payload.Span[1] & 0x7);
 
             try
             {
