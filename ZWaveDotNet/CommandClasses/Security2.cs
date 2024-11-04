@@ -227,7 +227,7 @@ namespace ZWaveDotNet.CommandClasses
             SecurityManager.NetworkKey? networkKey = controller.SecurityManager.GetHighestKey(msg.SourceNodeID);
             if (networkKey == null)
             {
-                Log.Error("Unable to decrypt message without network key");
+                Log.Error($"Unable to decrypt message from Node {msg.SourceNodeID} without network key");
                 return null;
             }
             Log.Verbose("Decrypting Secure2 Message with key (" + networkKey.Key + ")");

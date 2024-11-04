@@ -377,12 +377,13 @@ namespace ZWaveDotNet.Entities
             await nodeListLock.WaitAsync(cancellationToken);
             try
             {
-                using (FileStream outputStream = new FileStream(path, FileMode.Create))
+                using (FileStream outputStream = new FileStream(path + ".tmp", FileMode.Create))
                 {
                     ControllerJSON json = Serialize();
                     await JsonSerializer.SerializeAsync(outputStream, json, (JsonSerializerOptions?)null, cancellationToken);
                     await outputStream.FlushAsync(cancellationToken);
                 }
+                File.Move(path + ".tmp", path, true);
             }
             finally
             {
@@ -730,7 +731,7 @@ namespace ZWaveDotNet.Entities
                         if (Nodes.TryGetValue(cmd.SourceNodeID, out Node? node))
                             _ = Task.Factory.StartNew(async() => { try { await node.HandleApplicationCommand(cmd); } catch (Exception e) { Log.Error(e, "Unhandled"); } }, running.Token, TaskCreationOptions.RunContinuationsAsynchronously, TaskScheduler.Default);
                         else
-                            Log.Warning("Node " + cmd.SourceNodeID + " not found");
+                            Log.Warning("Node " + cmd.SourceNodeID + " not found. Message " + new ReportMessage(cmd).ToString());
                     }
                     else if (msg is InclusionStatus inc)
                     {

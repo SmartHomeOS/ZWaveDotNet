@@ -18,6 +18,10 @@ using ZWaveDotNet.SerialAPI;
 
 namespace ZWaveDotNet.CommandClasses
 {
+    /// <summary>
+    /// The Version Command Class may be used to obtain the Z-Wave library type, the Z-Wave protocol version used by the application, 
+    /// the individual Command Class versions used by the application and the vendor specific application version from a Z-Wave enabled device.
+    /// </summary>
     [CCVersion(CommandClass.Version, 1, 3)]
     public class Version : CommandClassBase
     {
@@ -35,24 +39,46 @@ namespace ZWaveDotNet.CommandClasses
 
         public Version(Node node, byte endpoint) : base(node, endpoint, CommandClass.Version) { }
 
+        /// <summary>
+        /// <b>Version 1</b>: The Command is used to request the library type, protocol version and application version from a device that supports the Version Command Class.
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<VersionReport> Get(CancellationToken cancellationToken = default)
         {
             ReportMessage msg = await SendReceive(VersionCommand.Get, VersionCommand.Report, cancellationToken);
             return new VersionReport(msg.Payload);
         }
 
+        /// <summary>
+        /// <b>Version 3</b>: This command is used to request which version commands are supported by a node.
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<VersionCapabilities> GetCapabilities(CancellationToken cancellationToken = default)
         {
             ReportMessage msg = await SendReceive(VersionCommand.CapabilitiesGet, VersionCommand.CapabilitiesReport, cancellationToken);
             return new VersionCapabilities(msg.Payload);
         }
 
+        /// <summary>
+        /// <b>Version 3</b>: This command is used to request the detailed Z-Wave chip software version information of a node.
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<ZWaveSoftwareReport> GetSoftwareVersion(CancellationToken cancellationToken = default)
         {
             ReportMessage msg = await SendReceive(VersionCommand.ZWaveSoftwareGet, VersionCommand.ZWaveSoftwareReport, cancellationToken);
             return new ZWaveSoftwareReport(msg.Payload);
         }
 
+        /// <summary>
+        /// <b>Version 1</b>: The Command is used to request the individual command class versions from a device.
+        /// </summary>
+        /// <param name="class"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidDataException"></exception>
         public async Task<byte> GetCommandClassVersion(CommandClass @class, CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(VersionCommand.CommandClassGet, VersionCommand.CommandClassReport, cancellationToken, (byte)@class);
