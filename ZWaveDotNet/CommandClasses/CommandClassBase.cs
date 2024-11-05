@@ -114,6 +114,8 @@ namespace ZWaveDotNet.CommandClasses
                     return new DoorLock(node, endpoint);
                 case CommandClass.EnergyProduction:
                     return new EnergyProduction(node, endpoint);
+                case CommandClass.FirmwareUpdateMD:
+                    return new FirmwareUpdate(node);
                 case CommandClass.GeographicLocation:
                     return new GeographicLocation(node);
                 case CommandClass.GroupingName:
@@ -260,7 +262,7 @@ namespace ZWaveDotNet.CommandClasses
             for (int i = 0; i < 3; i++)
             {
                 if ((await AttemptTransmission(message, token, i == 2).ConfigureAwait(false)) == true)
-                    return;
+                        return;
                 Log.Error($"Controller Failed to Send Message: Retrying [Attempt {i + 1}]...");
                 await Task.Delay(100 + Random.Shared.Next(1, 25) + (1000 * i), token).ConfigureAwait(false);
             }
@@ -295,11 +297,19 @@ namespace ZWaveDotNet.CommandClasses
 
         protected async Task<ReportMessage> SendReceive(Enum command, Enum response, CancellationToken token, bool supervised = false, params byte[] payload)
         {
+            Task<ReportMessage> receive = Receive(response, token);
+            await SendCommand(command, token, supervised, payload);
+            return await receive;
+        }
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2016:Forward the 'CancellationToken' parameter to methods", Justification = "<Pending>")]
+        protected Task<ReportMessage> Receive(Enum response, CancellationToken token)
+        {
             TaskCompletionSource<ReportMessage> src = new TaskCompletionSource<ReportMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
             token.Register(() => src.TrySetCanceled());
             byte cmd = Convert.ToByte(response);
             if (callbacks.TryGetValue(cmd, out BlockingCollection<TaskCompletionSource<ReportMessage>>? cbList))
-                cbList.Add(src);
+                cbList.Add(src, token);
             else
             {
                 BlockingCollection<TaskCompletionSource<ReportMessage>> newCallbacks = new BlockingCollection<TaskCompletionSource<ReportMessage>>
@@ -307,10 +317,9 @@ namespace ZWaveDotNet.CommandClasses
                     src
                 };
                 if (!callbacks.TryAdd(cmd, newCallbacks))
-                    callbacks[cmd].Add(src);
+                    callbacks[cmd].Add(src, token);
             }
-            await SendCommand(command, token, supervised, payload);
-            return await src.Task;
+            return src.Task;
         }
 
         protected async Task FireEvent<T>(CommandClassEvent<T>? evt, T? report) where T : ICommandClassReport

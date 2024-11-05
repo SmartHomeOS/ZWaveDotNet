@@ -21,11 +21,13 @@ using ZWaveDotNet.CommandClasses;
 using ZWaveDotNet.CommandClasses.Enums;
 using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.CommandClassReports.Enums;
+using ZWaveDotNet.Entities.Enums;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.Security;
 using ZWaveDotNet.SerialAPI;
 using ZWaveDotNet.SerialAPI.Enums;
 using ZWaveDotNet.SerialAPI.Messages;
+using ZWaveDotNet.SerialAPI.Messages.Enums;
 using static ZWaveDotNet.Entities.Controller;
 
 namespace ZWaveDotNet.Entities
@@ -50,7 +52,19 @@ namespace ZWaveDotNet.Entities
 
         public Controller Controller { get { return controller; } }
         public bool LongRange {  get { return lr; } }
-        public bool Listening { get { return nodeInfo?.IsListening ?? false; } }
+        public ListeningMode Listening { 
+            get {
+                if (nodeInfo == null)
+                    return ListeningMode.Never;
+                if (nodeInfo.IsListening)
+                    return ListeningMode.Always;
+                if ((nodeInfo.Security & NIFSecurity.Sensor250ms) == NIFSecurity.Sensor250ms)
+                    return ListeningMode.Every250;
+                if ((nodeInfo.Security & NIFSecurity.Sensor1000ms) == NIFSecurity.Sensor1000ms)
+                    return ListeningMode.Every1000;
+                return ListeningMode.Scheduled;
+            } 
+        }
         public bool Routing { get { return nodeInfo?.Routing ?? false; } }
         public SpecificType SpecificType { get { return nodeInfo?.SpecificType ?? SpecificType.Unknown; } }
         public GenericType GenericType { get { return nodeInfo?.GenericType ?? GenericType.Unknown; } }
@@ -292,34 +306,8 @@ namespace ZWaveDotNet.Entities
 
         internal async Task Interview(bool newlyIncluded, CancellationToken cancellationToken = default)
         {
-            SecurityManager.NetworkKey? key = null;
-            if (controller.SecurityManager != null)
-                 key = controller.SecurityManager.GetHighestKey(ID);
-            if (Listening || newlyIncluded)
-            {
-                await Interview(newlyIncluded, key, cancellationToken).ConfigureAwait(false);
-            }
-            else
-                await Task.Run(async () =>
-                {
-                    try
-                    {
-                        if (interviewed > InterviewState.None)
-                            return;
-                        while (!commandClasses.ContainsKey(CommandClass.WakeUp))
-                            await Task.Delay(3000).ConfigureAwait(false); //TODO - Improve this
-                        await ((WakeUp)commandClasses[CommandClass.WakeUp]).WaitForAwake().ConfigureAwait(false);
-                        using (CancellationTokenSource timeout = new CancellationTokenSource(90000))
-                        {
-                            using (CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeout.Token))
-                                await Interview(newlyIncluded, key, cts.Token).ConfigureAwait(false);
-                        }
-                    }
-                    catch(Exception ex)
-                    {
-                        Log.Error(ex, "Interview Exception");
-                    }
-                }, cancellationToken);
+            SecurityManager.NetworkKey? key = (controller.SecurityManager != null) ? controller.SecurityManager.GetHighestKey(ID) : null;
+            await Interview(newlyIncluded, key, cancellationToken).ConfigureAwait(false);
         }
 
         private async Task Interview(bool newlyIncluded, SecurityManager.NetworkKey? key, CancellationToken cancellationToken)
@@ -342,7 +330,7 @@ namespace ZWaveDotNet.Entities
                                     return;
                                 try
                                 {
-                                    using (CancellationTokenSource timeout = new CancellationTokenSource(5000))
+                                    using (CancellationTokenSource timeout = new CancellationTokenSource(3000))
                                     {
                                         using (CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(timeout.Token, cancellationToken))
                                             await RequestS0(cts.Token).ConfigureAwait(false);
@@ -374,7 +362,7 @@ namespace ZWaveDotNet.Entities
                                     return;
                                 try
                                 {
-                                    using (CancellationTokenSource timeout = new CancellationTokenSource(5000))
+                                    using (CancellationTokenSource timeout = new CancellationTokenSource(3000))
                                     {
                                         using (CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(timeout.Token, cancellationToken))
                                             await RequestS2(cts.Token).ConfigureAwait(false);
@@ -403,7 +391,7 @@ namespace ZWaveDotNet.Entities
                                     return;
                                 try
                                 {
-                                    using (CancellationTokenSource timeout = new CancellationTokenSource(5000))
+                                    using (CancellationTokenSource timeout = new CancellationTokenSource(3000))
                                     {
                                         using (CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(timeout.Token, cancellationToken))
                                             await RequestS2(cts.Token).ConfigureAwait(false);
@@ -432,7 +420,7 @@ namespace ZWaveDotNet.Entities
                                     return;
                                 try
                                 {
-                                    using (CancellationTokenSource timeout = new CancellationTokenSource(5000))
+                                    using (CancellationTokenSource timeout = new CancellationTokenSource(3000))
                                     {
                                         using (CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(timeout.Token, cancellationToken))
                                             await RequestS2(cts.Token).ConfigureAwait(false);
@@ -451,6 +439,11 @@ namespace ZWaveDotNet.Entities
                             Log.Information(e, "Failed to query S2 Access");
                             controller.SecurityManager.RevokeKey(ID, SecurityManager.RecordType.S2Access);
                         }
+                    }
+                    if (HasCommandClass(CommandClass.WakeUp))
+                    {
+                        Log.Information("Security query complete. Sleeping before continuing");
+                        await GetCommandClass<WakeUp>()!.WaitForAwake(cancellationToken);
                     }
                 }
                 else
