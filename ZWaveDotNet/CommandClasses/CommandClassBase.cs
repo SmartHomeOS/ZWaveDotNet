@@ -224,18 +224,19 @@ namespace ZWaveDotNet.CommandClasses
             return new Unknown(node, endpoint, cc);
         }
 
-        protected async Task SendCommand(Enum command, CancellationToken token, params byte[] payload)
+        protected async Task<bool> SendCommand(Enum command, CancellationToken token, params byte[] payload)
         {
-            await SendCommand(command, token, false, payload).ConfigureAwait(false);
+            return await SendCommand(command, token, false, payload).ConfigureAwait(false);
         }
 
-        protected async Task SendCommand(Enum command, CancellationToken token, bool supervised = false, params byte[] payload)
+        protected async Task<bool> SendCommand(Enum command, CancellationToken token, bool supervised = false, params byte[] payload)
         {
+            // TODO - Multicast
             CommandMessage data = new CommandMessage(controller, node.ID, endpoint, commandClass, Convert.ToByte(command), supervised, payload);
-            await SendCommand(data, token).ConfigureAwait(false);
+            return await SendCommand(data, token).ConfigureAwait(false);
         }
 
-        protected async Task SendCommand(CommandMessage data, CancellationToken token)
+        protected async Task<bool> SendCommand(CommandMessage data, CancellationToken token)
         { 
             if (data.Payload.Count > 1 && IsSecure(data.Payload[1]))
             {
@@ -253,19 +254,19 @@ namespace ZWaveDotNet.CommandClasses
             }
             
             DataMessage message = data.ToMessage();
-            if (data.Payload.Count > 51)
+            if ((!node.LongRange && data.Payload.Count > 46) || (data.Payload.Count > 120))
             {
-                await TransportService.Transmit(message, token);
-                return;
+                return await TransportService.Transmit(message, token);
             }
             
             for (int i = 0; i < 3; i++)
             {
                 if ((await AttemptTransmission(message, token, i == 2).ConfigureAwait(false)) == true)
-                        return;
+                        return true;
                 Log.Error($"Controller Failed to Send Message: Retrying [Attempt {i + 1}]...");
                 await Task.Delay(100 + Random.Shared.Next(1, 25) + (1000 * i), token).ConfigureAwait(false);
             }
+            return false;
         }
 
         protected async Task<bool> AttemptTransmission(DataMessage message, CancellationToken cancellationToken, bool ex = false)
@@ -292,7 +293,28 @@ namespace ZWaveDotNet.CommandClasses
 
         protected async Task<ReportMessage> SendReceive(Enum command, Enum response, CancellationToken token, params byte[] payload)
         {
-            return await SendReceive(command, response, token, false, payload).ConfigureAwait(false);
+            for (int i = 0; i < 3; i++)
+            {
+                try
+                {
+                    CancellationTokenSource timeout = new CancellationTokenSource(3000);
+                    CancellationTokenSource combo = CancellationTokenSource.CreateLinkedTokenSource(token, timeout.Token);
+                    return await SendReceive(command, response, combo.Token, false, payload).ConfigureAwait(false);
+                }
+                catch (TaskCanceledException tce)
+                {
+                    if (i == 2 || token.IsCancellationRequested)
+                        throw tce;
+                    Log.Logger.Debug("SendReceive timed out.  Retrying...");
+                }
+                catch (OperationCanceledException oce)
+                {
+                    if (i == 2 || token.IsCancellationRequested)
+                        throw oce;
+                    Log.Logger.Debug("SendReceive timed out.  Retrying...");
+                }
+            }
+            return null!;
         }
 
         protected async Task<ReportMessage> SendReceive(Enum command, Enum response, CancellationToken token, bool supervised = false, params byte[] payload)
@@ -302,7 +324,6 @@ namespace ZWaveDotNet.CommandClasses
             return await receive;
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2016:Forward the 'CancellationToken' parameter to methods", Justification = "<Pending>")]
         protected Task<ReportMessage> Receive(Enum response, CancellationToken token)
         {
             TaskCompletionSource<ReportMessage> src = new TaskCompletionSource<ReportMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -312,10 +333,8 @@ namespace ZWaveDotNet.CommandClasses
                 cbList.Add(src, token);
             else
             {
-                BlockingCollection<TaskCompletionSource<ReportMessage>> newCallbacks = new BlockingCollection<TaskCompletionSource<ReportMessage>>
-                {
-                    src
-                };
+                BlockingCollection<TaskCompletionSource<ReportMessage>> newCallbacks = new BlockingCollection<TaskCompletionSource<ReportMessage>>();
+                newCallbacks.Add(src, token);
                 if (!callbacks.TryAdd(cmd, newCallbacks))
                     callbacks[cmd].Add(src, token);
             }

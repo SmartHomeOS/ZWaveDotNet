@@ -63,7 +63,7 @@ namespace ZWaveDotNet.CommandClasses
             return msg.CommandClass == CommandClass.TransportService && (msg.Command == (byte)TransportServiceCommand.FirstFragment || msg.Command == (byte)TransportServiceCommand.SubsequentFragment);
         }
 
-        public static async Task Transmit (DataMessage message, CancellationToken token)
+        public static async Task<bool> Transmit (DataMessage message, CancellationToken token)
         {
             Log.Debug("Transmitting message using transmit encapsulation");
             //Get Session Key
@@ -78,14 +78,16 @@ namespace ZWaveDotNet.CommandClasses
             transmitting.Add(sessionId, message);
 
             //Transmit
+            bool success = true;
             for (int i = 0; i < message.Data.Count; i += MAX_SEGMENT)
             {
                 DataMessage segment = new DataMessage(message.controller, message.DestinationNodeID, message.Data.GetRange(i, Math.Min(message.Data.Count, i + MAX_SEGMENT) - i), true, (message.Options & TransmitOptions.ExploreNPDUs) == TransmitOptions.ExploreNPDUs);
-                await message.controller.Nodes[message.SourceNodeID].GetCommandClass<TransportService>()!.TransmitSegment(segment, sessionId, i, message.Data.Count, token);
+                success &= await message.controller.Nodes[message.SourceNodeID].GetCommandClass<TransportService>()!.TransmitSegment(segment, sessionId, i, message.Data.Count, token);
             }
+            return success;
         }
 
-        private async Task TransmitSegment(DataMessage msg, byte sessionId, int offset, int length, CancellationToken token = default)
+        private async Task<bool> TransmitSegment(DataMessage msg, byte sessionId, int offset, int length, CancellationToken token = default)
         {
             Log.Information("Sending Segment " + offset);
             List<byte> header = new List<byte>();
@@ -107,10 +109,11 @@ namespace ZWaveDotNet.CommandClasses
             for (int i = 0; i < 3; i++)
             {
                 if ((await AttemptTransmission(msg, token, i == 2).ConfigureAwait(false)) == true)
-                    return;
+                    return true;
                 Log.Error($"Transport Service Failed to Send Message: Retrying [Attempt {i + 1}]...");
                 await Task.Delay(100 + Random.Shared.Next(1, 25) + (1000 * i), token).ConfigureAwait(false);
             }
+            return false;
         }
 
         internal static async Task<ReportMessage?> Process(ReportMessage msg, Controller controller, CancellationToken token = default)

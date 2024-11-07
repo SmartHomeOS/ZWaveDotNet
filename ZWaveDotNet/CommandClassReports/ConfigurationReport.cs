@@ -20,7 +20,7 @@ namespace ZWaveDotNet.CommandClassReports
     {
         public readonly byte Parameter;
         public readonly byte Size;
-        public readonly object Value;
+        public readonly int Value;
 
         internal ConfigurationReport(Memory<byte> payload)
         {
