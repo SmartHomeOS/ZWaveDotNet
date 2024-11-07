@@ -36,6 +36,7 @@ namespace ZWaveDotNet.Entities
     {
         protected enum InterviewState { None, Started, Complete };
         public const ushort BROADCAST_ID = 0xFFFF;
+        public const ushort MULTICAST_ID = 0xFFFE;
         public const ushort UNINITIALIZED_ID = 0x0000;
 
         public event NodeEventHandler? InterviewComplete;
@@ -43,7 +44,6 @@ namespace ZWaveDotNet.Entities
         public readonly ushort ID;
         protected readonly Controller controller;
         protected readonly NodeProtocolInfo? nodeInfo;
-        protected bool lr;
         protected bool failed;
         protected InterviewState interviewed;
         
@@ -51,7 +51,7 @@ namespace ZWaveDotNet.Entities
         protected List<EndPoint> endPoints = new List<EndPoint>();
 
         public Controller Controller { get { return controller; } }
-        public bool LongRange {  get { return lr; } }
+        public bool LongRange {  get { return nodeInfo?.IsLongRange ?? false; } }
         public ListeningMode Listening { 
             get {
                 if (nodeInfo == null)

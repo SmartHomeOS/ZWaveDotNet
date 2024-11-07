@@ -26,7 +26,7 @@ namespace ExampleConsole
         private static Controller? controller;
         private static readonly HashSet<ushort> InterviewList = new HashSet<ushort>();
         private static readonly HashSet<ushort> ReadyList = new HashSet<ushort>();
-        private static RFRegion region = RFRegion.Unknown;
+        private static RFRegion region = RFRegion.Default;
         private static readonly LinkedList<string> Reports = new LinkedList<string>();
         private enum Mode { Display, Inclusion, Exclusion, UserInput};
         private static Mode currentMode = Mode.Display;

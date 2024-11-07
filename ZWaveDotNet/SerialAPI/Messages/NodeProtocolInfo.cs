@@ -51,6 +51,12 @@ namespace ZWaveDotNet.SerialAPI.Messages
         }
 
         [JsonIgnore]
+        public bool IsLongRange
+        {
+            get { return ((Reserved & 0x2) == 0x2); } 
+        }
+
+        [JsonIgnore]
         public decimal Version
         {
             get
@@ -72,6 +78,8 @@ namespace ZWaveDotNet.SerialAPI.Messages
                 if ((Capability & 0x10) == 0x10)
                     rates.Add(40000);
                 if ((Reserved & 0x1) == 0x1)
+                    rates.Add(100000);
+                if ((Reserved & 0x2) == 0x2) //ZW Long Range
                     rates.Add(100000);
                 if (rates.Count == 0)
                     rates.Add(9600);

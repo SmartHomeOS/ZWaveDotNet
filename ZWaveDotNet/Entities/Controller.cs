@@ -205,7 +205,7 @@ namespace ZWaveDotNet.Entities
             {
                 lrn = (LongRangeNodes)await flow.SendAcknowledgedResponse(Function.GetLRNodes, cancellationToken, offset);
                 nodes.AddRange(lrn.NodeIDs);
-                offset++;
+                offset += (byte)(lrn.Length / 128);
             } while (lrn != null && lrn.MoreNodes);
             return nodes.ToArray();
         }
@@ -338,7 +338,7 @@ namespace ZWaveDotNet.Entities
                 throw new PlatformNotSupportedException("This controller does not support RF regions");
             PayloadMessage region = (PayloadMessage)await flow.SendAcknowledgedResponse(Function.SerialAPISetup, cancellationToken, (byte)SubCommand.GetRFRegion);
             if (region.Data.Length < 2)
-                return RFRegion.Unknown;
+                return RFRegion.Default;
             return (RFRegion)region.Data.Span[1];
         }
 
@@ -346,10 +346,18 @@ namespace ZWaveDotNet.Entities
         {
             if (!Supports(Function.SerialAPISetup) || !Supports(SubCommand.SetRFRegion))
                 throw new PlatformNotSupportedException("This controller does not support RF regions");
-            if (region == RFRegion.Unknown)
-                throw new ArgumentException(nameof(region) + " cannot be " + nameof(RFRegion.Unknown));
+            if (region == RFRegion.Undefined)
+                throw new ArgumentException(nameof(region) + " cannot be " + nameof(RFRegion.Undefined));
             PayloadMessage success = (PayloadMessage)await flow.SendAcknowledgedResponse(Function.SerialAPISetup, cancellationToken, (byte)SubCommand.SetRFRegion, (byte)region);
             return success.Data.Span[1] != 0;
+        }
+
+        public async Task<byte> GetMaxPayload(bool longRange = false, CancellationToken cancellationToken = default)
+        {
+            if (!Supports(Function.SerialAPISetup) || !Supports(longRange ? SubCommand.GetLRMaxPayloadSize : SubCommand.GetMaxPayloadSize))
+                throw new PlatformNotSupportedException("This controller does not support payload size requests");
+            PayloadMessage size = (PayloadMessage)await flow.SendAcknowledgedResponse(Function.SerialAPISetup, cancellationToken, longRange ? (byte)SubCommand.GetLRMaxPayloadSize : (byte)SubCommand.GetMaxPayloadSize);
+            return size.Data.Span[1];
         }
 
         public async Task InterviewNodes()

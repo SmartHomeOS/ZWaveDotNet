@@ -20,6 +20,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
     {
         public bool MoreNodes { get; private set; }
         public byte Offset { get; private set; }
+        public byte Length { get; private set; }
 
         public ushort[] NodeIDs { get; private set; }
 
@@ -29,10 +30,10 @@ namespace ZWaveDotNet.SerialAPI.Messages
         {
             MoreNodes = payload.Span[0] != 0;
             Offset = payload.Span[1];
-            byte length = payload.Span[2];
+            Length = payload.Span[2];
 
             List<ushort> nodeIDs = new List<ushort>();
-            BitArray bits = new BitArray(payload.Slice(3, length).ToArray());
+            BitArray bits = new BitArray(payload.Slice(3, Length).ToArray());
             for (ushort i = 0; i < bits.Length; i++)
             {
                 if (bits[i])
