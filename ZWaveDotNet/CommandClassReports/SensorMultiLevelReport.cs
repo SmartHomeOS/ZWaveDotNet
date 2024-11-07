@@ -49,7 +49,7 @@ namespace ZWaveDotNet.CommandClassReports
             var distanceUnits = new[] { Units.meters, Units.centimeters, Units.feet };
             var seismicIntensityUnits = new[] { Units.Mercalli, Units.EuropeanMacroseismic, Units.Liedu, Units.Shindo };
             var seismicMagnitudeUnits = new[] { Units.Local, Units.Moment, Units.SurfaceWave, Units.BodyWave };
-            var moistureUnits = new[] { Units.Percent, Units.WaterContent, Units.kOhm, Units.WaterActivity };
+            var moistureUnits = new[] { Units.Percent, Units.cubicMeterPerCubicMeter, Units.kOhm, Units.WaterActivity };
 
             switch (type)
             {

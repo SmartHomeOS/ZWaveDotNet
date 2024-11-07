@@ -17,11 +17,9 @@ namespace ZWaveDotNet.Enums
         None,
         Amps,
         BMI,
-        BMR,
         BodyWave,
         BPM,
         bqPerCubicMeter,
-        BTU,
         BTUPerHour,
         centimeters,
         cubicFeet,
@@ -65,7 +63,6 @@ namespace ZWaveDotNet.Enums
         metersPerSec2,
         mgPerLiter,
         mHz,
-        miles,
         milesPerHour,
         mmPerHour,
         molPerCubicMeter,
@@ -91,7 +88,7 @@ namespace ZWaveDotNet.Enums
         USGallons,
         Volts,
         WaterActivity, //aW
-        WaterContent, // m3/m3
+        cubicMeterPerCubicMeter,
         Watts,
         WattsPerSquareMeter,
         Wh
