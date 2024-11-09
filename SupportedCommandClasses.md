@@ -24,7 +24,7 @@ DCP_MONITOR | 0 | 1 | None
 **DOOR_LOCK** | **4** | **4** | **Full**
 DOOR_LOCK_LOGGING | 0 | 1 | None
 **ENERGY_PRODUCTION** | **1** | **1** | **Full**
-ENTRY_CONTROL | 0 | 1 | None
+**ENTRY_CONTROL** | **1** | **1** | **Full**
 *FIRMWARE_UPDATE_MD* | *1* | *8* | *Partial*
 **GEOGRAPHIC_LOCATION** | **1** | **1** | **Full**
 **GROUPING_NAME** | **1** | **1** | **Full**
@@ -98,5 +98,5 @@ USER_CODE | 0 | 2 | None
 **WINDOW_COVERING** | **1** | **1** | **Full**
 **ZWAVEPLUS_INFO** | **2** | **2** | **Full**
 
-- Full Support for 67/97 Command Classes.
+- Full Support for 68/97 Command Classes.
 - Partial Support for 2/97 Command Classes.

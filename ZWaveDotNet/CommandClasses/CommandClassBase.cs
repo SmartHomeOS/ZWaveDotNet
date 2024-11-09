@@ -114,6 +114,8 @@ namespace ZWaveDotNet.CommandClasses
                     return new DoorLock(node, endpoint);
                 case CommandClass.EnergyProduction:
                     return new EnergyProduction(node, endpoint);
+                case CommandClass.EntryControl:
+                    return new EntryControl(node, endpoint);
                 case CommandClass.FirmwareUpdateMD:
                     return new FirmwareUpdate(node);
                 case CommandClass.GeographicLocation:
