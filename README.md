@@ -4,14 +4,14 @@
 An implementation of ZWave Plus using the 2024a public specification. 
 
 ### Features:
-* Support is included for 60+ command classes. [Full and partial command class support is listed here](SupportedCommandClasses.md).
+* Support is included for 70+ command classes. [Full and partial command class support is listed here](SupportedCommandClasses.md).
 * Support for security (V0 and V2) and message encapsulation (CRC16, MultiChannel, MultiCommand, Transport and Supervision)
 * Support for 8/12/16 bit node IDs (4000+ nodes per controller) including ZWave LR
 * Support for extended command classes (16-bit)
 * Support for broadcast messaging
 * Support for ZWave Plus and Device Type v2
 * Node database import/export
-* SmartStart inclusion and SmartStart for ZWave long range (LR) devices (including SmartStart by QR Code)
+* SmartStart inclusion and SmartStart for ZWave Long Range (LR) devices (including SmartStart by QR Code)
 
 #### Getting Started:
 * See our [Examples Page](Examples.md)

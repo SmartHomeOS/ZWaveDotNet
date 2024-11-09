@@ -7,7 +7,7 @@ ANTITHEFT_UNLOCK | 0 | 1 | None
 **APPLICATION_STATUS** | **1** | **1** | **Full**
 **ASSOCIATION** | **3** | **3** | **Full**
 ASSOCIATION_COMMAND_CONFIGURATION | 0 | 1 | None
-ASSOCIATION_GRP_INFO | 0 | 3 | None
+**ASSOCIATION_GRP_INFO** | **3** | **3** | **Full**
 **BARRIER_OPERATOR** | **1** | **1** | **Full**
 **BASIC** | **2** | **2** | **Full**
 **BASIC_TARIFF_INFO** | **1** | **1** | **Full**
@@ -98,5 +98,5 @@ USER_CODE | 0 | 2 | None
 **WINDOW_COVERING** | **1** | **1** | **Full**
 **ZWAVEPLUS_INFO** | **2** | **2** | **Full**
 
-- Full Support for 68/97 Command Classes.
+- Full Support for 69/97 Command Classes.
 - Partial Support for 2/97 Command Classes.
