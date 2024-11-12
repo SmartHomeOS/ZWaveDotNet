@@ -20,13 +20,13 @@ namespace ZWaveDotNet.SerialAPI.Messages
         public readonly ReceiveStatus RxStatus;
         public readonly byte[] HomeID;
 
-        public SmartStartNodeInformationUpdate(Memory<byte> payload, bool wideId) : base(payload, wideId)
+        public SmartStartNodeInformationUpdate(Span<byte> payload, bool wideId) : base(payload, wideId)
         {
             if (payload.Length < 8)
                 throw new InvalidDataException("SmartStartInfo should be at least 8 bytes");
             int pos = wideId ? 4 : 3;
             //Span[2] is reserved
-            RxStatus = (ReceiveStatus)payload.Span[pos++];
+            RxStatus = (ReceiveStatus)payload[pos++];
             HomeID = payload.Slice(pos, 4).ToArray();
         }
 

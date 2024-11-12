@@ -42,7 +42,7 @@ namespace ZWaveDotNet.CommandClasses
         public async Task<ManufacturerSpecificReport> Get(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(ManufacturerSpecificCommand.Get, ManufacturerSpecificCommand.Report, cancellationToken);
-            return new ManufacturerSpecificReport(response.Payload);
+            return new ManufacturerSpecificReport(response.Payload.Span);
         }
 
         /// <summary>
@@ -54,7 +54,7 @@ namespace ZWaveDotNet.CommandClasses
         public async Task<ManufacturerSpecificDeviceReport> SpecificGet(DeviceSpecificType type, CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(ManufacturerSpecificCommand.DeviceSpecificGet, ManufacturerSpecificCommand.DeviceSpecificReport, cancellationToken, (byte)type);
-            return new ManufacturerSpecificDeviceReport(response.Payload);
+            return new ManufacturerSpecificDeviceReport(response.Payload.Span);
         }
 
         protected override Task<SupervisionStatus> Handle(ReportMessage message)

@@ -39,7 +39,7 @@ namespace ZWaveDotNet.CommandClasses
         public async Task<AlarmReport> Get(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(AlarmCommand.Get, AlarmCommand.Report, cancellationToken);
-            return new AlarmReport(response.Payload);
+            return new AlarmReport(response.Payload.Span);
         }
 
         public async Task Set(NotificationType type, bool activate, CancellationToken cancellationToken = default)
@@ -51,14 +51,14 @@ namespace ZWaveDotNet.CommandClasses
         public async Task<AlarmSupportedReport> SupportedGet(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(AlarmCommand.SupportedGet, AlarmCommand.SupportedReport, cancellationToken);
-            return new AlarmSupportedReport(response.Payload);
+            return new AlarmSupportedReport(response.Payload.Span);
         }
 
         protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)AlarmCommand.Report)
             {
-                AlarmReport report = new AlarmReport(message.Payload);
+                AlarmReport report = new AlarmReport(message.Payload.Span);
                 await FireEvent(Updated, report);
                 Log.Information(report.ToString());
                 return SupervisionStatus.Success;

@@ -23,16 +23,16 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly byte UnsupportedCommand;
         public readonly bool PermanentlyUnsupported;
 
-        public ApplicationCapabilityReport(Memory<byte> payload)
+        public ApplicationCapabilityReport(Span<byte> payload)
         {
             if (payload.Length == 2)
-                UnsupportedCommandClass = (CommandClass)payload.Span[1];
+                UnsupportedCommandClass = (CommandClass)payload[1];
             else if (payload.Length == 3)
-                UnsupportedCommandClass = (CommandClass)BinaryPrimitives.ReadUInt16BigEndian(payload.Slice(1, 2).Span);
+                UnsupportedCommandClass = (CommandClass)BinaryPrimitives.ReadUInt16BigEndian(payload.Slice(1, 2));
             else
                 throw new DataException($"The response was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
-            PermanentlyUnsupported = (payload.Span[0] & 0x80) != 0x80;
-            UnsupportedCommand = payload.Span[2];
+            PermanentlyUnsupported = (payload[0] & 0x80) != 0x80;
+            UnsupportedCommand = payload[2];
         }
 
         public override string ToString()

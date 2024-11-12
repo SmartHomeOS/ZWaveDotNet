@@ -21,14 +21,14 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly byte Level;
         public readonly TimeSpan Duration;
 
-        public SceneActuatorConfigurationReport(Memory<byte> payload)
+        public SceneActuatorConfigurationReport(Span<byte> payload)
         {
             if (payload.Length < 3)
                 throw new DataException($"The Scene Actuator Configuration Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
 
-            SceneID = payload.Span[0];
-            Level = payload.Span[1];
-            Duration = PayloadConverter.ToTimeSpan(payload.Span[2]);
+            SceneID = payload[0];
+            Level = payload[1];
+            Duration = PayloadConverter.ToTimeSpan(payload[2]);
         }
 
         public override string ToString()

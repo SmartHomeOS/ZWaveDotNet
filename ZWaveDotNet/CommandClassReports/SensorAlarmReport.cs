@@ -27,15 +27,15 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly byte Level;
         public readonly ushort Duration;
 
-        internal SensorAlarmReport(Memory<byte> payload)
+        internal SensorAlarmReport(Span<byte> payload)
         {
             if (payload.Length < 3)
                 throw new DataException($"The Sensor Alarm Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
 
-            SourceNodeID = payload.Span[0];
-            Type = (AlarmType)payload.Span[1];
-            Level = payload.Span[2];
-            Duration = BinaryPrimitives.ReadUInt16BigEndian(payload.Slice(3, 2).Span);
+            SourceNodeID = payload[0];
+            Type = (AlarmType)payload[1];
+            Level = payload[2];
+            Duration = BinaryPrimitives.ReadUInt16BigEndian(payload.Slice(3, 2));
         }
 
         public override string ToString()

@@ -21,13 +21,13 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly ushort Manufacturer;
         public Memory<byte> Data;
 
-        public ManufacturerProprietaryReport(Memory<byte> payload) 
+        public ManufacturerProprietaryReport(Span<byte> payload) 
         {
             if (payload.Length < 3)
                 throw new DataException($"The Manufacturer Proprietary response was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
 
-            Manufacturer = BinaryPrimitives.ReadUInt16BigEndian(payload.Slice(0, 2).Span);
-            Data = payload.Slice(2);
+            Manufacturer = BinaryPrimitives.ReadUInt16BigEndian(payload.Slice(0, 2));
+            Data = payload.Slice(2).ToArray();
         }
 
         public override string ToString()

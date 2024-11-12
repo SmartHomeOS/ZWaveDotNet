@@ -49,7 +49,7 @@ namespace ZWaveDotNet.CommandClasses
         public async Task<SensorAlarmReport> Get(AlarmType type, CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(SensorAlarmCommand.Get, SensorAlarmCommand.Report, cancellationToken, (byte)type);
-            return new SensorAlarmReport(response.Payload);
+            return new SensorAlarmReport(response.Payload.Span);
         }
 
         /// <summary>
@@ -77,7 +77,7 @@ namespace ZWaveDotNet.CommandClasses
         {
             if (message.Command == (byte)SensorAlarmCommand.Report)
             {
-                await FireEvent(Alarm, new SensorAlarmReport(message.Payload));
+                await FireEvent(Alarm, new SensorAlarmReport(message.Payload.Span));
                 return SupervisionStatus.Success;
             }
             return SupervisionStatus.NoSupport;

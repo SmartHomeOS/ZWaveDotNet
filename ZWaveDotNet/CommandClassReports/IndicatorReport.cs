@@ -12,7 +12,6 @@
 
 using System.Data;
 using ZWaveDotNet.CommandClasses.Enums;
-using ZWaveDotNet.SerialAPI.Messages;
 using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.CommandClassReports

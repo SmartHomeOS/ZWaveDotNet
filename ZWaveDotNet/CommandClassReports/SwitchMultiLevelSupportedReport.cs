@@ -21,12 +21,12 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly SwitchType PrimarySwitch;
         public readonly SwitchType SecondarySwitch;
 
-        internal SwitchMultiLevelSupportedReport(Memory<byte> payload)
+        internal SwitchMultiLevelSupportedReport(Span<byte> payload)
         {
             if (payload.Length >= 2)
             {
-                PrimarySwitch = (SwitchType)(payload.Span[0] & 0x1F);
-                SecondarySwitch = (SwitchType)(payload.Span[1] & 0x1F);
+                PrimarySwitch = (SwitchType)(payload[0] & 0x1F);
+                SecondarySwitch = (SwitchType)(payload[1] & 0x1F);
             }
             else
                 throw new DataException($"The Switch MultiLevel Supported Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");

@@ -41,7 +41,7 @@ namespace ZWaveDotNet.CommandClasses
 
         protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
-            ManufacturerProprietaryReport rpt = new ManufacturerProprietaryReport(message.Payload);
+            ManufacturerProprietaryReport rpt = new ManufacturerProprietaryReport(message.Payload.Span);
             await FireEvent(Received, rpt);
             return SupervisionStatus.Success;
         }

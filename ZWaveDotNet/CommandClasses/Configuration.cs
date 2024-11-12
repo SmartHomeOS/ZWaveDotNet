@@ -56,7 +56,7 @@ namespace ZWaveDotNet.CommandClasses
         public async Task<ConfigurationReport> Get(byte parameter, CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(ConfigurationCommand.Get, ConfigurationCommand.Report, cancellationToken, parameter);
-            return new ConfigurationReport(response.Payload);
+            return new ConfigurationReport(response.Payload.Span);
         }
 
         /// <summary>

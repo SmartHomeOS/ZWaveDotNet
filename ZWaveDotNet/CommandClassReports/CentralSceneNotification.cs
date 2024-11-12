@@ -24,15 +24,15 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly byte SceneNumber;
         public readonly bool SlowRefresh;
 
-        internal CentralSceneNotification(Memory<byte> payload)
+        internal CentralSceneNotification(Span<byte> payload)
         {
             if (payload.Length < 3)
                 throw new DataException($"The Central Scene Notification was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
 
-            SequenceNumber = payload.Span[0];
-            KeyAttributes = (CentralSceneKeyAttributes)(payload.Span[1] & 0x07);
-            SlowRefresh = (payload.Span[1] & 0x80) == 0x80;
-            SceneNumber = payload.Span[2];
+            SequenceNumber = payload[0];
+            KeyAttributes = (CentralSceneKeyAttributes)(payload[1] & 0x07);
+            SlowRefresh = (payload[1] & 0x80) == 0x80;
+            SceneNumber = payload[2];
         }
 
         public override string ToString()

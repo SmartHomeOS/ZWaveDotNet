@@ -22,18 +22,18 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly KeyValuePair<ColorType, byte> TargetValue;
         public readonly TimeSpan Duration;
 
-        internal SwitchColorReport(Memory<byte> payload)
+        internal SwitchColorReport(Span<byte> payload)
         {
             if (payload.Length < 2)
                 throw new DataException($"The Switch Color Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
 
-            CurrentValue = new KeyValuePair<ColorType, byte>((ColorType)payload.Span[0], payload.Span[1]);
+            CurrentValue = new KeyValuePair<ColorType, byte>((ColorType)payload[0], payload[1]);
 
             if (payload.Length >= 4)
             {
                 //Version 3
-                TargetValue = new KeyValuePair<ColorType, byte>((ColorType)payload.Span[0], payload.Span[2]);
-                Duration = PayloadConverter.ToTimeSpan(payload.Span[3]);
+                TargetValue = new KeyValuePair<ColorType, byte>((ColorType)payload[0], payload[2]);
+                Duration = PayloadConverter.ToTimeSpan(payload[3]);
             }
             else
             {

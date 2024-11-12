@@ -21,13 +21,13 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly FanMode FanMode;
         public readonly bool AlwaysOff;
 
-        internal ThermostatFanModeReport(Memory<byte> payload)
+        internal ThermostatFanModeReport(Span<byte> payload)
         {
             if (payload.Length == 0)
                 throw new DataException($"The Thermostat Fan Mode Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
 
-            FanMode = (FanMode)(payload.Span[0] & 0xF);
-            AlwaysOff = (payload.Span[0] & 0x80) == 0x80;
+            FanMode = (FanMode)(payload[0] & 0xF);
+            AlwaysOff = (payload[0] & 0x80) == 0x80;
         }
 
         public override string ToString()

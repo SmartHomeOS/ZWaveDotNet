@@ -60,7 +60,7 @@ namespace ZWaveDotNet.CommandClasses
         {
             if (message.Command == (byte)LockCommand.Report)
             {
-                BasicReport report = new BasicReport(message.Payload);
+                BasicReport report = new BasicReport(message.Payload.Span);
                 await FireEvent(Report, report);
             }
             return SupervisionStatus.NoSupport;

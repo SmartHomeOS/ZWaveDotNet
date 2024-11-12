@@ -30,14 +30,14 @@ namespace ZWaveDotNet.CommandClassReports
 
         public readonly NodeEndpoint[] Endpoints;
 
-        internal MultiChannelAssociationReport(Memory<byte> payload)
+        internal MultiChannelAssociationReport(Span<byte> payload)
         {
             if (payload.Length < 3)
                 throw new DataException($"The Multi Channel Association Report was not in the expected format.  Payload: {MemoryUtil.Print(payload)}");
 
-            GroupID = payload.Span[0];
-            MaxNodesSupported = payload.Span[1];
-            ReportsToFollow = payload.Span[2];
+            GroupID = payload[0];
+            MaxNodesSupported = payload[1];
+            ReportsToFollow = payload[2];
 
             bool nodeMode = true;
             List<ushort> nodes = new List<ushort>();
@@ -45,12 +45,12 @@ namespace ZWaveDotNet.CommandClassReports
 
             for (int p = 3; p < payload.Length - 1; p++)
             {
-                if (payload.Span[p] == MULTI_CHANNEL_ASSOCIATION_SET_MARKER)
+                if (payload[p] == MULTI_CHANNEL_ASSOCIATION_SET_MARKER)
                     nodeMode = false;
                 else if (nodeMode)
-                    nodes.Add(payload.Span[p]); //FIXME: The spec is undefined for 16-bit NodeIDs
+                    nodes.Add(payload[p]); //FIXME: The spec is undefined for 16-bit NodeIDs
                 else
-                    eps.Add(new NodeEndpoint(payload.Span[p++], payload.Span[p]));
+                    eps.Add(new NodeEndpoint(payload[p++], payload[p]));
             }
             Nodes = nodes.ToArray();
             Endpoints = eps.ToArray();

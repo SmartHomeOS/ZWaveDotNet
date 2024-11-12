@@ -47,7 +47,7 @@ namespace ZWaveDotNet.CommandClasses
         public async Task<VersionReport> Get(CancellationToken cancellationToken = default)
         {
             ReportMessage msg = await SendReceive(VersionCommand.Get, VersionCommand.Report, cancellationToken);
-            return new VersionReport(msg.Payload);
+            return new VersionReport(msg.Payload.Span);
         }
 
         /// <summary>
@@ -58,7 +58,7 @@ namespace ZWaveDotNet.CommandClasses
         public async Task<VersionCapabilities> GetCapabilities(CancellationToken cancellationToken = default)
         {
             ReportMessage msg = await SendReceive(VersionCommand.CapabilitiesGet, VersionCommand.CapabilitiesReport, cancellationToken);
-            return new VersionCapabilities(msg.Payload);
+            return new VersionCapabilities(msg.Payload.Span);
         }
 
         /// <summary>
@@ -69,7 +69,7 @@ namespace ZWaveDotNet.CommandClasses
         public async Task<ZWaveSoftwareReport> GetSoftwareVersion(CancellationToken cancellationToken = default)
         {
             ReportMessage msg = await SendReceive(VersionCommand.ZWaveSoftwareGet, VersionCommand.ZWaveSoftwareReport, cancellationToken);
-            return new ZWaveSoftwareReport(msg.Payload);
+            return new ZWaveSoftwareReport(msg.Payload.Span);
         }
 
         /// <summary>

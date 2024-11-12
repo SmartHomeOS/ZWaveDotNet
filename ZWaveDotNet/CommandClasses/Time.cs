@@ -58,7 +58,7 @@ namespace ZWaveDotNet.CommandClasses
         public async Task<TimeOffsetReport> GetOffset(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(TimeCommand.TimeOffsetGet, TimeCommand.TimeOffsetReport, cancellationToken);
-            return new TimeOffsetReport(response.Payload);
+            return new TimeOffsetReport(response.Payload.Span);
         }
 
         public override async Task Interview(CancellationToken cancellationToken = default)

@@ -38,7 +38,7 @@ namespace ZWaveDotNet.CommandClasses
         public async Task<SwitchToggleMultiLevelReport> Get(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(ToggleMultiLevelCommand.Get, ToggleMultiLevelCommand.Report, cancellationToken);
-            return new SwitchToggleMultiLevelReport(response.Payload);
+            return new SwitchToggleMultiLevelReport(response.Payload.Span);
         }
         /// <summary>
         /// Sets the level
@@ -74,7 +74,7 @@ namespace ZWaveDotNet.CommandClasses
         {
             if (message.Command == (byte)ToggleMultiLevelCommand.Report)
             {
-                SwitchToggleMultiLevelReport report = new SwitchToggleMultiLevelReport(message.Payload);
+                SwitchToggleMultiLevelReport report = new SwitchToggleMultiLevelReport(message.Payload.Span);
                 await FireEvent(Changed, report);
                 Log.Information("Switch Toggle Multi Level Report: " + report.ToString());
                 return SupervisionStatus.Success;

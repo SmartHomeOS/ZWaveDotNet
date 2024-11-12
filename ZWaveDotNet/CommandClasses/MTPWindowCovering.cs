@@ -38,7 +38,7 @@ namespace ZWaveDotNet.CommandClasses
             if (node.ID == Node.BROADCAST_ID)
                 throw new MethodAccessException("GET methods may not be called on broadcast nodes");
             ReportMessage response = await SendReceive(MTPWindowCommand.Get, MTPWindowCommand.Report, cancellationToken);
-            return new MTPWindowCoveringReport(response.Payload);
+            return new MTPWindowCoveringReport(response.Payload.Span);
         }
 
         /// <summary>
@@ -56,7 +56,7 @@ namespace ZWaveDotNet.CommandClasses
         {
             if (message.Command == (byte)MTPWindowCommand.Report)
             {
-                MTPWindowCoveringReport rpt = new MTPWindowCoveringReport(message.Payload);
+                MTPWindowCoveringReport rpt = new MTPWindowCoveringReport(message.Payload.Span);
                 await FireEvent(PositionChanged, rpt);
                 Log.Information(rpt.ToString());
                 return SupervisionStatus.Success;

@@ -27,34 +27,34 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly TimeSpan? RemainingLockTime;
         public readonly TimeSpan? RemainingOperationTime;
 
-        public DoorLockReport(Memory<byte> payload)
+        public DoorLockReport(Span<byte> payload)
         {
             if (payload.Length < 5)
                 throw new DataException($"The Door Lock Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
 
-            CurrentMode = (DoorLockMode)payload.Span[0];
+            CurrentMode = (DoorLockMode)payload[0];
             EnabledInsideHandles = new bool[5];
             EnabledOutsideHandles = new bool[5];
             for (int i = 0; i < 8; i++)
             {
-                bool set = (payload.Span[1] & 0x1) == 0x1;
+                bool set = (payload[1] & 0x1) == 0x1;
                 if (i < 4)
                     EnabledInsideHandles[i + 1] = set;
                 else
                     EnabledOutsideHandles[i + 1] = set;
-                payload.Span[i] = (byte)(payload.Span[i] >> 1);
+                payload[i] = (byte)(payload[i] >> 1);
             }
-            Condition = (DoorCondition)payload.Span[2];
-            if (payload.Span[3] < 0xFE)
+            Condition = (DoorCondition)payload[2];
+            if (payload[3] < 0xFE)
             {
-                int secs = Math.Min((byte)59, payload.Span[4]);
-                RemainingLockTime = new TimeSpan(0, payload.Span[3], secs);
+                int secs = Math.Min((byte)59, payload[4]);
+                RemainingLockTime = new TimeSpan(0, payload[3], secs);
             }
             //V3
             if (payload.Length > 6)
             {
-                TargetMode = (DoorLockMode)payload.Span[5];
-                RemainingOperationTime = PayloadConverter.ToTimeSpan(payload.Span[6]);
+                TargetMode = (DoorLockMode)payload[5];
+                RemainingOperationTime = PayloadConverter.ToTimeSpan(payload[6]);
             }
             else
             {

@@ -22,21 +22,21 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly bool? TargetValue;
         public readonly TimeSpan Duration;
 
-        public SwitchBinaryReport(Memory<byte> payload)
+        public SwitchBinaryReport(Span<byte> payload)
         {
-            if (payload.Span[0] == UNKNOWN)
+            if (payload[0] == UNKNOWN)
                 CurrentValue = null;
             else
-                CurrentValue = payload.Span[0] != 0x0; //Values 0x1 - 0xFF = On
+                CurrentValue = payload[0] != 0x0; //Values 0x1 - 0xFF = On
 
             //Version 2
             if (payload.Length > 2)
             {
-                if (payload.Span[1] == UNKNOWN)
+                if (payload[1] == UNKNOWN)
                     TargetValue = null;
                 else
-                    TargetValue = payload.Span[1] != 0x0; //Values 0x1 - 0xFF = On
-                Duration = PayloadConverter.ToTimeSpan(payload.Span[2]);
+                    TargetValue = payload[1] != 0x0; //Values 0x1 - 0xFF = On
+                Duration = PayloadConverter.ToTimeSpan(payload[2]);
             }
             else
             {

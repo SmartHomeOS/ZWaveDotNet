@@ -57,7 +57,7 @@ namespace ZWaveDotNet.CommandClasses
         public async Task<ThermostatOperatingStateLoggingReport> GetLoggingReport(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(ThermostatOperatingStateCommand.LoggingGet, ThermostatOperatingStateCommand.LoggingReport, cancellationToken);
-            return new ThermostatOperatingStateLoggingReport(response.Payload);
+            return new ThermostatOperatingStateLoggingReport(response.Payload.Span);
         }
 
         protected override Task<SupervisionStatus> Handle(ReportMessage message)

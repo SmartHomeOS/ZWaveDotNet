@@ -22,13 +22,13 @@ namespace ZWaveDotNet.CommandClassReports
         public bool MPAN_OS;
         public Memory<byte> Entropy;
 
-        public NonceReport(Memory<byte> payload)
+        public NonceReport(Span<byte> payload)
         {
-            Sequence = payload.Span[0];
-            SPAN_OS = (payload.Span[1] & 0x1) == 0x1;
-            MPAN_OS = (payload.Span[1] & 0x2) == 0x2;
+            Sequence = payload[0];
+            SPAN_OS = (payload[1] & 0x1) == 0x1;
+            MPAN_OS = (payload[1] & 0x2) == 0x2;
             if (SPAN_OS)
-                Entropy = payload.Slice(2);
+                Entropy = payload.Slice(2).ToArray();
             else
                 Entropy = new byte[0];
             if (Entropy.Length > 16)

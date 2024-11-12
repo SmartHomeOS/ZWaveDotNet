@@ -56,7 +56,7 @@ namespace ZWaveDotNet.CommandClasses
         public async Task<HumiditySetpointReport> Get(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(HumidityControlSetpointCommand.Get, HumidityControlSetpointCommand.Report, cancellationToken);
-            return new HumiditySetpointReport(response.Payload);
+            return new HumiditySetpointReport(response.Payload.Span);
         }
 
         public async Task<Units> GetSupportedUnits(HumidityControlModeType type, CancellationToken cancellationToken = default)
@@ -71,7 +71,7 @@ namespace ZWaveDotNet.CommandClasses
         public async Task<HumiditySetpointCapabilitiesReport> GetSupportedRange(HumidityControlModeType type, CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(HumidityControlSetpointCommand.CapabilitiesGet, HumidityControlSetpointCommand.CapabilitiesReport, cancellationToken, (byte)type);
-            return new HumiditySetpointCapabilitiesReport(response.Payload);
+            return new HumiditySetpointCapabilitiesReport(response.Payload.Span);
         }
 
         /// <summary>
@@ -100,7 +100,7 @@ namespace ZWaveDotNet.CommandClasses
         {
             if (message.Command == (byte)HumidityControlSetpointCommand.Report)
             {
-                await FireEvent(Updated, new HumiditySetpointReport(message.Payload));
+                await FireEvent(Updated, new HumiditySetpointReport(message.Payload.Span));
                 return SupervisionStatus.Success;
             }
             return SupervisionStatus.NoSupport;

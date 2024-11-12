@@ -21,12 +21,12 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly byte Hour;
         public readonly byte Minute;
 
-        internal ClockReport(Memory<byte> payload)
+        internal ClockReport(Span<byte> payload)
         {
             if (payload.Length < 2)
                 throw new DataException($"The response was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
 
-            var day = (byte)(payload.Span[0] >> 5);
+            var day = (byte)(payload[0] >> 5);
             switch (day)
             {
                 case 1:
@@ -51,8 +51,8 @@ namespace ZWaveDotNet.CommandClassReports
                     DayOfWeek = DayOfWeek.Sunday;
                     break;
             }
-            Hour = (byte)(payload.Span[0] & 0x1F);
-            Minute = payload.Span[1];
+            Hour = (byte)(payload[0] & 0x1F);
+            Minute = payload[1];
         }
 
         public override string ToString()

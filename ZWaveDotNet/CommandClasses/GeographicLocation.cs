@@ -35,7 +35,7 @@ namespace ZWaveDotNet.CommandClasses
             if (node.ID == Node.BROADCAST_ID)
                 throw new MethodAccessException("GET methods may not be called on broadcast nodes");
             ReportMessage response = await SendReceive(GeographicLocationCommand.Get, GeographicLocationCommand.Report, cancellationToken);
-            return new GeographicLocationReport(response.Payload);
+            return new GeographicLocationReport(response.Payload.Span);
         }
 
         public async Task Set(double longitude, double latitude, CancellationToken cancellationToken = default)

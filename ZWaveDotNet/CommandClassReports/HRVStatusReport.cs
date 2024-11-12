@@ -23,12 +23,12 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly float Value;
         public readonly Units Unit;
 
-        internal HRVStatusReport(Memory<byte> payload)
+        internal HRVStatusReport(Span<byte> payload)
         {
             if (payload.Length < 3)
                 throw new DataException($"The HRV Status Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
 
-            StatusType = (HRVStatusParameter)payload.Span[0];
+            StatusType = (HRVStatusParameter)payload[0];
             Value = PayloadConverter.ToFloat(payload.Slice(1), out byte scale, out _, out _);
             Unit = GetUnit(StatusType, scale);
         }

@@ -47,7 +47,7 @@ namespace ZWaveDotNet.CommandClasses
         public async Task<SensorBinaryReport> Get(SensorBinaryType sensorType, CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(SensorBinaryCommand.Get, SensorBinaryCommand.Report, cancellationToken, (byte)sensorType);
-            return new SensorBinaryReport(response.Payload);
+            return new SensorBinaryReport(response.Payload.Span);
         }
 
         /// <summary>
@@ -72,7 +72,7 @@ namespace ZWaveDotNet.CommandClasses
         {
             if (message.Command == (byte)SensorBinaryCommand.Report)
             {
-                await FireEvent(Updated, new SensorBinaryReport(message.Payload));
+                await FireEvent(Updated, new SensorBinaryReport(message.Payload.Span));
                 return SupervisionStatus.Success;
             }
             return SupervisionStatus.NoSupport;

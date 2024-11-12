@@ -21,14 +21,14 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly bool Value;
         public readonly SensorBinaryType SensorType;
 
-        internal SensorBinaryReport(Memory<byte> payload)
+        internal SensorBinaryReport(Span<byte> payload)
         {
             if (payload.Length == 0)
                 throw new DataException($"The Sensor Binary Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
 
-            Value = payload.Span[0] == 0xFF;
+            Value = payload[0] == 0xFF;
             if (payload.Length > 1)
-                SensorType = (SensorBinaryType)payload.Span[1];
+                SensorType = (SensorBinaryType)payload[1];
             else
                 SensorType = SensorBinaryType.FirstSupported;
         }

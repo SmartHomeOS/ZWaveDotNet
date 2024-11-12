@@ -23,15 +23,15 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly byte TargetValue;
         public readonly TimeSpan Duration;
 
-        public WindowCoveringReport(Memory<byte> payload)
+        public WindowCoveringReport(Span<byte> payload)
         {
             if (payload.Length < 4)
                 throw new DataException($"The Window Covering Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
 
-            Parameter = (WindowCoveringParameter)payload.Span[0];
-            CurrentValue = payload.Span[1];
-            TargetValue = payload.Span[2];
-            Duration = PayloadConverter.ToTimeSpan(payload.Span[3]);
+            Parameter = (WindowCoveringParameter)payload[0];
+            CurrentValue = payload[1];
+            TargetValue = payload[2];
+            Duration = PayloadConverter.ToTimeSpan(payload[3]);
         }
 
         public override string ToString()

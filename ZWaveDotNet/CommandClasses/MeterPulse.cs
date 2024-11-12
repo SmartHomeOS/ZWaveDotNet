@@ -37,14 +37,14 @@ namespace ZWaveDotNet.CommandClasses
                 throw new MethodAccessException("GET methods may not be called on broadcast nodes");
 
             ReportMessage response = await SendReceive(MeterPulseCommand.Get, MeterPulseCommand.Report, cancellationToken);
-            return new MeterPulseReport(response.Payload);
+            return new MeterPulseReport(response.Payload.Span);
         }
 
         protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)MeterPulseCommand.Report)
             {
-                await FireEvent(Report, new MeterPulseReport(message.Payload));
+                await FireEvent(Report, new MeterPulseReport(message.Payload.Span));
                 return SupervisionStatus.Success;
             }
             return SupervisionStatus.NoSupport;

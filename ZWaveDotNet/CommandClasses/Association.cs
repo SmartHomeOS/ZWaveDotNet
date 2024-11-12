@@ -39,7 +39,7 @@ namespace ZWaveDotNet.CommandClasses
         public async Task<AssociationReport> Get(byte groupID, CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(AssociationCommand.Get, AssociationCommand.Report, cancellationToken, groupID);
-            return new AssociationReport(response.Payload);
+            return new AssociationReport(response.Payload.Span);
         }
 
         public async Task<byte> GetSpecific(CancellationToken cancellationToken = default)
@@ -61,7 +61,7 @@ namespace ZWaveDotNet.CommandClasses
         public async Task<AssociationGroupsReport> GetGroups(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(AssociationCommand.GroupingsGet, AssociationCommand.GroupingsReport, cancellationToken);
-            return new AssociationGroupsReport(response.Payload);
+            return new AssociationGroupsReport(response.Payload.Span);
         }
 
         public override async Task Interview(CancellationToken cancellationToken = default)

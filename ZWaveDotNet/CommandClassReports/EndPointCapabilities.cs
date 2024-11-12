@@ -24,12 +24,12 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly GenericType GenericType;
         public readonly SpecificType SpecificType;
 
-        public EndPointCapabilities(Memory<byte> payload)
+        public EndPointCapabilities(Span<byte> payload)
         {
-            EndPointID = (byte)(payload.Span[0] & 0x7F);
-            Dynamic = (payload.Span[0] & 0x80) == 0x80;
-            GenericType = (GenericType)payload.Span[1];
-            SpecificType = SpecificTypeMapping.Get(GenericType, payload.Span[2]);
+            EndPointID = (byte)(payload[0] & 0x7F);
+            Dynamic = (payload[0] & 0x80) == 0x80;
+            GenericType = (GenericType)payload[1];
+            SpecificType = SpecificTypeMapping.Get(GenericType, payload[2]);
             CommandClasses = PayloadConverter.GetCommandClasses(payload.Slice(3)).ToArray();
         }
     }

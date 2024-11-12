@@ -33,7 +33,7 @@ namespace ZWaveDotNet.CommandClasses
         public async Task<ClockReport> Get(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(ClockCommand.Get, ClockCommand.Report, cancellationToken);
-            return new ClockReport(response.Payload);
+            return new ClockReport(response.Payload.Span);
         }
 
         public async Task Set(DayOfWeek dayOfWeek, int hour, int minute, CancellationToken cancellationToken = default)

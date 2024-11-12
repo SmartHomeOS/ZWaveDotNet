@@ -23,7 +23,7 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly bool EnergySavingMode;
         public readonly bool FrostProtectionMode;
 
-        internal ThermostatSetbackReport(ReadOnlySpan<byte> payload)
+        internal ThermostatSetbackReport(Span<byte> payload)
         {
             if (payload.Length < 2)
                 throw new DataException($"The Thermostat Setback Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");

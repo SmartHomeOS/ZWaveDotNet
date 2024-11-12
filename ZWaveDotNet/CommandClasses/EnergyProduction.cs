@@ -36,7 +36,7 @@ namespace ZWaveDotNet.CommandClasses
                 throw new MethodAccessException("GET methods may not be called on broadcast nodes");
 
             ReportMessage response = await SendReceive(EnergyProductionCommand.Get, EnergyProductionCommand.Report, cancellationToken, (byte)parameter);
-            return new EnergyProductionReport(response.Payload);
+            return new EnergyProductionReport(response.Payload.Span);
         }
 
         protected override Task<SupervisionStatus> Handle(ReportMessage message)

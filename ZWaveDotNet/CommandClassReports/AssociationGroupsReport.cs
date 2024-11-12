@@ -19,12 +19,12 @@ namespace ZWaveDotNet.CommandClassReports
     {
         public readonly byte GroupsSupported;
 
-        internal AssociationGroupsReport(Memory<byte> payload)
+        internal AssociationGroupsReport(Span<byte> payload)
         {
             if (payload.Length < 1)
                 throw new DataException($"The Association Groups Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
 
-            GroupsSupported = payload.Span[0];
+            GroupsSupported = payload[0];
         }
 
         public override string ToString()

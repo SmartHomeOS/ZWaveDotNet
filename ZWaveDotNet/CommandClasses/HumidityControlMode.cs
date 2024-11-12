@@ -63,7 +63,7 @@ namespace ZWaveDotNet.CommandClasses
         {
             if (message.Command == (byte)HumidityControlModeCommand.Report)
             {
-                await FireEvent(Updated, new EnumReport<HumidityControlModeType>(message.Payload));
+                await FireEvent(Updated, new EnumReport<HumidityControlModeType>(message.Payload.Span));
                 return SupervisionStatus.Success;
             }
             return SupervisionStatus.NoSupport;

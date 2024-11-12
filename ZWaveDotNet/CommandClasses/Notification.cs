@@ -56,7 +56,7 @@ namespace ZWaveDotNet.CommandClasses
         public async Task<NotificationReport> Get(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(NotificationCommand.Get, NotificationCommand.Report, cancellationToken, (byte)0x0, FIRST_AVAILABLE, (byte)0x0);
-            return new NotificationReport(response.SourceNodeID, response.SourceEndpoint, response.RSSI, response.Payload);
+            return new NotificationReport(response.SourceNodeID, response.SourceEndpoint, response.RSSI, response.Payload.Span);
         }
 
         /// <summary>
@@ -68,7 +68,7 @@ namespace ZWaveDotNet.CommandClasses
         public async Task<NotificationReport> Get(NotificationType type, CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(NotificationCommand.Get, NotificationCommand.Report, cancellationToken, (byte)0x0, (byte)type, (byte)0x0);
-            return new NotificationReport(response.SourceNodeID, response.SourceEndpoint, response.RSSI, response.Payload);
+            return new NotificationReport(response.SourceNodeID, response.SourceEndpoint, response.RSSI, response.Payload.Span);
         }
 
         /// <summary>
@@ -79,7 +79,7 @@ namespace ZWaveDotNet.CommandClasses
         public async Task<NotificationReport> Get(NotificationState state, CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(NotificationCommand.Get, NotificationCommand.Report, cancellationToken, (byte)0x0, (byte)((ushort)state >> 8), (byte)((ushort)state & 0xFF));
-            return new NotificationReport(response.SourceNodeID, response.SourceEndpoint, response.RSSI, response.Payload);
+            return new NotificationReport(response.SourceNodeID, response.SourceEndpoint, response.RSSI, response.Payload.Span);
         }
 
         /// <summary>
@@ -105,7 +105,7 @@ namespace ZWaveDotNet.CommandClasses
         public async Task<AlarmSupportedReport> SupportedGet(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(NotificationCommand.SupportedGet, NotificationCommand.SupportedReport, cancellationToken);
-            return new AlarmSupportedReport(response.Payload);
+            return new AlarmSupportedReport(response.Payload.Span);
         }
 
         /// <summary>
@@ -136,7 +136,7 @@ namespace ZWaveDotNet.CommandClasses
         {
             if (message.Command == (byte)NotificationCommand.Report)
             {
-                NotificationReport report = new NotificationReport(message.SourceNodeID, message.SourceEndpoint, message.RSSI, message.Payload);
+                NotificationReport report = new NotificationReport(message.SourceNodeID, message.SourceEndpoint, message.RSSI, message.Payload.Span);
                 await FireEvent(Updated, report);
                 Log.Information(report.ToString());
                 return SupervisionStatus.Success;

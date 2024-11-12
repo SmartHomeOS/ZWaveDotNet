@@ -38,7 +38,7 @@ namespace ZWaveDotNet.CommandClasses
             ReportMessage resp = await SendReceive(Command.GetName, Command.ReportName, cancellationToken);
             if (resp.Payload.Length < 1)
                 throw new FormatException($"The response was not in the expected format. Payload: {MemoryUtil.Print(resp.Payload)}");
-            return PayloadConverter.ToEncodedString(resp.Payload, 16);
+            return PayloadConverter.ToEncodedString(resp.Payload.Span, 16);
         }
 
         public async Task<string> GetLocation(CancellationToken cancellationToken = default)
@@ -46,7 +46,7 @@ namespace ZWaveDotNet.CommandClasses
             ReportMessage resp = await SendReceive(Command.GetLocation, Command.ReportLocation, cancellationToken);
             if (resp.Payload.Length < 1)
                 throw new FormatException($"The response was not in the expected format. Payload: {MemoryUtil.Print(resp.Payload)}");
-            return PayloadConverter.ToEncodedString(resp.Payload, 16);
+            return PayloadConverter.ToEncodedString(resp.Payload.Span, 16);
         }
 
         public Task SetName(string name, CancellationToken cancellationToken = default)

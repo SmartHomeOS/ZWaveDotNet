@@ -22,7 +22,7 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly TimeSpan WakeupIntervalStep;
         public readonly bool WakeOnDemand;
 
-        internal WakeUpIntervalCapabilitiesReport(Memory<byte> payload)
+        internal WakeUpIntervalCapabilitiesReport(Span<byte> payload)
         {
             if (payload.Length < 12)
                 throw new InvalidDataException("Payload should be at least 12 bytes");
@@ -35,7 +35,7 @@ namespace ZWaveDotNet.CommandClassReports
             seconds = PayloadConverter.ToUInt24(payload.Slice(9, 3));
             WakeupIntervalStep = TimeSpan.FromSeconds(seconds);
             if (payload.Length > 12)
-                WakeOnDemand = (payload.Span[12] & 0x1) == 0x1;
+                WakeOnDemand = (payload[12] & 0x1) == 0x1;
         }
 
         public override string ToString()

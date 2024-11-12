@@ -38,7 +38,7 @@ namespace ZWaveDotNet.CommandClasses
             if (node.ID == Node.BROADCAST_ID)
                 throw new MethodAccessException("GET methods may not be called on broadcast nodes");
             ReportMessage response = await SendReceive(BasicCommand.Get, BasicCommand.Report, cancellationToken);
-            return new BasicReport(response.Payload);
+            return new BasicReport(response.Payload.Span);
         }
 
         public async Task Set(byte value, CancellationToken cancellationToken = default)
@@ -50,7 +50,7 @@ namespace ZWaveDotNet.CommandClasses
         {
             if (message.Command == (byte)BasicCommand.Report)
             {
-                BasicReport rpt = new BasicReport(message.Payload);
+                BasicReport rpt = new BasicReport(message.Payload.Span);
                 await FireEvent(Report, rpt);
                 Log.Verbose("Basic Report: " + rpt.ToString());
                 return SupervisionStatus.Success;

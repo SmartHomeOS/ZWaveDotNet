@@ -46,7 +46,7 @@ namespace ZWaveDotNet.CommandClasses
             if (node.ID == Node.BROADCAST_ID)
                 throw new MethodAccessException("GET methods may not be called on broadcast nodes");
             ReportMessage response = await SendReceive(BarrierOperatorCommand.Get, BarrierOperatorCommand.Report, cancellationToken);
-            return new BarrierReport(response.Payload);
+            return new BarrierReport(response.Payload.Span);
         }
 
         public async Task Set(bool open, CancellationToken cancellationToken = default)
@@ -86,7 +86,7 @@ namespace ZWaveDotNet.CommandClasses
         {
             if (message.Command == (byte)BarrierOperatorCommand.Report)
             {
-                BarrierReport rpt = new BarrierReport(message.Payload);
+                BarrierReport rpt = new BarrierReport(message.Payload.Span);
                 await FireEvent(BarrierState, rpt);
                 return SupervisionStatus.Success;
             }

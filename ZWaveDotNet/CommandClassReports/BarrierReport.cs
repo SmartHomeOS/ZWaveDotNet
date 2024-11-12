@@ -21,9 +21,9 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly BarrierState State;
         public readonly int PercentOpen = PERCENT_UNSUPPORTED;
 
-        public BarrierReport(Memory<byte> payload)
+        public BarrierReport(Span<byte> payload)
         {
-            byte state = payload.Span[0];
+            byte state = payload[0];
             if (state == 0)
             {
                 State = BarrierState.Closed;

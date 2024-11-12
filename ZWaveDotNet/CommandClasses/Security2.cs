@@ -56,7 +56,7 @@ namespace ZWaveDotNet.CommandClasses
         public async Task<List<CommandClass>> GetSupportedCommands(CancellationToken cancellationToken = default)
         {
             ReportMessage msg = await SendReceive(Security2Command.CommandsSupportedGet, Security2Command.CommandsSupportedReport, cancellationToken);
-            return PayloadConverter.GetCommandClasses(msg.Payload);
+            return PayloadConverter.GetCommandClasses(msg.Payload.Span);
         }
 
         internal async Task<KeyExchangeReport> KexGet(CancellationToken cancellationToken = default)
@@ -64,7 +64,7 @@ namespace ZWaveDotNet.CommandClasses
             Log.Verbose("Requesting Supported Curves and schemes");
             ReportMessage msg = await SendReceive(Security2Command.KEXGet, Security2Command.KEXReport, cancellationToken);
             Log.Verbose("Curves and schemes Received");
-            return new KeyExchangeReport(msg.Payload);
+            return new KeyExchangeReport(msg.Payload.Span);
         }
 
         internal async Task<Memory<byte>> KexSet(KeyExchangeReport report, CancellationToken cancellationToken = default)
@@ -173,7 +173,7 @@ namespace ZWaveDotNet.CommandClasses
                 {
                     Log.Verbose("Requesting new entropy");
                     ReportMessage msg = await SendReceive(Security2Command.NonceGet, Security2Command.NonceReport, cancellationToken, NextSequence()).ConfigureAwait(false);
-                    NonceReport nr = new NonceReport(msg.Payload);
+                    NonceReport nr = new NonceReport(msg.Payload.Span);
                     MEI = AES.CKDFMEIExpand(AES.CKDFMEIExtract(sendersEntropy.Value, nr.Entropy));
                 }
                 else
@@ -369,7 +369,7 @@ namespace ZWaveDotNet.CommandClasses
             switch ((Security2Command)message.Command)
             {
                 case Security2Command.KEXSet:
-                    KeyExchangeReport? kexReport = new KeyExchangeReport(message.Payload);
+                    KeyExchangeReport? kexReport = new KeyExchangeReport(message.Payload.Span);
                     Log.Verbose("Kex Set Received: " + kexReport.ToString());
                     if (kexReport.Echo)
                     {
@@ -477,7 +477,7 @@ namespace ZWaveDotNet.CommandClasses
                     SecurityManager.NetworkKey? networkKey = controller.SecurityManager.GetHighestKey(message.SourceNodeID);
                     if (networkKey == null)
                         return SupervisionStatus.Fail;
-                    NonceReport nr = new NonceReport(message.Payload);
+                    NonceReport nr = new NonceReport(message.Payload.Span);
                     if (!controller.SecurityManager.IsSequenceNew(message.SourceNodeID, nr.Sequence))
                     {
                         Log.Error("Duplicate S2 Nonce Report Skipped");

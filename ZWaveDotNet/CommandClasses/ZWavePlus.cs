@@ -32,7 +32,7 @@ namespace ZWaveDotNet.CommandClasses
         public async Task<ZWavePlusInfo> GetInfo(CancellationToken cancellationToken = default)
         {
             ReportMessage resp = await SendReceive(ZwavePlusCommand.InfoGet, ZwavePlusCommand.InfoReport, cancellationToken);
-            return new ZWavePlusInfo(resp.Payload);
+            return new ZWavePlusInfo(resp.Payload.Span);
         }
 
         protected override Task<SupervisionStatus> Handle(ReportMessage message)

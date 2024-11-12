@@ -39,7 +39,7 @@ namespace ZWaveDotNet.CommandClasses
                 throw new ArgumentException(nameof(sceneId) + " must be 1 - 255");
 
             ReportMessage response = await SendReceive(SceneActuatorConfCommand.Get, SceneActuatorConfCommand.Report, cancellationToken, sceneId);
-            return new SceneActuatorConfigurationReport(response.Payload);
+            return new SceneActuatorConfigurationReport(response.Payload.Span);
         }
 
         public async Task Set(byte sceneId, TimeSpan duration, byte? level = null, CancellationToken cancellationToken = default)

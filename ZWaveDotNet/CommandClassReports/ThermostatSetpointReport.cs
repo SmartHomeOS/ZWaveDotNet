@@ -23,12 +23,12 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly float Value;
         public readonly Units Unit;
 
-        internal ThermostatSetpointReport(Memory<byte> payload)
+        internal ThermostatSetpointReport(Span<byte> payload)
         {
             if (payload.Length < 3)
                 throw new DataException($"The Thermostat Setpoint Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
 
-            Type = (ThermostatModeType)(payload.Span[0] & 0xF);
+            Type = (ThermostatModeType)(payload[0] & 0xF);
             Value = PayloadConverter.ToFloat(payload.Slice(1), out byte scale, out _, out _);
             Unit = GetUnit(scale);
         }

@@ -44,7 +44,7 @@ namespace ZWaveDotNet.CommandClasses
             if (node.ID == Node.BROADCAST_ID)
                 throw new MethodAccessException("GET methods may not be called on broadcast nodes");
             ReportMessage response = await SendReceive(MultiChannelCommand.EndPointGet, MultiChannelCommand.EndPointReport, cancellationToken);
-            return new EndPointReport(response.Payload);
+            return new EndPointReport(response.Payload.Span);
         }
 
         public async Task<EndPointCapabilities> GetCapabilities(byte endpointId, CancellationToken cancellationToken = default)
@@ -52,7 +52,7 @@ namespace ZWaveDotNet.CommandClasses
             if (node.ID == Node.BROADCAST_ID)
                 throw new MethodAccessException("GET methods may not be called on broadcast nodes");
             ReportMessage response = await SendReceive(MultiChannelCommand.CapabilityGet, MultiChannelCommand.CapabilityReport, cancellationToken, endpointId);
-            return new EndPointCapabilities(response.Payload);
+            return new EndPointCapabilities(response.Payload.Span);
         }
 
         public async Task<EndPointFindReport> FindEndPoints(GenericType generic, SpecificType specific, CancellationToken cancellationToken = default)
@@ -60,7 +60,7 @@ namespace ZWaveDotNet.CommandClasses
             if (node.ID == Node.BROADCAST_ID)
                 throw new MethodAccessException("GET methods may not be called on broadcast nodes");
             ReportMessage response = await SendReceive(MultiChannelCommand.EndPointFind, MultiChannelCommand.EndPointFindReport, cancellationToken, (byte)generic, SpecificTypeMapping.Get(generic, specific));
-            return new EndPointFindReport(response.Payload);
+            return new EndPointFindReport(response.Payload.Span);
         }
 
         public async Task<List<byte>> GetAggregatedMembers(byte endpointId, CancellationToken cancellationToken = default)
@@ -111,7 +111,7 @@ namespace ZWaveDotNet.CommandClasses
         {
             if (message.Command == (byte)MultiChannelCommand.CapabilityReport)
             {
-                EndPointCapabilities report = new EndPointCapabilities(message.Payload);
+                EndPointCapabilities report = new EndPointCapabilities(message.Payload.Span);
                 await FireEvent(EndpointCapabilitiesUpdated, report);
                 return SupervisionStatus.Success;
             }

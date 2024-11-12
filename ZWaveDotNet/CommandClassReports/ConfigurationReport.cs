@@ -22,26 +22,26 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly byte Size;
         public readonly int Value;
 
-        internal ConfigurationReport(Memory<byte> payload)
+        internal ConfigurationReport(Span<byte> payload)
         {
             if (payload.Length < 3)
                 throw new DataException($"The Configuration Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
 
-            Parameter = payload.Span[0];
-            Size = (byte)(payload.Span[1] & 0x7);
+            Parameter = payload[0];
+            Size = (byte)(payload[1] & 0x7);
 
             try
             {
                 switch (Size)
                 {
                     case 1:
-                        Value = payload.Span[2];
+                        Value = payload[2];
                         break;
                     case 2:
-                        Value = BinaryPrimitives.ReadInt16BigEndian(payload.Slice(2).Span);
+                        Value = BinaryPrimitives.ReadInt16BigEndian(payload.Slice(2));
                         break;
                     case 4:
-                        Value = BinaryPrimitives.ReadInt32BigEndian(payload.Slice(2).Span);
+                        Value = BinaryPrimitives.ReadInt32BigEndian(payload.Slice(2));
                         break;
                     default:
                         throw new NotSupportedException($"Size:{Size} is not supported");

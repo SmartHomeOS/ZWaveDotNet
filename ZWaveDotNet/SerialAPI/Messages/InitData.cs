@@ -32,14 +32,14 @@ namespace ZWaveDotNet.SerialAPI.Messages
         public readonly byte ChipType;
         public readonly byte ChipVersion;
 
-        public InitData(Memory<byte> payload) : base(Function.GetSerialAPIInitData)
+        public InitData(Span<byte> payload) : base(Function.GetSerialAPIInitData)
         {
             if (payload.Length < 4)
                 throw new InvalidDataException("Empty InitData received");
             if (Version >= 10)
-                Version = (byte)(payload.Span[0] - 9);
-            Capability = (ControllerCapability)payload.Span[1];
-            if (payload.Span[2] == 29)
+                Version = (byte)(payload[0] - 9);
+            Capability = (ControllerCapability)payload[1];
+            if (payload[2] == 29)
             {
                 List<ushort> nodeIDs = new List<ushort>();
                 BitArray bits = new BitArray(payload.Slice(3, 29).ToArray());
@@ -49,14 +49,14 @@ namespace ZWaveDotNet.SerialAPI.Messages
                         nodeIDs.Add((ushort)(i + 1));
                 }
                 NodeIDs = nodeIDs.ToArray();
-                ChipType = payload.Span[32];
-                ChipVersion = payload.Span[33];
+                ChipType = payload[32];
+                ChipVersion = payload[33];
             }
             else
             {
                 NodeIDs = Array.Empty<ushort>();
-                ChipType = payload.Span[3];
-                ChipVersion = payload.Span[4];
+                ChipType = payload[3];
+                ChipVersion = payload[4];
             }
         }
 

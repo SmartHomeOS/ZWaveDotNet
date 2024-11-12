@@ -22,9 +22,9 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly Units Unit;
         public readonly EnergyParameter Parameter;
 
-        public EnergyProductionReport(Memory<byte> payload)
+        public EnergyProductionReport(Span<byte> payload)
         {
-            Parameter = (EnergyParameter)payload.Span[0];
+            Parameter = (EnergyParameter)payload[0];
             Value = PayloadConverter.ToFloat(payload.Slice(1), out byte scale, out _, out _);
             Unit = GetUnit(Parameter, scale);
         }

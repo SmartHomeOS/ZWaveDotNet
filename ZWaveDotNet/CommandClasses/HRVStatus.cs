@@ -52,14 +52,14 @@ namespace ZWaveDotNet.CommandClasses
         public async Task<HRVStatusReport> Get(HRVStatusParameter type, CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(HRVStatusCommand.Get, HRVStatusCommand.Report, cancellationToken, (byte)type);
-            return new HRVStatusReport(response.Payload);
+            return new HRVStatusReport(response.Payload.Span);
         }
 
         protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)HRVStatusCommand.Report)
             {
-                HRVStatusReport report = new HRVStatusReport(message.Payload);
+                HRVStatusReport report = new HRVStatusReport(message.Payload.Span);
                 await FireEvent(Updated, report);
                 Log.Information(report.ToString());
                 return SupervisionStatus.Success;

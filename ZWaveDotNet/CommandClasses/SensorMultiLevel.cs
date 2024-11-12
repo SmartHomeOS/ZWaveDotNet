@@ -87,7 +87,7 @@ namespace ZWaveDotNet.CommandClasses
         public async Task<SensorMultiLevelReport> Get(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(SensorMultiLevelCommand.Get, SensorMultiLevelCommand.Report, cancellationToken);
-            return new SensorMultiLevelReport(response.Payload);
+            return new SensorMultiLevelReport(response.Payload.Span);
         }
 
         /// <summary>
@@ -101,14 +101,14 @@ namespace ZWaveDotNet.CommandClasses
             byte scale = SensorMultiLevelReport.GetScale(type, unit);
             scale = (byte)(scale << 3);
             ReportMessage response = await SendReceive(SensorMultiLevelCommand.Get, SensorMultiLevelCommand.Report, cancellationToken, (byte)type, scale);
-            return new SensorMultiLevelReport(response.Payload);
+            return new SensorMultiLevelReport(response.Payload.Span);
         }
 
         protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)SensorMultiLevelCommand.Report)
             {
-                SensorMultiLevelReport report = new SensorMultiLevelReport(message.Payload);
+                SensorMultiLevelReport report = new SensorMultiLevelReport(message.Payload.Span);
                 await FireEvent(Updated, report);
                 Log.Information(report.ToString());
                 return SupervisionStatus.Success;

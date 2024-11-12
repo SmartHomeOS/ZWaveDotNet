@@ -18,13 +18,13 @@ namespace ZWaveDotNet.CommandClassReports
         public bool CommandClassSupport;
         public bool ZWaveSoftwareSupport;
 
-        public VersionCapabilities(Memory<byte> payload) 
+        public VersionCapabilities(Span<byte> payload) 
         {
             if (payload.Length == 0)
                 throw new InvalidDataException("Empty Payload Received");
-            VersionSupport = (payload.Span[0] & 0x1) == 0x1;
-            CommandClassSupport = (payload.Span[0] & 0x1) == 0x2;
-            ZWaveSoftwareSupport = (payload.Span[0] & 0x1) == 0x4;
+            VersionSupport = (payload[0] & 0x1) == 0x1;
+            CommandClassSupport = (payload[0] & 0x1) == 0x2;
+            ZWaveSoftwareSupport = (payload[0] & 0x1) == 0x4;
         }
 
         public override string ToString()

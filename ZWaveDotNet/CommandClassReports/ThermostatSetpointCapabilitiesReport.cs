@@ -24,12 +24,12 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly float Maximum;
         public readonly Units Unit;
 
-        internal ThermostatSetpointCapabilitiesReport(Memory<byte> payload)
+        internal ThermostatSetpointCapabilitiesReport(Span<byte> payload)
         {
             if (payload.Length < 5)
                 throw new DataException($"The Thermostat Setpoint Capabilities Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
 
-            CapabilityType = (ThermostatModeType)payload.Span[0];
+            CapabilityType = (ThermostatModeType)payload[0];
             Minimum = PayloadConverter.ToFloat(payload.Slice(1), out byte scale, out byte size, out _);
             Maximum = PayloadConverter.ToFloat(payload.Slice(2 + size), out _, out _, out _);
             Unit = GetUnit(scale);

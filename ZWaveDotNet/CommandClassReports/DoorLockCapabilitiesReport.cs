@@ -33,7 +33,7 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly bool SupportsBolt;
         public readonly bool SupportsLatch;
 
-        public DoorLockCapabilitiesReport(ReadOnlySpan<byte> payload)
+        public DoorLockCapabilitiesReport(Span<byte> payload)
         {
             if (payload.Length < 4)
                 throw new DataException($"The Door Lock Capabilities Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");

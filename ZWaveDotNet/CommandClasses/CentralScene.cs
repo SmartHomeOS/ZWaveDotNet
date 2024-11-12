@@ -42,7 +42,7 @@ namespace ZWaveDotNet.CommandClasses
                 throw new MethodAccessException("GET methods may not be called on broadcast nodes");
 
             ReportMessage response = await SendReceive(CentralSceneCommand.SupportedGet, CentralSceneCommand.SupportedReport, cancellationToken);
-            return new CentralSceneSupportedReport(response.Payload);
+            return new CentralSceneSupportedReport(response.Payload.Span);
         }
 
         public async Task<bool> GetConfiguration(CancellationToken cancellationToken = default)
@@ -65,7 +65,7 @@ namespace ZWaveDotNet.CommandClasses
         {
             if (message.Command == (byte)CentralSceneCommand.Notification)
             {
-                CentralSceneNotification rpt = new CentralSceneNotification(message.Payload);
+                CentralSceneNotification rpt = new CentralSceneNotification(message.Payload.Span);
                 await FireEvent(SceneNotification, rpt);
                 return SupervisionStatus.Success;
             }

@@ -21,18 +21,18 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly byte TargetValue;
         public readonly TimeSpan Duration;
 
-        public SwitchToggleMultiLevelReport(Memory<byte> payload)
+        public SwitchToggleMultiLevelReport(Span<byte> payload)
         {
             if (payload.Length == 1)
             {
-                CurrentValue = TargetValue = payload.Span[0];
+                CurrentValue = TargetValue = payload[0];
                 Duration = TimeSpan.Zero;
             }
             else if (payload.Length == 3)
             {
-                CurrentValue = payload.Span[0];
-                TargetValue = payload.Span[1];
-                Duration = PayloadConverter.ToTimeSpan(payload.Span[2]);
+                CurrentValue = payload[0];
+                TargetValue = payload[1];
+                Duration = PayloadConverter.ToTimeSpan(payload[2]);
             }
             else
                 throw new DataException($"The Switch Multi Level Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");

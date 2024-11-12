@@ -36,22 +36,22 @@ namespace ZWaveDotNet.SerialAPI.Messages
         public ApplicationUpdateType UpdateType;
         public ushort NodeId;
 
-        public ApplicationUpdate(Memory<byte> payload, bool wideId) : base(Function.ApplicationUpdate)
+        public ApplicationUpdate(Span<byte> payload, bool wideId) : base(Function.ApplicationUpdate)
         {
             if (payload.Length == 0)
                 throw new InvalidDataException("Empty ApplicationUpdate received");
-            UpdateType = (ApplicationUpdateType)payload.Span[0];
+            UpdateType = (ApplicationUpdateType)payload[0];
             if (wideId && payload.Length > 2)
-                NodeId = BinaryPrimitives.ReadUInt16BigEndian(payload.Span.Slice(1, 2));
+                NodeId = BinaryPrimitives.ReadUInt16BigEndian(payload.Slice(1, 2));
             else if (payload.Length > 1)
-                NodeId = payload.Span[1];
+                NodeId = payload[1];
         }
 
-        public static ApplicationUpdate From(Memory<byte> payload, bool wideId)
+        public static ApplicationUpdate From(Span<byte> payload, bool wideId)
         {
             if (payload.Length == 0)
                 throw new InvalidDataException("Empty ApplicationUpdate received");
-            switch ((ApplicationUpdateType)payload.Span[0])
+            switch ((ApplicationUpdateType)payload[0])
             {
                 case ApplicationUpdateType.SmartStartHomeIdReceivedLR:
                 case ApplicationUpdateType.SmartStartHomeIdReceived:

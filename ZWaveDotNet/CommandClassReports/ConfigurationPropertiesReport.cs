@@ -12,7 +12,6 @@
 
 using System.Buffers.Binary;
 using System.Data;
-using System.Drawing;
 using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Util;
 

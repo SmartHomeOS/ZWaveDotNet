@@ -40,7 +40,7 @@ namespace ZWaveDotNet.CommandClasses
         public async Task<SwitchMultiLevelReport> Get(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(MultiLevelCommand.Get, MultiLevelCommand.Report, cancellationToken);
-            return new SwitchMultiLevelReport(response.Payload);
+            return new SwitchMultiLevelReport(response.Payload.Span);
         }
 
         public async Task Set(byte value, CancellationToken cancellationToken = default)
@@ -80,14 +80,14 @@ namespace ZWaveDotNet.CommandClasses
         public async Task<SwitchMultiLevelSupportedReport> GetSupported(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(MultiLevelCommand.SupportedGet, MultiLevelCommand.SupportedReport, cancellationToken);
-            return new SwitchMultiLevelSupportedReport(response.Payload);
+            return new SwitchMultiLevelSupportedReport(response.Payload.Span);
         }
 
         protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)MultiLevelCommand.Report)
             {
-                SwitchMultiLevelReport report = new SwitchMultiLevelReport(message.Payload);
+                SwitchMultiLevelReport report = new SwitchMultiLevelReport(message.Payload.Span);
                 await FireEvent(Changed, report);
                 Log.Information(report.ToString());
                 return SupervisionStatus.Success;

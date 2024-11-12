@@ -22,20 +22,20 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly DateTime DSTEnd;
         public readonly int DSTOffsetMinutes;
 
-        internal TimeOffsetReport(Memory<byte> payload)
+        internal TimeOffsetReport(Span<byte> payload)
         {
             if (payload.Length < 9)
                 throw new DataException($"The Time Offset Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
 
-            int hour = payload.Span[0] & 0x7F;
-            if ((payload.Span[0] & 0x80) == 0x80)
+            int hour = payload[0] & 0x7F;
+            if ((payload[0] & 0x80) == 0x80)
                 hour *= -1;
-            TimeOffset = new TimeSpan(hour, payload.Span[1], 0);
-            int DSTOffsetMinutes = payload.Span[2] & 0x7F;
-            if ((payload.Span[2] & 0x80) == 0x80)
+            TimeOffset = new TimeSpan(hour, payload[1], 0);
+            int DSTOffsetMinutes = payload[2] & 0x7F;
+            if ((payload[2] & 0x80) == 0x80)
                 DSTOffsetMinutes *= -1;
-            DSTStart = new DateTime(0, payload.Span[3], payload.Span[4], payload.Span[5], 0, 0);
-            DSTEnd = new DateTime(0, payload.Span[6], payload.Span[7], payload.Span[8], 0, 0);
+            DSTStart = new DateTime(0, payload[3], payload[4], payload[5], 0, 0);
+            DSTEnd = new DateTime(0, payload[6], payload[7], payload[8], 0, 0);
         }
 
         public override string ToString()

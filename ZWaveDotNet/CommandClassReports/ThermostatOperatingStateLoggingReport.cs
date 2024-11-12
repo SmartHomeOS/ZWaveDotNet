@@ -21,20 +21,20 @@ namespace ZWaveDotNet.CommandClassReports
     {
         public readonly List<(ThermostatOperatingStateType type, TimeSpan UsageToday, TimeSpan UsageYesterday)> Log = new();
 
-        internal ThermostatOperatingStateLoggingReport(Memory<byte> payload)
+        internal ThermostatOperatingStateLoggingReport(Span<byte> payload)
         {
             if (payload.Length == 0)
                 throw new DataException($"The Thermostat Operating State Logging Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
 
-            byte count = payload.Span[0];
+            byte count = payload[0];
             if (payload.Length < (5 * count) + 1)
                 throw new DataException($"The Thermostat Operating State Logging Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
             for (int i = 0; i < count * 5; i+= 5)
             {
 
-                ThermostatOperatingStateType type = (ThermostatOperatingStateType)payload.Span[i + 1];
-                TimeSpan today = new TimeSpan(payload.Span[i + 2], payload.Span[i + 3], 0);
-                TimeSpan tomorrow = new TimeSpan(payload.Span[i + 4], payload.Span[i + 5], 0);
+                ThermostatOperatingStateType type = (ThermostatOperatingStateType)payload[i + 1];
+                TimeSpan today = new TimeSpan(payload[i + 2], payload[i + 3], 0);
+                TimeSpan tomorrow = new TimeSpan(payload[i + 4], payload[i + 5], 0);
                 Log.Add((type, today, tomorrow));
             }
         }

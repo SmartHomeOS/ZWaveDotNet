@@ -39,32 +39,32 @@ namespace ZWaveDotNet.CommandClassReports
         public NotificationParam? Param { get; protected set; }
         public byte SequenceNum { get; protected set; }
 
-        internal NotificationReport(ushort sourceNode, byte endpoint, sbyte rssi, Memory<byte> payload)
+        internal NotificationReport(ushort sourceNode, byte endpoint, sbyte rssi, Span<byte> payload)
         {
             if (payload.Length < 7)
                 throw new DataException($"The Notification Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
 
-            V1Type = (NotificationType)payload.Span[0];
-            V1Level = payload.Span[1];
-            SourceNodeID = payload.Span[2];
-            Status = payload.Span[3];
-            Type = (NotificationType)payload.Span[4];
-            Event = (NotificationState)BinaryPrimitives.ReadUInt16BigEndian(payload.Slice(4, 2).Span);
-            if (payload.Span[5] == 0x0)
+            V1Type = (NotificationType)payload[0];
+            V1Level = payload[1];
+            SourceNodeID = payload[2];
+            Status = payload[3];
+            Type = (NotificationType)payload[4];
+            Event = (NotificationState)BinaryPrimitives.ReadUInt16BigEndian(payload.Slice(4, 2));
+            if (payload[5] == 0x0)
                 Event = NotificationState.Idle;
-            else if (payload.Span[5] == 0xFE)
+            else if (payload[5] == 0xFE)
                 Event = NotificationState.Unknown;
-            int paramLen = payload.Span[6] & 0x1F;
+            int paramLen = payload[6] & 0x1F;
             if (paramLen > 0)
                 Param = ParseParam(Event, payload.Slice(7, paramLen));
-            if ((payload.Span[6] & 0x80) == 0x80)
-                SequenceNum = payload.Span[payload.Length - 1];
+            if ((payload[6] & 0x80) == 0x80)
+                SequenceNum = payload[payload.Length - 1];
         }
 
-        public NotificationParam? ParseParam(NotificationState state, Memory<byte> payload)
+        public NotificationParam? ParseParam(NotificationState state, Span<byte> payload)
         {
             if (((ushort)state & 0xFF) == 0) //Idle
-                return new PreviousValueParam((NotificationState)(((ushort)state & 0xFF00) | payload.Span[0]));
+                return new PreviousValueParam((NotificationState)(((ushort)state & 0xFF00) | payload[0]));
             switch (state)
             {
                 case NotificationState.CO2Detected:
@@ -91,20 +91,20 @@ namespace ZWaveDotNet.CommandClassReports
                 case NotificationState.SmokeAlarmTest:
                 case NotificationState.ValveOperationStatus:
                 case NotificationState.MasterValveOperationStatus:
-                    return new BoolParam(payload.Span[0] == 0x1);
+                    return new BoolParam(payload[0] == 0x1);
                 case NotificationState.WaterPressureAlarm:
                 case NotificationState.WaterTemperatureAlarm:
                 case NotificationState.WaterLevelAlarm:
                 case NotificationState.WaterFlowAlarm:
                 case NotificationState.MasterValveCurrentAlarmStatus:
                 case NotificationState.ValveCurrentAlarmStatus:
-                    return new ThresholdParam((NotificationThreshold)payload.Span[0]);
+                    return new ThresholdParam((NotificationThreshold)payload[0]);
                 case NotificationState.BarrierObstacle:
                 case NotificationState.BarrierVacationMode:
-                    return new BoolParam(payload.Span[0] == 0xFF);
+                    return new BoolParam(payload[0] == 0xFF);
                 case NotificationState.BarrierSensorLowBattery:
                 case NotificationState.BarrierSupervisoryError:
-                    return new IDParam(payload.Span[0]);
+                    return new IDParam(payload[0]);
             }
             return null;
         }

@@ -21,12 +21,12 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly ThermostatModeType Mode;
         public readonly byte[] ManufacturerData;
 
-        internal ThermostatModeReport(Memory<byte> payload)
+        internal ThermostatModeReport(Span<byte> payload)
         {
             if (payload.Length == 0)
                 throw new DataException($"The Thermostat Mode Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
 
-            Mode = (ThermostatModeType)(payload.Span[0] & 0x1F);
+            Mode = (ThermostatModeType)(payload[0] & 0x1F);
             if (payload.Length > 1)
                 ManufacturerData = payload.Slice(1).ToArray();
             else

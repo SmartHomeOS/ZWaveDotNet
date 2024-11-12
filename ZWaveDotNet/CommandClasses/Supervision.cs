@@ -77,7 +77,7 @@ namespace ZWaveDotNet.CommandClasses
         {
             if (message.Command == (byte)SupervisionCommand.Report)
             {
-                SupervisionReport report = new SupervisionReport(message.Payload);
+                SupervisionReport report = new SupervisionReport(message.Payload.Span);
                 Log.Information(report.ToString());
                 await FireEvent(StatusReport, report);
                 return SupervisionStatus.Success;

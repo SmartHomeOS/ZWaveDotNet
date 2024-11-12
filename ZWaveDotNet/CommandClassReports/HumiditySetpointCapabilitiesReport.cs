@@ -24,12 +24,12 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly float Maximum;
         public readonly Units Unit;
 
-        internal HumiditySetpointCapabilitiesReport(Memory<byte> payload)
+        internal HumiditySetpointCapabilitiesReport(Span<byte> payload)
         {
             if (payload.Length < 5)
                 throw new DataException($"The Humidity Setpoint Capabilities Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
 
-            CapabilityType = (HumidityControlModeType)payload.Span[0];
+            CapabilityType = (HumidityControlModeType)payload[0];
             Minimum = PayloadConverter.ToFloat(payload.Slice(1), out byte scale, out byte size, out _);
             Maximum = PayloadConverter.ToFloat(payload.Slice(2 + size), out _, out _, out _);
             Unit = GetUnit(scale);

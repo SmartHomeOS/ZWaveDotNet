@@ -29,7 +29,7 @@ namespace ZWaveDotNet.CommandClasses
 
         protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
-            await FireEvent(CommandClassUnsupported, new ApplicationCapabilityReport(message.Payload));
+            await FireEvent(CommandClassUnsupported, new ApplicationCapabilityReport(message.Payload.Span));
             return SupervisionStatus.Success;
         }
     }

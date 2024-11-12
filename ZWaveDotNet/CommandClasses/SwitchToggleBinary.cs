@@ -35,7 +35,7 @@ namespace ZWaveDotNet.CommandClasses
         public async Task<SwitchBinaryReport> Get(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(SwitchToggleBinaryCommand.Get, SwitchToggleBinaryCommand.Report, cancellationToken);
-            return new SwitchBinaryReport(response.Payload);
+            return new SwitchBinaryReport(response.Payload.Span);
         }
 
         public async Task Set(bool value, CancellationToken cancellationToken = default)
@@ -47,7 +47,7 @@ namespace ZWaveDotNet.CommandClasses
         {
             if (message.Command == (byte)SwitchToggleBinaryCommand.Report)
             {
-                await FireEvent(SwitchReport, new SwitchBinaryReport(message.Payload));
+                await FireEvent(SwitchReport, new SwitchBinaryReport(message.Payload.Span));
                 return SupervisionStatus.Success;
             }
             return SupervisionStatus.NoSupport;

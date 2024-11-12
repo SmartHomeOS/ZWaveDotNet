@@ -22,14 +22,14 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly ushort ProductType;
         public readonly ushort ProductID;
 
-        internal ManufacturerSpecificReport(Memory<byte> payload)
+        internal ManufacturerSpecificReport(Span<byte> payload)
         { 
             if (payload.Length < 6)
                 throw new DataException($"The Manufacturer Specific Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
 
-            ManufacturerID = BinaryPrimitives.ReadUInt16BigEndian(payload.Span);
-            ProductType = BinaryPrimitives.ReadUInt16BigEndian(payload.Slice(2, 2).Span);
-            ProductID = BinaryPrimitives.ReadUInt16BigEndian(payload.Slice(4, 2).Span);
+            ManufacturerID = BinaryPrimitives.ReadUInt16BigEndian(payload);
+            ProductType = BinaryPrimitives.ReadUInt16BigEndian(payload.Slice(2, 2));
+            ProductID = BinaryPrimitives.ReadUInt16BigEndian(payload.Slice(4, 2));
         }
 
         public override string ToString()

@@ -20,7 +20,7 @@ namespace ZWaveDotNet.CommandClassReports
     {
         public readonly FanState State;
 
-        internal ThermostatFanStateReport(ReadOnlySpan<byte> payload)
+        internal ThermostatFanStateReport(Span<byte> payload)
         {
             if (payload.Length == 0)
                 throw new DataException($"The Thermostat State Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");

@@ -23,15 +23,15 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly ushort InstallerIcon;
         public readonly ushort UserIcon;
 
-        public ZWavePlusInfo(Memory<byte> payload)
+        public ZWavePlusInfo(Span<byte> payload)
         {
             if (payload.Length < 7)
                 throw new ArgumentException("Invalid ZWPlus Report");
-            Version = payload.Span[0];
-            RoleType = payload.Span[1];
-            NodeType = (NodeType)payload.Span[2];
-            InstallerIcon = BinaryPrimitives.ReadUInt16BigEndian(payload.Slice(3, 2).Span);
-            UserIcon = BinaryPrimitives.ReadUInt16BigEndian(payload.Slice(5, 2).Span);
+            Version = payload[0];
+            RoleType = payload[1];
+            NodeType = (NodeType)payload[2];
+            InstallerIcon = BinaryPrimitives.ReadUInt16BigEndian(payload.Slice(3, 2));
+            UserIcon = BinaryPrimitives.ReadUInt16BigEndian(payload.Slice(5, 2));
         }
 
         public override string ToString()

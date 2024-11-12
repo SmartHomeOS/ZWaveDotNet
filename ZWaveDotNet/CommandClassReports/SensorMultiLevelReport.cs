@@ -23,12 +23,12 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly float Value;
         public readonly Units Unit;
 
-        internal SensorMultiLevelReport(Memory<byte> payload)
+        internal SensorMultiLevelReport(Span<byte> payload)
         {
             if (payload.Length < 3)
                 throw new DataException($"The Sensor MultiLevel Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
 
-            SensorType = (SensorType)payload.Span[0];
+            SensorType = (SensorType)payload[0];
             Value = PayloadConverter.ToFloat(payload.Slice(1), out byte scale, out _, out _);
             Unit = GetUnit(SensorType, scale);
         }

@@ -45,7 +45,7 @@ namespace ZWaveDotNet.CommandClasses
         public async Task<BatteryLevelReport> GetLevel(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(BatteryCommand.Get, BatteryCommand.Report, cancellationToken);
-            return new BatteryLevelReport(response.Payload);
+            return new BatteryLevelReport(response.Payload.Span);
         }
 
         /// <summary>
@@ -56,14 +56,14 @@ namespace ZWaveDotNet.CommandClasses
         public async Task<BatteryHealthReport> GetHealth(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(BatteryCommand.HealthGet, BatteryCommand.HealthReport, cancellationToken);
-            return new BatteryHealthReport(response.Payload);
+            return new BatteryHealthReport(response.Payload.Span);
         }
 
         protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)BatteryCommand.Report)
             {
-                BatteryLevelReport report = new BatteryLevelReport(message.Payload);
+                BatteryLevelReport report = new BatteryLevelReport(message.Payload.Span);
                 await FireEvent(Status, report);
                 Log.Information("Battery Update: " + report.ToString());
                 return SupervisionStatus.Success;

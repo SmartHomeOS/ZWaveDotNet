@@ -37,7 +37,7 @@ namespace ZWaveDotNet.CommandClasses
             switch ((ApplicationStatusCommands)message.Command)
             {
                 case ApplicationStatusCommands.Busy:
-                    await FireEvent(ApplicationBusy, new ApplicationStatusReport(message.Payload));
+                    await FireEvent(ApplicationBusy, new ApplicationStatusReport(message.Payload.Span));
                     return SupervisionStatus.Success;
                 case ApplicationStatusCommands.RejectedRequest:
                     await FireEvent(RequestRejected, null);

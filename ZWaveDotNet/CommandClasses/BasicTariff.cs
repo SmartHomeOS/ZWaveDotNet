@@ -38,14 +38,14 @@ namespace ZWaveDotNet.CommandClasses
                 throw new MethodAccessException("GET methods may not be called on broadcast nodes");
 
             ReportMessage response = await SendReceive(BasicTariffCommand.Get, BasicTariffCommand.Report, cancellationToken);
-            return new BasicTariffReport(response.Payload);
+            return new BasicTariffReport(response.Payload.Span);
         }
 
         protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)BasicTariffCommand.Report)
             {
-                BasicTariffReport rpt = new BasicTariffReport(message.Payload);
+                BasicTariffReport rpt = new BasicTariffReport(message.Payload.Span);
                 await FireEvent(Report, rpt);
                 Log.Information(rpt.ToString());
                 return SupervisionStatus.Success;

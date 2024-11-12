@@ -23,12 +23,12 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly float Value;
         public readonly Units Unit;
 
-        internal HumiditySetpointReport(Memory<byte> payload)
+        internal HumiditySetpointReport(Span<byte> payload)
         {
             if (payload.Length < 3)
                 throw new DataException($"The Humidity Setpoint Status Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
 
-            SetpointType = (HumidityControlModeType)payload.Span[0];
+            SetpointType = (HumidityControlModeType)payload[0];
             Value = PayloadConverter.ToFloat(payload.Slice(1), out byte scale, out _, out _);
             Unit = GetUnit(scale);
         }

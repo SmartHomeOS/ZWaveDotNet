@@ -88,7 +88,7 @@ namespace ZWaveDotNet.CommandClasses
                 throw new MethodAccessException("GET methods may not be called on broadcast nodes");
 
             ReportMessage response = await SendReceive(IndicatorCommand.SupportedGet, IndicatorCommand.SupportedReport, cancellationToken, (byte)indicator);
-            return new IndicatorSupportedReport(response.Payload);
+            return new IndicatorSupportedReport(response.Payload.Span);
         }
 
         /// <summary>

@@ -20,16 +20,16 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly double Latitude;
         public readonly double Longitude;
 
-        public GeographicLocationReport(Memory<byte> payload)
+        public GeographicLocationReport(Span<byte> payload)
         {
             if (payload.Length < 4)
                 throw new DataException($"The Geographic Location was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
 
-            Longitude = payload.Span[0] + (payload.Span[1] & 0x7F) / 60.0;
-            if ((payload.Span[1] & 0x80) == 0x80)
+            Longitude = payload[0] + (payload[1] & 0x7F) / 60.0;
+            if ((payload[1] & 0x80) == 0x80)
                 Longitude *= -1;
-            Latitude = payload.Span[2] + (payload.Span[3] & 0x7F) / 60.0;
-            if ((payload.Span[3] & 0x80) == 0x80)
+            Latitude = payload[2] + (payload[3] & 0x7F) / 60.0;
+            if ((payload[3] & 0x80) == 0x80)
                 Latitude *= -1;
         }
 

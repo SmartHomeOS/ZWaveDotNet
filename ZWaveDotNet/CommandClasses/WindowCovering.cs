@@ -63,7 +63,7 @@ namespace ZWaveDotNet.CommandClasses
                 throw new MethodAccessException("GET methods may not be called on broadcast nodes");
 
             ReportMessage response = await SendReceive(WindowCoveringCommand.Get, WindowCoveringCommand.Report, cancellationToken, (byte)parameter);
-            return new WindowCoveringReport(response.Payload);
+            return new WindowCoveringReport(response.Payload.Span);
         }
 
         public async Task Set(WindowCoveringParameter param, byte value, TimeSpan duration, CancellationToken cancellationToken = default)
@@ -108,7 +108,7 @@ namespace ZWaveDotNet.CommandClasses
         {
             if (message.Command == (byte)WindowCoveringCommand.Report)
             {
-                WindowCoveringReport rpt = new WindowCoveringReport(message.Payload);
+                WindowCoveringReport rpt = new WindowCoveringReport(message.Payload.Span);
                 await FireEvent(Report, rpt);
                 return SupervisionStatus.Success;
             }

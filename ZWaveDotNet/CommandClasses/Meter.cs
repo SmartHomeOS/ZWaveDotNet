@@ -48,7 +48,7 @@ namespace ZWaveDotNet.CommandClasses
         public async Task<MeterReport> Get(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(MeterCommand.Get, MeterCommand.Report, cancellationToken);
-            return new MeterReport(response.Payload);
+            return new MeterReport(response.Payload.Span);
         }
 
         /// <summary>
@@ -67,7 +67,7 @@ namespace ZWaveDotNet.CommandClasses
             byte scale = (byte)(GetScale(type, unit) << 3);
             scale |= (byte)((byte)rate << 6);
             ReportMessage response = await SendReceive(MeterCommand.Get, MeterCommand.Report, cancellationToken, scale, scale2);
-            return new MeterReport(response.Payload);
+            return new MeterReport(response.Payload.Span);
         }
 
         /// <summary>
@@ -78,7 +78,7 @@ namespace ZWaveDotNet.CommandClasses
         public async Task<MeterSupportedReport> GetSupported(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(MeterCommand.SupportedGet, MeterCommand.SupportedReport, cancellationToken);
-            return new MeterSupportedReport(response.Payload);
+            return new MeterSupportedReport(response.Payload.Span);
         }
 
         /// <summary>
@@ -123,7 +123,7 @@ namespace ZWaveDotNet.CommandClasses
         {
             if (message.Command == (byte)MeterCommand.Report)
             {
-                MeterReport report = new MeterReport(message.Payload);
+                MeterReport report = new MeterReport(message.Payload.Span);
                 await FireEvent(Updated, report);
                 Log.Information(report.ToString());
                 return SupervisionStatus.Success;

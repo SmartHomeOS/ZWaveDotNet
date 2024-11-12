@@ -52,7 +52,7 @@ namespace ZWaveDotNet.CommandClasses
         public async Task<WakeUpIntervalReport> GetInterval(CancellationToken cancellationToken = default)
         {
             ReportMessage message = await SendReceive(WakeUpCommand.IntervalGet, WakeUpCommand.IntervalReport, cancellationToken);
-            return new WakeUpIntervalReport(message.Payload);
+            return new WakeUpIntervalReport(message.Payload.Span);
         }
 
         /// <summary>
@@ -87,7 +87,7 @@ namespace ZWaveDotNet.CommandClasses
         public async Task<WakeUpIntervalCapabilitiesReport> GetIntervalCapabilities(CancellationToken cancellationToken = default)
         {
             ReportMessage message = await SendReceive(WakeUpCommand.IntervalCapabilitiesGet, WakeUpCommand.IntervalCapabilitiesReport, cancellationToken);
-            return new WakeUpIntervalCapabilitiesReport(message.Payload);
+            return new WakeUpIntervalCapabilitiesReport(message.Payload.Span);
         }
 
         protected override async Task<SupervisionStatus> Handle(ReportMessage message)

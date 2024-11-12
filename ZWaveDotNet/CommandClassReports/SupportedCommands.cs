@@ -20,9 +20,9 @@ namespace ZWaveDotNet.CommandClassReports
         public byte RemainingReports;
         public List<CommandClass> CommandClasses;
 
-        public SupportedCommands(Memory<byte> payload)
+        public SupportedCommands(Span<byte> payload)
         {
-            RemainingReports = payload.Span[0];
+            RemainingReports = payload[0];
             CommandClasses = PayloadConverter.GetCommandClasses(payload.Slice(1));
         }
 

@@ -42,24 +42,24 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly bool Disconnected;
         public readonly bool LowTemperature;
 
-        internal BatteryLevelReport(Memory<byte> payload)
+        internal BatteryLevelReport(Span<byte> payload)
         {
             if (payload.Length < 1)
                 throw new DataException($"Battery Level Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
 
-            IsLow = payload.Span[0] == 0xFF;
-            LevelPercent = IsLow ? (byte)5 : payload.Span[0];
+            IsLow = payload[0] == 0xFF;
+            LevelPercent = IsLow ? (byte)5 : payload[0];
             if (payload.Length > 2)
             {
-                State = (BatteryChargingState)(payload.Span[1] >> 6);
-                Rechargable = (payload.Span[1] & 0x20) == 0x20;
-                Backup = (payload.Span[1] & 0x10) == 0x10;
-                Overheating = (payload.Span[1] & 0x8) == 0x8;
-                LowFluid = (payload.Span[1] & 0x4) == 0x4;
-                ReplaceSoon = (payload.Span[1] & 0x2) == 0x2;
-                ReplaceNow = (payload.Span[1] & 0x1) == 0x1;
-                Disconnected = (payload.Span[2] & 0x1) == 0x1;
-                LowTemperature = (payload.Span[2] & 0x2) == 0x2;
+                State = (BatteryChargingState)(payload[1] >> 6);
+                Rechargable = (payload[1] & 0x20) == 0x20;
+                Backup = (payload[1] & 0x10) == 0x10;
+                Overheating = (payload[1] & 0x8) == 0x8;
+                LowFluid = (payload[1] & 0x4) == 0x4;
+                ReplaceSoon = (payload[1] & 0x2) == 0x2;
+                ReplaceNow = (payload[1] & 0x1) == 0x1;
+                Disconnected = (payload[2] & 0x1) == 0x1;
+                LowTemperature = (payload[2] & 0x2) == 0x2;
             }
             else
                 State = BatteryChargingState.Unknown;

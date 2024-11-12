@@ -26,11 +26,11 @@ namespace ZWaveDotNet.SerialAPI.Messages
 
         public LongRangeNodes() : base(Function.GetLRNodes) { NodeIDs = Array.Empty<ushort>(); }
 
-        public LongRangeNodes(Memory<byte> payload) : base(Function.GetLRNodes)
+        public LongRangeNodes(Span<byte> payload) : base(Function.GetLRNodes)
         {
-            MoreNodes = payload.Span[0] != 0;
-            Offset = payload.Span[1];
-            Length = payload.Span[2];
+            MoreNodes = payload[0] != 0;
+            Offset = payload[1];
+            Length = payload[2];
 
             List<ushort> nodeIDs = new List<ushort>();
             BitArray bits = new BitArray(payload.Slice(3, Length).ToArray());

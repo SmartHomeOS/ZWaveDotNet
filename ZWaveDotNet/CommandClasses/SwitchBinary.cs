@@ -47,7 +47,7 @@ namespace ZWaveDotNet.CommandClasses
             if (node.ID == Node.BROADCAST_ID)
                 throw new MethodAccessException("GET methods may not be called on broadcast nodes");
             ReportMessage msg = await SendReceive(SwitchBinaryCommand.Get, SwitchBinaryCommand.Report, cancellationToken);
-            return new SwitchBinaryReport(msg.Payload);
+            return new SwitchBinaryReport(msg.Payload.Span);
         }
 
         /// <summary>
@@ -80,7 +80,7 @@ namespace ZWaveDotNet.CommandClasses
         {
             if (message.Command == (byte)SwitchBinaryCommand.Report)
             {
-                SwitchBinaryReport report = new SwitchBinaryReport(message.Payload);
+                SwitchBinaryReport report = new SwitchBinaryReport(message.Payload.Span);
                 Log.Information(report.ToString());
                 await FireEvent(SwitchReport, report);
                 return SupervisionStatus.Success;

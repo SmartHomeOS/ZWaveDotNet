@@ -35,7 +35,7 @@ namespace ZWaveDotNet.CommandClasses
             ReportMessage resp = await SendReceive(GroupNameCommand.GetName, GroupNameCommand.ReportName, cancellationToken);
             if (resp.Payload.Length < 2)
                 throw new FormatException($"The response was not in the expected format. Payload: {MemoryUtil.Print(resp.Payload)}");
-            return PayloadConverter.ToEncodedString(resp.Payload.Slice(1), 16);
+            return PayloadConverter.ToEncodedString(resp.Payload.Span.Slice(1), 16);
         }
 
         public async Task SetName(byte group, string name, CancellationToken cancellationToken = default)

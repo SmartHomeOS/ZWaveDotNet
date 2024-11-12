@@ -39,7 +39,7 @@ namespace ZWaveDotNet.CommandClasses
         public async Task<ThermostatModeReport> Get(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(ThermostatModeCommand.Get, ThermostatModeCommand.Report, cancellationToken);
-            return new ThermostatModeReport(response.Payload);
+            return new ThermostatModeReport(response.Payload.Span);
         }
 
         public async Task Set(ThermostatModeType value, byte[]? manufacturerData = null, CancellationToken cancellationToken = default)
@@ -75,7 +75,7 @@ namespace ZWaveDotNet.CommandClasses
         {
             if (message.Command == (byte)ThermostatModeCommand.Report)
             {
-                await FireEvent(Updated, new ThermostatModeReport(message.Payload));
+                await FireEvent(Updated, new ThermostatModeReport(message.Payload.Span));
                 return SupervisionStatus.Success;
             }
             return SupervisionStatus.NoSupport;

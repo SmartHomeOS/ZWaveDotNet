@@ -52,7 +52,7 @@ namespace ZWaveDotNet.CommandClasses
         public async Task<SwitchColorReport> Get(ColorType component, CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(SwitchColorCommand.Get, SwitchColorCommand.Report, cancellationToken, (byte)component);
-            return new SwitchColorReport(response.Payload);
+            return new SwitchColorReport(response.Payload.Span);
         }
 
         public async Task<ColorType[]> GetSupported(CancellationToken cancellationToken = default)
@@ -89,7 +89,7 @@ namespace ZWaveDotNet.CommandClasses
         {
             if (message.Command == (byte)SwitchColorCommand.Report)
             {
-                await FireEvent(ColorChange, new SwitchColorReport(message.Payload));
+                await FireEvent(ColorChange, new SwitchColorReport(message.Payload.Span));
                 return SupervisionStatus.Success;
             }
             return SupervisionStatus.NoSupport;

@@ -60,7 +60,7 @@ namespace ZWaveDotNet.CommandClasses
             if (node.ID == Node.BROADCAST_ID)
                 throw new MethodAccessException("GET methods may not be called on broadcast nodes");
             ReportMessage response = await SendReceive(DoorLockCommand.Get, DoorLockCommand.Report, cancellationToken);
-            return new DoorLockReport(response.Payload);
+            return new DoorLockReport(response.Payload.Span);
         }
 
         public async Task Set(DoorLockMode mode, CancellationToken cancellationToken = default)
@@ -112,7 +112,7 @@ namespace ZWaveDotNet.CommandClasses
         {
             if (message.Command == (byte)DoorLockCommand.Report)
             {
-                DoorLockReport rpt = new DoorLockReport(message.Payload);
+                DoorLockReport rpt = new DoorLockReport(message.Payload.Span);
                 await FireEvent(Report, rpt);
                 return SupervisionStatus.Success;
             }

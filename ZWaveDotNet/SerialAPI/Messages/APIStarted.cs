@@ -40,16 +40,16 @@ namespace ZWaveDotNet.SerialAPI.Messages
         public readonly CommandClass[] SupportedCommandClasses;
         public readonly bool SupportsLR;
 
-        public APIStarted(Memory<byte> payload) : base(Function.SerialAPIStarted)
+        public APIStarted(Span<byte> payload) : base(Function.SerialAPIStarted)
         {
-            Reason = (WakeupReason)payload.Span[0];
-            WatchdogStarted = payload.Span[1] == 0x1;
-            AlwaysListening = ((payload.Span[2] & 0x80) == 0x80);
-            GenericType = (GenericType)payload.Span[3];
-            SpecificType = SpecificTypeMapping.Get(GenericType, payload.Span[4]);
-            byte len = payload.Span[5];
+            Reason = (WakeupReason)payload[0];
+            WatchdogStarted = payload[1] == 0x1;
+            AlwaysListening = ((payload[2] & 0x80) == 0x80);
+            GenericType = (GenericType)payload[3];
+            SpecificType = SpecificTypeMapping.Get(GenericType, payload[4]);
+            byte len = payload[5];
             SupportedCommandClasses = PayloadConverter.GetCommandClasses(payload.Slice(6, len)).ToArray();
-            SupportsLR = ((payload.Span[6 + len] & 0x1) == 0x1);
+            SupportsLR = ((payload[6 + len] & 0x1) == 0x1);
         }
 
         public override string ToString()

@@ -21,18 +21,18 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly byte TargetValue;
         public readonly TimeSpan Duration;
 
-        public BasicReport(Memory<byte> payload)
+        public BasicReport(Span<byte> payload)
         {
             if (payload.Length < 1)
                 throw new DataException($"The Basic Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
 
-            CurrentValue = payload.Span[0];
+            CurrentValue = payload[0];
 
             if (payload.Length >= 3)
             {
                 //Version 2
-                TargetValue = payload.Span[1];
-                Duration = PayloadConverter.ToTimeSpan(payload.Span[2]);
+                TargetValue = payload[1];
+                Duration = PayloadConverter.ToTimeSpan(payload[2]);
             }
             else
             {

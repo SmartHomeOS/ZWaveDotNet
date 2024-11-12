@@ -24,17 +24,17 @@ namespace ZWave.CommandClasses
         public readonly bool SlowRefresh;
         public readonly Dictionary<byte, CentralSceneKeyAttributes[]> SupportedAttributes = new Dictionary<byte, CentralSceneKeyAttributes[]>();
 
-        internal CentralSceneSupportedReport(Memory<byte> payload)
+        internal CentralSceneSupportedReport(Span<byte> payload)
         {
             if (payload.Length < 1)
                 throw new DataException($"The Central Scene Supported Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
 
-            SceneCount = payload.Span[0];
+            SceneCount = payload[0];
             if (payload.Length >= 3)
             {
-                byte numBytes = (byte)((payload.Span[1] & 0x6) >> 1);
-                bool identical = (payload.Span[1] & 0x1) == 0x1;
-                SlowRefresh = (payload.Span[1] & 0x80) == 0x80;
+                byte numBytes = (byte)((payload[1] & 0x6) >> 1);
+                bool identical = (payload[1] & 0x1) == 0x1;
+                SlowRefresh = (payload[1] & 0x80) == 0x80;
 
                 for (byte i = 1; i < SceneCount; i++)
                 {

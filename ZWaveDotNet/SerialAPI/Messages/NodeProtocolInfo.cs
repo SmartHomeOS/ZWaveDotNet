@@ -28,14 +28,14 @@ namespace ZWaveDotNet.SerialAPI.Messages
 
         public NodeProtocolInfo() : base(Function.GetNodeProtocolInfo) { }
 
-        public NodeProtocolInfo(Memory<byte> payload) : base(Function.GetNodeProtocolInfo)
+        public NodeProtocolInfo(Span<byte> payload) : base(Function.GetNodeProtocolInfo)
         {
-            Capability = payload.Span[0];
-            Security = (NIFSecurity)payload.Span[1];
-            Reserved = payload.Span[2];
-            BasicType = (BasicType)payload.Span[3];
-            GenericType = (GenericType)payload.Span[4];
-            SpecificType = SpecificTypeMapping.Get((GenericType)payload.Span[4], payload.Span[5]);
+            Capability = payload[0];
+            Security = (NIFSecurity)payload[1];
+            Reserved = payload[2];
+            BasicType = (BasicType)payload[3];
+            GenericType = (GenericType)payload[4];
+            SpecificType = SpecificTypeMapping.Get((GenericType)payload[4], payload[5]);
         }
 
         [JsonIgnore]

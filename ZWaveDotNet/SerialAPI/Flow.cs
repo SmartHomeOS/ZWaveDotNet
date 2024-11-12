@@ -189,11 +189,11 @@ namespace ZWaveDotNet.SerialAPI
                         if (frame.DataType == DataFrameType.Response)
                             return new Response(frame.Payload, frame.CommandID);
                         else
-                            return ApplicationUpdate.From(frame.Payload, WideID);
+                            return ApplicationUpdate.From(frame.Payload.Span, WideID);
                     case Function.SerialAPIStarted:
-                        return new APIStarted(frame.Payload);
+                        return new APIStarted(frame.Payload.Span);
                     case Function.GetNodeProtocolInfo:
-                        return new NodeProtocolInfo(frame.Payload);
+                        return new NodeProtocolInfo(frame.Payload.Span);
                     case Function.SendData:
                     case Function.SendDataMulticast:
                     case Function.SendDataBridge:
@@ -206,13 +206,13 @@ namespace ZWaveDotNet.SerialAPI
                         else
                             return new DataCallback(frame.Payload, frame.CommandID);
                     case Function.GetSerialAPIInitData:
-                        return new InitData(frame.Payload);
+                        return new InitData(frame.Payload.Span);
                     case Function.GetLRNodes:
-                        return new LongRangeNodes(frame.Payload);
+                        return new LongRangeNodes(frame.Payload.Span);
                     case Function.AddNodeToNetwork:
                     case Function.RemoveNodeFromNetwork:
                     case Function.RemoveNodeIdFromNetwork:
-                        return new InclusionStatus(frame.Payload, frame.CommandID);
+                        return new InclusionStatus(frame.Payload.Span, frame.CommandID);
                 }
             }
             return new PayloadMessage(frame.Payload, frame.CommandID);

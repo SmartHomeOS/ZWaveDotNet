@@ -39,7 +39,7 @@ namespace ZWaveDotNet.CommandClasses
             if (node.ID == Node.BROADCAST_ID)
                 throw new MethodAccessException("GET methods may not be called on broadcast nodes");
             ReportMessage response = await SendReceive(MultiChannelAssociationCommand.Get, MultiChannelAssociationCommand.Report, cancellationToken, groupId);
-            return new MultiChannelAssociationReport(response.Payload);
+            return new MultiChannelAssociationReport(response.Payload.Span);
         }
 
         public async Task Set(byte groupId, ushort[] nodeIds, NodeEndpoint[] endPoints, CancellationToken cancellationToken = default)
@@ -90,7 +90,7 @@ namespace ZWaveDotNet.CommandClasses
         {
             if (message.Command == (byte)MultiChannelAssociationCommand.Report)
             {
-                MultiChannelAssociationReport report = new MultiChannelAssociationReport(message.Payload);
+                MultiChannelAssociationReport report = new MultiChannelAssociationReport(message.Payload.Span);
                 await FireEvent(AssociationUpdate, report);
                 return SupervisionStatus.Success;
             }

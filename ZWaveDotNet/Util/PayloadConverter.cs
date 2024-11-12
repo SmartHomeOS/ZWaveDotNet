@@ -28,14 +28,14 @@ namespace ZWaveDotNet.Util
             return result;
         }
 
-        public static uint ToUInt24(Memory<byte> bytes)
+        public static uint ToUInt24(Span<byte> bytes)
         {
             if (bytes.Length < 3)
                 throw new ArgumentException("UInt24 requires 3 bytes");
             if (BitConverter.IsLittleEndian)
-                return (uint)(bytes.Span[0] << 16 | bytes.Span[1] << 8 | bytes.Span[2]);
+                return (uint)(bytes[0] << 16 | bytes[1] << 8 | bytes[2]);
             else
-                return (uint)(bytes.Span[2] << 16 | bytes.Span[1] << 8 | bytes.Span[0]);
+                return (uint)(bytes[2] << 16 | bytes[1] << 8 | bytes[0]);
         }
 
         public static TimeSpan ToTimeSpan(byte payload)
@@ -48,49 +48,49 @@ namespace ZWaveDotNet.Util
                 return new TimeSpan(0, payload - 0x80, 0);
         }
 
-        public static string ToEncodedString(Memory<byte> bytes, int maxLen)
+        public static string ToEncodedString(Span<byte> bytes, int maxLen)
         {
             if (bytes.Length <= 1)
                 return string.Empty;
-            if ((bytes.Span[0] & 0x3) == 0x0)
-                return Encoding.ASCII.GetString(bytes.Slice(1, Math.Min(bytes.Length - 1, maxLen)).Span);
-            else if ((bytes.Span[0] & 0x3) == 0x1)
-                return Encoding.UTF8.GetString(bytes.Slice(1, Math.Min(bytes.Length - 1, maxLen)).Span);
+            if ((bytes[0] & 0x3) == 0x0)
+                return Encoding.ASCII.GetString(bytes.Slice(1, Math.Min(bytes.Length - 1, maxLen)));
+            else if ((bytes[0] & 0x3) == 0x1)
+                return Encoding.UTF8.GetString(bytes.Slice(1, Math.Min(bytes.Length - 1, maxLen)));
             else
-                return Encoding.Unicode.GetString(bytes.Slice(1, Math.Min(bytes.Length - 1, maxLen)).Span);
+                return Encoding.Unicode.GetString(bytes.Slice(1, Math.Min(bytes.Length - 1, maxLen)));
         }
 
-        public static float ToFloat(Memory<byte> payload, out byte scale, out byte size, out byte precision)
+        public static float ToFloat(Span<byte> payload, out byte scale, out byte size, out byte precision)
         {
-            precision = (byte)((payload.Span[0] & 0xE0) >> 5);
-            scale = (byte)((payload.Span[0] & 0x18) >> 3);
-            size = (byte)(payload.Span[0] & 0x07);
+            precision = (byte)((payload[0] & 0xE0) >> 5);
+            scale = (byte)((payload[0] & 0x18) >> 3);
+            size = (byte)(payload[0] & 0x07);
             return ToFloat(payload.Slice(1), size, precision);
         }
 
-        public static float ToFloat(Memory<byte> payload, byte size, byte precision)
+        public static float ToFloat(Span<byte> payload, byte size, byte precision)
         {
             int value = 0;
             switch (size) //Field size 1, 2, 4 bytes
             {
                 case 1:
-                    value = (sbyte)payload.Span[0];
+                    value = (sbyte)payload[0];
                     break;
                 case 2:
-                    value = BinaryPrimitives.ReadInt16BigEndian(payload.Slice(0, 2).Span);
+                    value = BinaryPrimitives.ReadInt16BigEndian(payload.Slice(0, 2));
                     break;
                 case 4:
-                    value = BinaryPrimitives.ReadInt32BigEndian(payload.Slice(0, 4).Span);
+                    value = BinaryPrimitives.ReadInt32BigEndian(payload.Slice(0, 4));
                     break;
             }
             return (value / MathF.Pow(10, precision));
         }
 
-        public static float[] ToFloats(Memory<byte> payload, out byte scale)
+        public static float[] ToFloats(Span<byte> payload, out byte scale)
         {
-            byte precision = (byte)((payload.Span[0] & 0xE0) >> 5);
-            byte size = (byte)(payload.Span[0] & 0x07);
-            scale = (byte)((payload.Span[0] & 0x18) >> 3);
+            byte precision = (byte)((payload[0] & 0xE0) >> 5);
+            byte size = (byte)(payload[0] & 0x07);
+            scale = (byte)((payload[0] & 0x18) >> 3);
 
             List<float> values = new List<float>();
             for (int i = 1; i < payload.Length; i += size)
@@ -99,13 +99,13 @@ namespace ZWaveDotNet.Util
                 switch (size) //Field size 1, 2, 4 bytes
                 {
                     case 1:
-                        value = (sbyte)payload.Span[i];
+                        value = (sbyte)payload[i];
                         break;
                     case 2:
-                        value = BinaryPrimitives.ReadInt16BigEndian(payload.Slice(i, 2).Span);
+                        value = BinaryPrimitives.ReadInt16BigEndian(payload.Slice(i, 2));
                         break;
                     case 4:
-                        value = BinaryPrimitives.ReadInt32BigEndian(payload.Slice(i, 4).Span);
+                        value = BinaryPrimitives.ReadInt32BigEndian(payload.Slice(i, 4));
                         break;
                 }
                 values.Add((value / MathF.Pow(10, precision)));
@@ -171,20 +171,20 @@ namespace ZWaveDotNet.Util
             return payload.Slice(0, limit); //If the last char is multi-byte that might force truncation
         }
 
-        public static List<CommandClass> GetCommandClasses(Memory<byte> bytes)
+        public static List<CommandClass> GetCommandClasses(Span<byte> bytes)
         {
             List<CommandClass> list = new List<CommandClass>(bytes.Length);
             for (byte i = 0; i < bytes.Length; i++)
             {
-                if (bytes.Span[i] == (byte)CommandClass.Mark)
+                if (bytes[i] == (byte)CommandClass.Mark)
                     break;
-                if (bytes.Span[i] < (byte)CommandClass.Basic)
+                if (bytes[i] < (byte)CommandClass.Basic)
                     continue;
-                else if ((bytes.Span[i] & 0xF0) != 0xF0)
-                    list.Add((CommandClass)bytes.Span[i]);
+                else if ((bytes[i] & 0xF0) != 0xF0)
+                    list.Add((CommandClass)bytes[i]);
                 else
                 {
-                    list.Add((CommandClass)BinaryPrimitives.ReadUInt16BigEndian(bytes.Slice(i).Span));
+                    list.Add((CommandClass)BinaryPrimitives.ReadUInt16BigEndian(bytes.Slice(i)));
                     i++;
                 }
             }

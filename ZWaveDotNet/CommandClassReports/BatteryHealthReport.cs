@@ -20,12 +20,12 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly byte CapacityPercent;
         public readonly float[] Temperatures;
 
-        internal BatteryHealthReport(Memory<byte> payload)
+        internal BatteryHealthReport(Span<byte> payload)
         {
             if (payload.Length < 2)
                 throw new DataException($"Battery Health Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
 
-            CapacityPercent = payload.Span[0];
+            CapacityPercent = payload[0];
             Temperatures = PayloadConverter.ToFloats(payload.Slice(1), out byte scale);
         }
 

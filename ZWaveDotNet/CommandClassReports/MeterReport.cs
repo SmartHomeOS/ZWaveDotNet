@@ -27,31 +27,31 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly TimeSpan ElapsedTime = TimeSpan.Zero;
         public readonly float LastValue;
 
-        internal MeterReport(Memory<byte> payload)
+        internal MeterReport(Span<byte> payload)
         {
             if (payload.Length < 3)
                 throw new DataException($"The Meter Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
 
-            Type = (MeterType)(payload.Span[0] & 0x1F);
-            RateType = (RateType)((payload.Span[0] & 0x60) >> 5);
+            Type = (MeterType)(payload[0] & 0x1F);
+            RateType = (RateType)((payload[0] & 0x60) >> 5);
             Value = PayloadConverter.ToFloat(payload.Slice(1), out byte scale, out byte size, out byte precision);
-            if ((payload.Span[0] & 0x80) == 0x80)
+            if ((payload[0] & 0x80) == 0x80)
                 scale |= 0x4;
             byte scale2 = 0;
             
             if (payload.Length >= size + 4)
             {
-                ushort secs = BinaryPrimitives.ReadUInt16BigEndian(payload.Slice(2 + size, 2).Span);
+                ushort secs = BinaryPrimitives.ReadUInt16BigEndian(payload.Slice(2 + size, 2));
                 if (secs != 0)
                 {
                     if (secs != 0xFFFF)
                         ElapsedTime = TimeSpan.FromSeconds(secs);
                     LastValue = PayloadConverter.ToFloat(payload.Slice(4 + size), size, precision);
                     if (payload.Length > (2 * size) + 4)
-                        scale2 = payload.Span[4 + (2* size)];
+                        scale2 = payload[4 + (2* size)];
                 }
                 else if (payload.Length > size + 6)
-                    scale2 = payload.Span[4 + size];
+                    scale2 = payload[4 + size];
             }
             Unit = GetUnit(Type, scale, scale2);
         }

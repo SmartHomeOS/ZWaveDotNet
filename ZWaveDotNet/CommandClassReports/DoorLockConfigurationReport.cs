@@ -27,7 +27,7 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly bool TA;
         public readonly bool BTB;
 
-        public DoorLockConfigurationReport(ReadOnlySpan<byte> payload)
+        public DoorLockConfigurationReport(Span<byte> payload)
         {
             if (payload.Length < 4)
                 throw new DataException($"The Door Lock Configuration Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");

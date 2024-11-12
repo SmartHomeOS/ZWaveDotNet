@@ -21,15 +21,15 @@ namespace ZWaveDotNet.CommandClassReports
         public bool Scheme1;
         public bool Curve25519;
         public SecurityKey Keys;
-        public KeyExchangeReport(Memory<byte> payload)
+        public KeyExchangeReport(Span<byte> payload)
         {
             if (payload.Length < 4)
                 throw new ArgumentException("Invalid KEX Report");
-            Echo = (payload.Span[0] & 0x1) == 0x1;
-            ClientSideAuth = (payload.Span[0] & 0x2) == 0x2;
-            Scheme1 = (payload.Span[1] & 0x2) == 0x2;
-            Curve25519 = (payload.Span[2] & 0x1) == 0x1;
-            Keys = (SecurityKey)payload.Span[3];
+            Echo = (payload[0] & 0x1) == 0x1;
+            ClientSideAuth = (payload[0] & 0x2) == 0x2;
+            Scheme1 = (payload[1] & 0x2) == 0x2;
+            Curve25519 = (payload[2] & 0x1) == 0x1;
+            Keys = (SecurityKey)payload[3];
         }
 
         public KeyExchangeReport(bool echo, bool csa, SecurityKey requestedKeys)

@@ -20,12 +20,12 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly byte CurrentValue;
         public readonly bool Open;
 
-        public MTPWindowCoveringReport(Memory<byte> payload)
+        public MTPWindowCoveringReport(Span<byte> payload)
         {
             if (payload.Length == 0)
                 throw new DataException($"The Move To Position Window Covering Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
 
-            CurrentValue = payload.Span[0];
+            CurrentValue = payload[0];
             Open = CurrentValue != 0;
         }
 

@@ -27,21 +27,21 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly byte E2CurrentRateNumber;
         public readonly uint E2ConsumptionWh;
 
-        public BasicTariffReport(Memory<byte> payload)
+        public BasicTariffReport(Span<byte> payload)
         {
             if (payload.Length < 9)
                 throw new DataException($"The Basic Tariff Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
 
-            TotalRateNumbersSupported = (byte)(payload.Span[0] & 0xF);
-            DualElement = (payload.Span[0] & 0x80) == 0x80;
-            E1CurrentRateNumber = (byte)(payload.Span[1] & 0xF);
-            E1ConsumptionWh = BinaryPrimitives.ReadUInt32BigEndian(payload.Slice(2, 4).Span);
-            NextRate = new TimeOnly(payload.Span[6], payload.Span[7], payload.Span[8]);
+            TotalRateNumbersSupported = (byte)(payload[0] & 0xF);
+            DualElement = (payload[0] & 0x80) == 0x80;
+            E1CurrentRateNumber = (byte)(payload[1] & 0xF);
+            E1ConsumptionWh = BinaryPrimitives.ReadUInt32BigEndian(payload.Slice(2, 4));
+            NextRate = new TimeOnly(payload[6], payload[7], payload[8]);
 
             if (DualElement && payload.Length >= 14)
             {
-                E2CurrentRateNumber = (byte)(payload.Span[9] & 0xF);
-                E2ConsumptionWh = BinaryPrimitives.ReadUInt32BigEndian(payload.Slice(10, 4).Span);
+                E2CurrentRateNumber = (byte)(payload[9] & 0xF);
+                E2ConsumptionWh = BinaryPrimitives.ReadUInt32BigEndian(payload.Slice(10, 4));
             }
         }
 

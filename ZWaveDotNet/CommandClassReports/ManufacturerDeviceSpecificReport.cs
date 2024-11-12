@@ -22,22 +22,22 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly DeviceSpecificType Type;
         public readonly string ID;
 
-        internal ManufacturerSpecificDeviceReport(Memory<byte> payload)
+        internal ManufacturerSpecificDeviceReport(Span<byte> payload)
         {
             if (payload.Length < 2)
                 throw new DataException($"The Specific Device Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
 
-            Type = (DeviceSpecificType)(payload.Span[0] & 0x07);
+            Type = (DeviceSpecificType)(payload[0] & 0x07);
             bool binary = true;
-            if ((payload.Span[1] & 0xE0) == 0x0)
+            if ((payload[1] & 0xE0) == 0x0)
                 binary = false;
-            int len = payload.Span[1] & 0x1F;
+            int len = payload[1] & 0x1F;
             if (payload.Length < len + 2)
                 throw new DataException($"The Specific Device Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
             if (binary)
                 ID = BitConverter.ToString(payload.Slice(2, len).ToArray());
             else
-                ID = Encoding.UTF8.GetString(payload.Slice(2, len).Span);
+                ID = Encoding.UTF8.GetString(payload.Slice(2, len));
         }
 
         public override string ToString()
