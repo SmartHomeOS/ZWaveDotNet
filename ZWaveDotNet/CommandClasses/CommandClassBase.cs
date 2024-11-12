@@ -84,6 +84,8 @@ namespace ZWaveDotNet.CommandClasses
                         return new Alarm(node, endpoint);
                     else
                         return new Notification(node, endpoint);
+                case CommandClass.AntiTheftUnlock:
+                    return new AntiTheftUnlock(node, endpoint);
                 case CommandClass.ApplicationCapability:
                     return new ApplicationCapability(node, endpoint);
                 case CommandClass.ApplicationStatus:
@@ -216,6 +218,8 @@ namespace ZWaveDotNet.CommandClasses
                     return new TimeParameters(node, endpoint);
                 case CommandClass.TransportService:
                     return new TransportService(node, endpoint);
+                case CommandClass.UserCode:
+                    return new UserCode(node, endpoint);
                 case CommandClass.Version:
                     return new Version(node, endpoint);
                 case CommandClass.WakeUp:

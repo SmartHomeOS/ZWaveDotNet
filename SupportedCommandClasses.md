@@ -2,7 +2,7 @@ Command Class | Max Supported Version | Max Spec Version | Support
 --------------|-------------------|---------------|---------
 **ALARM** | **2** | **2** | **Full**
 ANTITHEFT | 0 | 3 | None
-ANTITHEFT_UNLOCK | 0 | 1 | None
+**ANTITHEFT_UNLOCK** | **1** | **1** | **Full**
 **APPLICATION_CAPABILITY** | **1** | **1** | **Full**
 **APPLICATION_STATUS** | **1** | **1** | **Full**
 **ASSOCIATION** | **3** | **3** | **Full**
@@ -92,11 +92,11 @@ TARIFF_TBL_MONITOR | 0 | 1 | None
 **TIME** | **2** | **2** | **Full**
 *TIME_PARAMETERS* | *1* | *2* | *Full*
 **TRANSPORT_SERVICE** | **2** | **2** | **Full**
-USER_CODE | 0 | 2 | None
+*USER_CODE* | *1* | *2* | *Full*
 **VERSION** | **3** | **3** | **Full**
 **WAKE_UP** | **3** | **3** | **Full**
 **WINDOW_COVERING** | **1** | **1** | **Full**
 **ZWAVEPLUS_INFO** | **2** | **2** | **Full**
 
-- Full Support for 69/97 Command Classes.
+- Full Support for 71/97 Command Classes.
 - Partial Support for 2/97 Command Classes.

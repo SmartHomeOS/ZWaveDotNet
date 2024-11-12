@@ -10,6 +10,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
@@ -17,9 +18,13 @@ using ZWaveDotNet.SerialAPI;
 
 namespace ZWaveDotNet.CommandClasses
 {
+    /// <summary>
+    /// The Lock Command Class is used to lock and unlock a “lock” type device, e.g. a door or window lock
+    /// </summary>
     [CCVersion(CommandClass.Lock, 1, 1)]
     public class Lock : CommandClassBase
     {
+        public CommandClassEvent<BasicReport>? Report;
         public Lock(Node node, byte endpoint) : base(node, endpoint, CommandClass.Lock) { }
 
         enum LockCommand
@@ -29,20 +34,36 @@ namespace ZWaveDotNet.CommandClasses
             Report = 0x03
         }
 
+        /// <summary>
+        /// Request the lock state from a device
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<bool> Get(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(LockCommand.Get, LockCommand.Report, cancellationToken);
             return response.Payload.Span[0] != 0x0;
         }
 
+        /// <summary>
+        /// Set the lock state in a device
+        /// </summary>
+        /// <param name="locked"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task Set(bool locked, CancellationToken cancellationToken = default)
         {
             await SendCommand(LockCommand.Set, cancellationToken, (byte)(locked ? 0x1 : 0x0));
         }
 
-        protected override Task<SupervisionStatus> Handle(ReportMessage message)
+        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
-            return Task.FromResult(SupervisionStatus.NoSupport);
+            if (message.Command == (byte)LockCommand.Report)
+            {
+                BasicReport report = new BasicReport(message.Payload);
+                await FireEvent(Report, report);
+            }
+            return SupervisionStatus.NoSupport;
         }
     }
 }
