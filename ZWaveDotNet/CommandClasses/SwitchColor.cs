@@ -21,6 +21,10 @@ using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.CommandClasses
 {
+    /// <summary>
+    /// This Command Class manipulates the color components of a device. 
+    /// Each color component is scaled by the brightness level previously set by a Multilevel Switch Set, Binary Switch Set or Basic Set Command.
+    /// </summary>
     [CCVersion(CommandClass.SwitchColor, 1, 3)]
     public class SwitchColor : CommandClassBase
     {
@@ -39,6 +43,13 @@ namespace ZWaveDotNet.CommandClasses
 
         public SwitchColor(Node node, byte endpoint) : base(node, endpoint, CommandClass.SwitchColor) { }
 
+        /// <summary>
+        /// <b>Version 1</b>: Control one or more color components in a device (V1 nodes ignore duration)
+        /// </summary>
+        /// <param name="components"></param>
+        /// <param name="cancellationToken"></param>
+        /// <param name="duration"></param>
+        /// <returns></returns>
         public async Task Set(KeyValuePair<ColorType,byte>[] components, CancellationToken cancellationToken = default, TimeSpan? duration = null)
         {
             var payload = new List<byte>();
@@ -49,12 +60,24 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(SwitchColorCommand.Set, cancellationToken, payload.ToArray());
         }
 
+        /// <summary>
+        /// <b>Version 1</b>: Request the status of a specified color component
+        /// </summary>
+        /// <param name="component"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<SwitchColorReport> Get(ColorType component, CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(SwitchColorCommand.Get, SwitchColorCommand.Report, cancellationToken, (byte)component);
             return new SwitchColorReport(response.Payload.Span);
         }
 
+        /// <summary>
+        /// <b>Version 1</b>: Request the supported color components of a device
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        /// <exception cref="DataException"></exception>
         public async Task<ColorType[]> GetSupported(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(SwitchColorCommand.SupportedGet, SwitchColorCommand.SupportedReport, cancellationToken);
@@ -70,16 +93,34 @@ namespace ZWaveDotNet.CommandClasses
             return ret.ToArray();
         }
 
-        public async Task StartLevelChange(bool up, ColorType component, int startLevel, CancellationToken cancellationToken = default)
+        /// <summary>
+        /// <b>Version 1</b>: Initiate a transition of one color component to a new level (V1-2 nodes ignore duration)
+        /// </summary>
+        /// <param name="up"></param>
+        /// <param name="component"></param>
+        /// <param name="startLevel">If < 0, start level is ignored</param>
+        /// <param name="duration"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public async Task StartLevelChange(bool up, ColorType component, int startLevel, TimeSpan? duration = null, CancellationToken cancellationToken = default)
         {
             byte flags = 0x0;
             if (startLevel < 0)
                 flags |= 0x20; //Ignore Start
             if (up)
                 flags |= 0x40;
-            await SendCommand(SwitchColorCommand.StartLevelChange, cancellationToken, flags, (byte)component, (byte)Math.Max(0, startLevel));
+            byte durationByte = 0;
+            if (duration != null)
+                durationByte = (PayloadConverter.GetByte(duration.Value));
+            await SendCommand(SwitchColorCommand.StartLevelChange, cancellationToken, flags, (byte)component, (byte)Math.Max(0, startLevel), durationByte);
         }
 
+        /// <summary>
+        /// <b>Version 1</b>: Stop an ongoing transition initiated by a StartLevelChange command
+        /// </summary>
+        /// <param name="component"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task StopLevelChange(ColorType component, CancellationToken cancellationToken = default)
         {
             await SendCommand(SwitchColorCommand.StopLevelChange, cancellationToken, (byte)component);
