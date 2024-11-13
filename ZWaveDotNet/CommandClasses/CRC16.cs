@@ -30,12 +30,12 @@ namespace ZWaveDotNet.CommandClasses
 
         public CRC16(Node node, byte endpoint) : base(node, endpoint, CommandClass.CRC16) {  }
 
-        public static bool IsEncapsulated(ReportMessage msg)
+        internal static bool IsEncapsulated(ReportMessage msg)
         {
             return msg.CommandClass == CommandClass.CRC16 && msg.Command == (byte)CRC16Command.Encap;
         }
 
-        public static void Encapsulate (List<byte> payload)
+        internal static void Encapsulate (List<byte> payload)
         {
             byte[] header = new byte[]
             {

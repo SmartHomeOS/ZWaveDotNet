@@ -18,6 +18,9 @@ using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.CommandClasses
 {
+    /// <summary>
+    /// This Command Class is used for launching scenes in a number of actuator nodes e.g. another scene-controlling unit, a multilevel switch, a binary switch etc.
+    /// </summary>
     [CCVersion(CommandClass.SceneActivation)]
     public class SceneActivation : CommandClassBase
     {
@@ -28,9 +31,15 @@ namespace ZWaveDotNet.CommandClasses
 
         public SceneActivation(Node node, byte endpoint) : base(node, endpoint, CommandClass.SceneActivation) { }
 
+        /// <summary>
+        /// Activate the scene associated to the scene ID
+        /// </summary>
+        /// <param name="sceneId"></param>
+        /// <param name="duration"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task Set(byte sceneId, TimeSpan duration, CancellationToken cancellationToken = default)
         {
-            
             await SendCommand(SceneActivationCommand.Set, cancellationToken, sceneId, PayloadConverter.GetByte(duration));
         }
 

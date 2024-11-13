@@ -18,6 +18,10 @@ using ZWaveDotNet.SerialAPI;
 
 namespace ZWaveDotNet.CommandClasses
 {
+    /// <summary>
+    /// The Z-Wave Plus Info Command Class is used to differentiate between Z-Wave Plus, Z-Wave for IP and Z-Wave devices.
+    /// Furthermore this command class provides additional information about the Z-Wave Plus device in question.
+    /// </summary>
     [CCVersion(CommandClass.ZWavePlusInfo, 2,2)]
     public class ZWavePlus : CommandClassBase
     {
@@ -29,6 +33,11 @@ namespace ZWaveDotNet.CommandClasses
 
         public ZWavePlus(Node node, byte endpoint) : base(node, endpoint, CommandClass.ZWavePlusInfo) { }
 
+        /// <summary>
+        /// <b>Version 1/2</b>: Get additional information of the Z-Wave Plus device in question
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<ZWavePlusInfo> GetInfo(CancellationToken cancellationToken = default)
         {
             ReportMessage resp = await SendReceive(ZwavePlusCommand.InfoGet, ZwavePlusCommand.InfoReport, cancellationToken);

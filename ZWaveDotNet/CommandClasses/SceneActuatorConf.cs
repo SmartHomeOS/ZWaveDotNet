@@ -19,6 +19,9 @@ using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.CommandClasses
 {
+    /// <summary>
+    /// This Command Class is used to configure scenes settings for a node supporting an actuator Command Class, e.g.a multilevel switch, binary switch etc.
+    /// </summary>
     [CCVersion(CommandClass.SceneActuatorConf)]
     public class SceneActuatorConf : CommandClassBase
     {   
@@ -31,6 +34,14 @@ namespace ZWaveDotNet.CommandClasses
 
         public SceneActuatorConf(Node node, byte endpoint) : base(node, endpoint, CommandClass.SceneActuatorConf) { }
 
+        /// <summary>
+        /// Request the settings for a given scene identifier or for the scene currently active
+        /// </summary>
+        /// <param name="sceneId"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        /// <exception cref="MethodAccessException"></exception>
+        /// <exception cref="ArgumentException"></exception>
         public async Task<SceneActuatorConfigurationReport> Get(byte sceneId, CancellationToken cancellationToken = default)
         {
             if (node.ID == Node.BROADCAST_ID)
@@ -42,6 +53,15 @@ namespace ZWaveDotNet.CommandClasses
             return new SceneActuatorConfigurationReport(response.Payload.Span);
         }
 
+        /// <summary>
+        /// Associate the specified scene ID to the defined actuator settings
+        /// </summary>
+        /// <param name="sceneId"></param>
+        /// <param name="duration"></param>
+        /// <param name="level"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
         public async Task Set(byte sceneId, TimeSpan duration, byte? level = null, CancellationToken cancellationToken = default)
         {
             if (sceneId == 0)

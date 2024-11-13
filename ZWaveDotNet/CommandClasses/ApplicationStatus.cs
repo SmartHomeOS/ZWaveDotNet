@@ -18,6 +18,10 @@ using ZWaveDotNet.SerialAPI;
 
 namespace ZWaveDotNet.CommandClasses
 {
+    /// <summary>
+    /// This command class contains commands that are not directly related to a specific functionality in the application,
+    /// but are useful for maintaining an optimal Z-Wave system.
+    /// </summary>
     [CCVersion(CommandClass.ApplicationStatus)]
     public class ApplicationStatus : CommandClassBase
     {

@@ -26,12 +26,12 @@ namespace ZWaveDotNet.CommandClasses
         }
         public MultiCommand(Node node, byte endpoint) : base(node, endpoint, CommandClass.MultiCommand) {  }
 
-        public static bool IsEncapsulated(ReportMessage msg)
+        internal static bool IsEncapsulated(ReportMessage msg)
         {
             return msg.CommandClass == CommandClass.MultiCommand && msg.Command == (byte)MultiCommandCommand.Encap;
         }
 
-        public static void Encapsulate (List<byte> payload, List<CommandMessage> commands)
+        internal static void Encapsulate (List<byte> payload, List<CommandMessage> commands)
         {
             payload.Clear();
             payload.Add((byte)CommandClass.MultiCommand);

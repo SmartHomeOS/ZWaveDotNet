@@ -40,12 +40,12 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(SupervisionCommand.Report, cancellationToken, sessionId, (byte)status, 0x0);
         }
 
-        public static bool IsEncapsulated(ReportMessage msg)
+        internal static bool IsEncapsulated(ReportMessage msg)
         {
             return msg.CommandClass == CommandClass.Supervision && msg.Command == (byte)SupervisionCommand.Get;
         }
 
-        public static void Encapsulate (List<byte> payload, bool withProgress)
+        internal static void Encapsulate (List<byte> payload, bool withProgress)
         {
             sessionId = Math.Max((byte)(sessionId++ % 64), (byte)1);
             byte flags = sessionId;

@@ -10,14 +10,17 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using ZWaveDotNet.Entities;
-using ZWaveDotNet.SerialAPI;
-using ZWaveDotNet.Enums;
 using Serilog;
 using ZWaveDotNet.CommandClassReports.Enums;
+using ZWaveDotNet.Entities;
+using ZWaveDotNet.Enums;
+using ZWaveDotNet.SerialAPI;
 
 namespace ZWaveDotNet.CommandClasses
 {
+    /// <summary>
+    /// This Command Class is used to notify central controllers that a Z-Wave device is resetting its network specific parameters.
+    /// </summary>
     [CCVersion(CommandClass.DeviceResetLocally)]
     public class DeviceResetLocally : CommandClassBase
     {

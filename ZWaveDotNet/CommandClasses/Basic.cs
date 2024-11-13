@@ -19,6 +19,9 @@ using ZWaveDotNet.SerialAPI;
 
 namespace ZWaveDotNet.CommandClasses
 {
+    /// <summary>
+    /// The Basic Command Class allows a controlling device to operate the primary functionality of a supporting device without any further knowledge.
+    /// </summary>
     [CCVersion(CommandClass.Basic, 2)]
     public class Basic : CommandClassBase
     {
@@ -33,6 +36,12 @@ namespace ZWaveDotNet.CommandClasses
 
         public Basic(Node node, byte endpoint) : base(node, endpoint, CommandClass.Basic) { }
 
+        /// <summary>
+        /// <b>Version 1</b>: Request the status of a supporting device
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        /// <exception cref="MethodAccessException"></exception>
         public async Task<BasicReport> Get(CancellationToken cancellationToken = default)
         {
             if (node.ID == Node.BROADCAST_ID)
@@ -41,6 +50,12 @@ namespace ZWaveDotNet.CommandClasses
             return new BasicReport(response.Payload.Span);
         }
 
+        /// <summary>
+        /// <b>Version 1</b>: Set a value in a supporting device
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task Set(byte value, CancellationToken cancellationToken = default)
         {
             await SendCommand(BasicCommand.Set, cancellationToken, value);

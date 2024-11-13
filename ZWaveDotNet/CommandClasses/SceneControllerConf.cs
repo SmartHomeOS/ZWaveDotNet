@@ -19,6 +19,9 @@ using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.CommandClasses
 {
+    /// <summary>
+    /// This Command Class is used to configure nodes launching scenes using their association groups
+    /// </summary>
     [CCVersion(CommandClass.SceneControllerConf)]
     public class SceneControllerConf : CommandClassBase
     {
@@ -31,6 +34,14 @@ namespace ZWaveDotNet.CommandClasses
 
         public SceneControllerConf(Node node, byte endpoint) : base(node, endpoint, CommandClass.SceneControllerConf) { }
 
+        /// <summary>
+        /// Request the settings for a given association grouping identifier or the active settings
+        /// </summary>
+        /// <param name="groupId"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        /// <exception cref="MethodAccessException"></exception>
+        /// <exception cref="ArgumentException"></exception>
         public async Task<SceneControllerConfigurationReport> Get(byte groupId, CancellationToken cancellationToken = default)
         {
             if (node.ID == Node.BROADCAST_ID)
@@ -42,6 +53,15 @@ namespace ZWaveDotNet.CommandClasses
             return new SceneControllerConfigurationReport(response.Payload.Span);
         }
 
+        /// <summary>
+        /// Configure settings for a given physical item on the device
+        /// </summary>
+        /// <param name="groupId"></param>
+        /// <param name="sceneId"></param>
+        /// <param name="duration"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
         public async Task Set(byte groupId, byte sceneId, TimeSpan duration, CancellationToken cancellationToken = default)
         {
             if (groupId == 0)

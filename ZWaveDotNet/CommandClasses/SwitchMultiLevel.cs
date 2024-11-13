@@ -20,6 +20,9 @@ using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.CommandClasses
 {
+    /// <summary>
+    /// This Command Class is used to control devices with multilevel capability
+    /// </summary>
     [CCVersion(CommandClass.SwitchMultiLevel, 1, 4)]
     public class SwitchMultiLevel : CommandClassBase
     {
@@ -37,17 +40,35 @@ namespace ZWaveDotNet.CommandClasses
 
         public SwitchMultiLevel(Node node, byte endpoint) : base(node, endpoint, CommandClass.SwitchMultiLevel) { }
 
+        /// <summary>
+        /// <b>Version 1</b>: Request the status of a multilevel device.
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<SwitchMultiLevelReport> Get(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(MultiLevelCommand.Get, MultiLevelCommand.Report, cancellationToken);
             return new SwitchMultiLevelReport(response.Payload.Span);
         }
 
+        /// <summary>
+        /// <b>Version 1</b>: Set a multilevel value in a supporting device.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task Set(byte value, CancellationToken cancellationToken = default)
         {
             await SendCommand(MultiLevelCommand.Set, cancellationToken, value);
         }
 
+        /// <summary>
+        /// <b>Version 2</b>: Set a multilevel value in a supporting device (When used on a V1 device, duration is ignored)
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="duration"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task Set(byte value, TimeSpan duration, CancellationToken cancellationToken = default)
         {
             byte time = 0;
@@ -56,6 +77,16 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(MultiLevelCommand.Set, cancellationToken, value, time);
         }
 
+        /// <summary>
+        /// <b>Version 1</b>: Initiate a transition to a new level (Only V2 supports duration, only V3 supports secondary)
+        /// </summary>
+        /// <param name="primaryDown"></param>
+        /// <param name="startLevel"></param>
+        /// <param name="duration"></param>
+        /// <param name="secondaryDecrement"></param>
+        /// <param name="secondaryStepSize"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task StartLevelChange(bool? primaryDown, int startLevel, byte duration, bool? secondaryDecrement = null, byte secondaryStepSize = 0, CancellationToken cancellationToken = default)
         {
             byte flags = 0x0;
@@ -72,11 +103,21 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(MultiLevelCommand.StartLevelChange, cancellationToken, flags, (byte)Math.Max(0, startLevel), duration, secondaryStepSize);
         }
 
+        /// <summary>
+        /// <b>Version 1</b>: Stop an ongoing transition
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task StopLevelChange(CancellationToken cancellationToken = default)
         {
             await SendCommand(MultiLevelCommand.StopLevelChange, cancellationToken);
         }
 
+        /// <summary>
+        /// <b>Version 3</b>: This command is used to request the supported Switch Types of a supporting device.
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<SwitchMultiLevelSupportedReport> GetSupported(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(MultiLevelCommand.SupportedGet, MultiLevelCommand.SupportedReport, cancellationToken);

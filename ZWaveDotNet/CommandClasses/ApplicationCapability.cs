@@ -20,6 +20,9 @@ using ZWaveDotNet.SerialAPI;
 
 namespace ZWaveDotNet.CommandClasses
 {
+    /// <summary>
+    /// The Application Capability Command Class comprises commands for handling issues related to dynamic support for command classes.
+    /// </summary>
     [CCVersion(CommandClass.ApplicationCapability)]
     public class ApplicationCapability : CommandClassBase
     {

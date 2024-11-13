@@ -24,6 +24,9 @@ using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.CommandClasses
 {
+    /// <summary>
+    /// The Security 2 Command Class is a framework for allowing nodes to communicate securely in a Z-Wave network
+    /// </summary>
     [CCVersion(CommandClass.Security2, 1, 1, false)]
     public class Security2 : CommandClassBase
     {
@@ -53,6 +56,11 @@ namespace ZWaveDotNet.CommandClasses
 
         public Security2(Node node, byte endpoint) : base(node, endpoint, CommandClass.Security2) { }
 
+        /// <summary>
+        /// Query the commands supported by the device when using secure communication
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<List<CommandClass>> GetSupportedCommands(CancellationToken cancellationToken = default)
         {
             ReportMessage msg = await SendReceive(Security2Command.CommandsSupportedGet, Security2Command.CommandsSupportedReport, cancellationToken);
@@ -128,12 +136,12 @@ namespace ZWaveDotNet.CommandClasses
             bootstrapComplete.TrySetException(new SecurityException(type.ToString()));
         }
 
-        public static bool IsEncapsulated(ReportMessage msg)
+        internal static bool IsEncapsulated(ReportMessage msg)
         {
             return msg.CommandClass == CommandClass.Security2 && msg.Command == (byte)Security2Command.MessageEncap;
         }
 
-        public async Task Transmit(List<byte> payload, SecurityManager.RecordType? type, CancellationToken cancellationToken = default)
+        internal async Task Transmit(List<byte> payload, SecurityManager.RecordType? type, CancellationToken cancellationToken = default)
         {
             await Encapsulate(payload, type, cancellationToken);
             if (payload.Count > 2)
@@ -142,7 +150,7 @@ namespace ZWaveDotNet.CommandClasses
             Log.Verbose("Transmit Complete");
         }
 
-        public async Task Encapsulate(List<byte> payload, SecurityManager.RecordType? type, CancellationToken cancellationToken = default)
+        internal async Task Encapsulate(List<byte> payload, SecurityManager.RecordType? type, CancellationToken cancellationToken = default)
         {
             List<byte> extensionData = new List<byte>();
             Log.Verbose("Encrypting Payload for " + node.ID.ToString());
@@ -545,14 +553,14 @@ namespace ZWaveDotNet.CommandClasses
             return false;
         }
 
-        public async Task WaitForBootstrap(CancellationToken cancellationToken)
+        internal async Task WaitForBootstrap(CancellationToken cancellationToken)
         {
             bootstrapComplete = new TaskCompletionSource();
             cancellationToken.Register(() => bootstrapComplete.TrySetCanceled());
             await bootstrapComplete.Task;
         }
 
-        public static Memory<byte> EncryptCCM(Memory<byte> plaintext, Memory<byte> nonce, Memory<byte> key, AdditionalAuthData ad)
+        protected static Memory<byte> EncryptCCM(Memory<byte> plaintext, Memory<byte> nonce, Memory<byte> key, AdditionalAuthData ad)
         {
             Memory<byte> ret = new byte[plaintext.Length + 8];
             using (AesCcm aes = new AesCcm(key.Span))
@@ -560,7 +568,7 @@ namespace ZWaveDotNet.CommandClasses
             return ret;
         }
 
-        public static Memory<byte> DecryptCCM(Memory<byte> cipherText, Memory<byte> nonce, Memory<byte> key, AdditionalAuthData ad)
+        protected static Memory<byte> DecryptCCM(Memory<byte> cipherText, Memory<byte> nonce, Memory<byte> key, AdditionalAuthData ad)
         {
             Memory<byte> ret = new byte[cipherText.Length - 8];
             using (AesCcm aes = new AesCcm(key.Span))

@@ -19,6 +19,9 @@ using ZWaveDotNet.SerialAPI;
 
 namespace ZWaveDotNet.CommandClasses
 {
+    /// <summary>
+    /// The Alarm Silence Command Class may be used to temporarily disable the sounding of the alarm but still keep the alarm operating.
+    /// </summary>
     [CCVersion(CommandClass.SilenceAlarm)]
     public class SilenceAlarm : CommandClassBase
     {
@@ -29,6 +32,13 @@ namespace ZWaveDotNet.CommandClasses
 
         public SilenceAlarm(Node node, byte endpoint) : base(node, endpoint, CommandClass.SilenceAlarm)  { }
 
+        /// <summary>
+        /// Remotely silence the sensor alarm
+        /// </summary>
+        /// <param name="types"></param>
+        /// <param name="duration"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task Set(List<AlarmType> types, TimeSpan duration, CancellationToken cancellationToken = default)
         {
             byte[] payload = new byte[5];

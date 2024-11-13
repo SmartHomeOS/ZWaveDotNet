@@ -78,12 +78,12 @@ namespace ZWaveDotNet.CommandClasses
             return ret;
         }
 
-        public static bool IsEncapsulated(ReportMessage msg)
+        internal static bool IsEncapsulated(ReportMessage msg)
         {
             return msg.CommandClass == CommandClass.MultiChannel && msg.Command == (byte)MultiChannelCommand.Encap;
         }
 
-        public static void Encapsulate (List<byte> payload, byte destinationEndpoint)
+        internal static void Encapsulate (List<byte> payload, byte destinationEndpoint)
         {
             byte[] header = new byte[]
             {

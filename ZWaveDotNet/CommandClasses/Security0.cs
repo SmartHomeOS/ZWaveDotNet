@@ -22,6 +22,9 @@ using ZWaveDotNet.SerialAPI;
 
 namespace ZWaveDotNet.CommandClasses
 {
+    /// <summary>
+    /// The Security Command Class defines a number of commands used to facilitate handling of encrypted frames in a Z-Wave Network
+    /// </summary>
     [CCVersion(CommandClass.Security0)]
     public class Security0 : CommandClassBase
     {
@@ -43,6 +46,11 @@ namespace ZWaveDotNet.CommandClasses
 
         public Security0(Node node, byte endpoint) : base(node, endpoint, CommandClass.Security0) { }
 
+        /// <summary>
+        /// Query the commands supported by the device when using secure communication
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<SupportedCommands> CommandsSupportedGet(CancellationToken cancellationToken = default)
         {
             ReportMessage msg = await SendReceive(Security0Command.CommandsSupportedGet, Security0Command.CommandsSupportedReport, cancellationToken);
@@ -68,12 +76,12 @@ namespace ZWaveDotNet.CommandClasses
             return await SendReceive(Security0Command.NonceGet, Security0Command.NonceReport, cancellationToken);
         }
 
-        public static bool IsEncapsulated(ReportMessage msg)
+        internal static bool IsEncapsulated(ReportMessage msg)
         {
             return msg.CommandClass == CommandClass.Security0 && (msg.Command == (byte)Security0Command.MessageEncap || msg.Command == (byte)Security0Command.MessageEncapNonceGet);
         }
 
-        public async Task TransmitTemp(List<byte> payload, CancellationToken cancellationToken = default)
+        internal async Task TransmitTemp(List<byte> payload, CancellationToken cancellationToken = default)
         {
             ReportMessage report;
             using (CancellationTokenSource timeout = new CancellationTokenSource(10000))
@@ -101,7 +109,7 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(Security0Command.MessageEncap, cancellationToken, securePayload).ConfigureAwait(false);
         }
 
-        public async Task Encapsulate(List<byte> payload, CancellationToken cancellationToken)
+        internal async Task Encapsulate(List<byte> payload, CancellationToken cancellationToken)
         {
             ReportMessage report = await GetNonce(cancellationToken).ConfigureAwait(false);
             if (report.IsMulticastMethod)
@@ -221,7 +229,7 @@ namespace ZWaveDotNet.CommandClasses
             return output;
         }
 
-        public async Task WaitForKeyVerified(CancellationToken cancellationToken)
+        internal async Task WaitForKeyVerified(CancellationToken cancellationToken)
         {
             keyVerified = new TaskCompletionSource();
             cancellationToken.Register(() => keyVerified.TrySetCanceled());
