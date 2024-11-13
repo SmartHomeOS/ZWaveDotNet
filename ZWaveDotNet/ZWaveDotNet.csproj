@@ -4,17 +4,26 @@
     <TargetFrameworks>net8.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>0.8.0</Version>
+    <Version>0.8.1</Version>
     <Authors>jdomnitz</Authors>
     <Company>SmartHomeOS and Contributors</Company>
 	<PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
 	<Title>ZWaveDotNet</Title>
-	<Description>A C# implementation of the 2024a ZWave Plus standard including 60+ Command Classes, Security, SmartStart and ZwaveLR</Description>
+	<Description>A C# implementation of the 2024a ZWave Plus standard including 70+ Command Classes, Security, SmartStart and ZwaveLR</Description>
 	<Copyright>Copyright ZWaveDotNet Contributors</Copyright>
 	<PackageReadmeFile>README.md</PackageReadmeFile>
 	<RepositoryUrl>https://github.com/SmartHomeOS/ZWaveDotNet/</RepositoryUrl>
-	<PackageTags>zwave; zwave controller; smart start; zwave LR; dotnet;</PackageTags>
-	<PackageReleaseNotes>Support is included for 60+ command classes. See README for details.</PackageReleaseNotes>
+	<PackageTags>zwave; zwave-controller; smartstart; zwave-LR; dotnet;</PackageTags>
+	<PackageReleaseNotes>Support is included for 70+ command classes. See README for details.</PackageReleaseNotes>
+	<GenerateDocumentationFile>True</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0|AnyCPU'">
+    <IsAotCompatible>True</IsAotCompatible>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0|AnyCPU'">
+    <IsAotCompatible>True</IsAotCompatible>
   </PropertyGroup>
 
 	<ItemGroup>
