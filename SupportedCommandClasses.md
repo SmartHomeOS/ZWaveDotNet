@@ -22,7 +22,7 @@ DCP_CONFIG | 0 | 1 | None
 DCP_MONITOR | 0 | 1 | None
 **DEVICE_RESET_LOCALLY** | **1** | **1** | **Full**
 **DOOR_LOCK** | **4** | **4** | **Full**
-DOOR_LOCK_LOGGING | 0 | 1 | None
+**DOOR_LOCK_LOGGING** | **1** | **1** | **Full**
 **ENERGY_PRODUCTION** | **1** | **1** | **Full**
 **ENTRY_CONTROL** | **1** | **1** | **Full**
 *FIRMWARE_UPDATE_MD* | *1* | *8* | *Partial*
@@ -55,7 +55,7 @@ METER_TBL_PUSH | 0 | 1 | None
 **NOTIFICATION** | **8** | **8** | **Full**
 PREPAYMENT | 0 | 1 | None
 **PROPRIETARY** | **1** | **1** | **Full**
-PROTECTION | 0 | 2 | None
+*PROTECTION* | *1* | *2* | *Full*
 RATE_TBL_CONFIG | 0 | 1 | None
 RATE_TBL_MONITOR | 0 | 1 | None
 **SCENE_ACTIVATION** | **1** | **1** | **Full**
@@ -98,5 +98,5 @@ TARIFF_TBL_MONITOR | 0 | 1 | None
 **WINDOW_COVERING** | **1** | **1** | **Full**
 **ZWAVEPLUS_INFO** | **2** | **2** | **Full**
 
-- Full Support for 71/97 Command Classes.
+- Full Support for 73/97 Command Classes.
 - Partial Support for 2/97 Command Classes.

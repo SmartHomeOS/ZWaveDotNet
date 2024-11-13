@@ -116,6 +116,8 @@ namespace ZWaveDotNet.CommandClasses
                     return new DeviceResetLocally(node);
                 case CommandClass.DoorLock:
                     return new DoorLock(node, endpoint);
+                case CommandClass.DoorLockLogging:
+                    return new DoorLockLogging(node, endpoint);
                 case CommandClass.EnergyProduction:
                     return new EnergyProduction(node, endpoint);
                 case CommandClass.EntryControl:
@@ -168,6 +170,8 @@ namespace ZWaveDotNet.CommandClasses
                     //Covered in Alarm
                 case CommandClass.Proprietary:
                     return new Proprietary(node, endpoint);
+                case CommandClass.Protection:
+                    return new Protection(node, endpoint);
                 case CommandClass.SceneActivation:
                     return new SceneActivation(node, endpoint);
                 case CommandClass.SceneActuatorConf:
