@@ -43,11 +43,11 @@ namespace ZWaveDotNet.CommandClasses
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
         /// <exception cref="MethodAccessException"></exception>
-        public async Task<AntiTheftUnlockReport> Get(byte userIdentifier, CancellationToken cancellationToken = default)
+        public async Task<AntiTheftUnlockReport> Get(CancellationToken cancellationToken = default)
         {
             if (node.ID == Node.BROADCAST_ID)
                 throw new MethodAccessException("GET methods may not be called on broadcast nodes");
-            ReportMessage response = await SendReceive(AntiTheftUnlockCommand.Get, AntiTheftUnlockCommand.Report, cancellationToken, userIdentifier);
+            ReportMessage response = await SendReceive(AntiTheftUnlockCommand.Get, AntiTheftUnlockCommand.Report, cancellationToken);
             return new AntiTheftUnlockReport(response.Payload.Span);
         }
 
