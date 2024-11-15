@@ -24,6 +24,9 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.WindowCovering)]
     public class WindowCovering : CommandClassBase
     {
+        /// <summary>
+        /// Unsolicited Window Covering Report
+        /// </summary>
         public event CommandClassEvent<WindowCoveringReport>? Report;
         
         enum WindowCoveringCommand : byte
@@ -37,7 +40,7 @@ namespace ZWaveDotNet.CommandClasses
             StopLevelChange = 0x07
         }
 
-        public WindowCovering(Node node, byte endpoint) : base(node, endpoint, CommandClass.WindowCovering) { }
+        internal WindowCovering(Node node, byte endpoint) : base(node, endpoint, CommandClass.WindowCovering) { }
 
         public async Task<WindowCoveringParameter[]> GetSupported(CancellationToken cancellationToken = default)
         {
@@ -104,7 +107,10 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(WindowCoveringCommand.StopLevelChange, cancellationToken, (byte)parameter);
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)WindowCoveringCommand.Report)
             {

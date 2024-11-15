@@ -22,18 +22,28 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.ThermostatSetback, 1)]
     public class ThermostatSetback : CommandClassBase
     {
+        /// <summary>
+        /// Setback to Frost Protection Temperature
+        /// </summary>
         public const sbyte FROST_PROTECTION = 0x79;
+        /// <summary>
+        /// Setback to Energy Saving Temperature
+        /// </summary>
         public const sbyte ENERGY_SAVING_MODE = 0x7A; 
+
+        /// <summary>
+        /// Unsolicited Thermostat Setback Report
+        /// </summary>
         public event CommandClassEvent<ThermostatSetbackReport>? Updated;
 
-        public enum ThermostatSetbackCommand
+        enum ThermostatSetbackCommand
         {
             Set = 0x01,
             Get = 0x02,
             Report = 0x03
         }
 
-        public ThermostatSetback(Node node, byte endpoint) : base(node, endpoint, CommandClass.ThermostatSetback) { }
+        internal ThermostatSetback(Node node, byte endpoint) : base(node, endpoint, CommandClass.ThermostatSetback) { }
 
         public async Task<ThermostatSetbackReport> Get(ThermostatModeType type, CancellationToken cancellationToken = default)
         {
@@ -53,7 +63,10 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(ThermostatSetbackCommand.Set, cancellationToken, (byte)type, (byte)Math.Min((byte)122, tempTenthsCelsiusDegrees));
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)ThermostatSetbackCommand.Report)
             {

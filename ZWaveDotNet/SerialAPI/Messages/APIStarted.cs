@@ -16,7 +16,7 @@ using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.SerialAPI.Messages
 {
-    public class APIStarted : Message
+    internal class APIStarted : Message
     {
         public enum WakeupReason
         {

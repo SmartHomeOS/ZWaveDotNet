@@ -29,7 +29,7 @@ namespace ZWaveDotNet.CommandClasses
             Set = 0x01
         }
 
-        public SceneActivation(Node node, byte endpoint) : base(node, endpoint, CommandClass.SceneActivation) { }
+        internal SceneActivation(Node node, byte endpoint) : base(node, endpoint, CommandClass.SceneActivation) { }
 
         /// <summary>
         /// Activate the scene associated to the scene ID
@@ -43,7 +43,10 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(SceneActivationCommand.Set, cancellationToken, sceneId, PayloadConverter.GetByte(duration));
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             return SupervisionStatus.NoSupport;
         }

@@ -15,7 +15,7 @@ using ZWaveDotNet.SerialAPI.Messages.Enums;
 
 namespace ZWaveDotNet.SerialAPI.Messages
 {
-    public class DataCallback : Message
+    internal class DataCallback : Message
     {
         public readonly byte SessionID;
         public readonly TransmissionStatus Status;

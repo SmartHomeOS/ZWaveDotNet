@@ -15,7 +15,7 @@ using System.Buffers.Binary;
 
 namespace ZWaveDotNet.Util
 {
-    public class PayloadWriter
+    internal class PayloadWriter
     {
         private readonly Memory<byte> data;
         private int pos;

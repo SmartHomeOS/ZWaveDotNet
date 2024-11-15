@@ -17,7 +17,7 @@ using ZWaveDotNet.SerialAPI.Messages;
 
 namespace ZWaveDotNet.SerialAPI
 {
-    public class Flow : IDisposable
+    internal class Flow : IDisposable
     {
         private readonly Port port;
         private readonly Channel<Frame> unsolicited;

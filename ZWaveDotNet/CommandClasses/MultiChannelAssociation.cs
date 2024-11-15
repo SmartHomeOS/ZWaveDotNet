@@ -21,9 +21,12 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.MultiChannelAssociation, 2, 5)]
     public class MultiChannelAssociation : CommandClassBase
     {
+        /// <summary>
+        /// Unsolicited MultiChannel Association Report
+        /// </summary>
         public event CommandClassEvent<MultiChannelAssociationReport>? AssociationUpdate;
 
-        public enum MultiChannelAssociationCommand
+        enum MultiChannelAssociationCommand
         {
            Set = 0x1,
            Get = 0x2,
@@ -32,7 +35,7 @@ namespace ZWaveDotNet.CommandClasses
            GroupingsGet = 0x5,
            GroupingsReport = 0x6
         }
-        public MultiChannelAssociation(Node node, byte endpoint) : base(node, endpoint, CommandClass.MultiChannelAssociation) {  }
+        internal MultiChannelAssociation(Node node, byte endpoint) : base(node, endpoint, CommandClass.MultiChannelAssociation) {  }
 
         public async Task<MultiChannelAssociationReport> Get(byte groupId, CancellationToken cancellationToken = default)
         {
@@ -86,7 +89,10 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(command, cancellationToken, payload);
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)MultiChannelAssociationCommand.Report)
             {

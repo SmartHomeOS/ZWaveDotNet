@@ -27,8 +27,11 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.SensorMultiLevel, 1, 11)]
     public class SensorMultiLevel : CommandClassBase
     {
-        public SensorMultiLevel(Node node, byte endpoint) : base(node, endpoint, CommandClass.SensorMultiLevel){ }
+        internal SensorMultiLevel(Node node, byte endpoint) : base(node, endpoint, CommandClass.SensorMultiLevel){ }
 
+        /// <summary>
+        /// Unsolicited Sensor MultiLevel Report
+        /// </summary>
         public event CommandClassEvent<SensorMultiLevelReport>? Updated;
 
         enum SensorMultiLevelCommand
@@ -104,7 +107,10 @@ namespace ZWaveDotNet.CommandClasses
             return new SensorMultiLevelReport(response.Payload.Span);
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)SensorMultiLevelCommand.Report)
             {

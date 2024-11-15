@@ -28,9 +28,12 @@ namespace ZWaveDotNet.CommandClasses
     {
         public event CommandClassEvent<ApplicationCapabilityReport>? CommandClassUnsupported;
 
-        public ApplicationCapability(Node node, byte endpoint) : base(node, endpoint, CommandClass.ApplicationCapability) { }
+        internal ApplicationCapability(Node node, byte endpoint) : base(node, endpoint, CommandClass.ApplicationCapability) { }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             await FireEvent(CommandClassUnsupported, new ApplicationCapabilityReport(message.Payload.Span));
             return SupervisionStatus.Success;

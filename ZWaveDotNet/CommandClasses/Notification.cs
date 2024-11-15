@@ -32,6 +32,9 @@ namespace ZWaveDotNet.CommandClasses
     {
         private const byte FIRST_AVAILABLE = 0xFF;
 
+        /// <summary>
+        /// Unsolicited Notification Report
+        /// </summary>
         public event CommandClassEvent<NotificationReport>? Updated;
 
         enum NotificationCommand
@@ -45,7 +48,7 @@ namespace ZWaveDotNet.CommandClasses
             SupportedReport = 0x08
         }
 
-        public Notification(Node node, byte endpoint) : base(node, endpoint, CommandClass.Notification) { }
+        internal Notification(Node node, byte endpoint) : base(node, endpoint, CommandClass.Notification) { }
 
         /// <summary>
         /// <b>Push Mode</b>: This command is used to request if the unsolicited transmission of a Notification Type is enabled.
@@ -132,7 +135,10 @@ namespace ZWaveDotNet.CommandClasses
             return states.ToArray();
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)NotificationCommand.Report)
             {

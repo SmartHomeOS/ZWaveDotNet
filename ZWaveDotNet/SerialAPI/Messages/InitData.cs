@@ -15,7 +15,7 @@ using ZWaveDotNet.SerialAPI.Enums;
 
 namespace ZWaveDotNet.SerialAPI.Messages
 {
-    public class InitData : Message
+    internal class InitData : Message
     {
         [Flags]
         public enum ControllerCapability

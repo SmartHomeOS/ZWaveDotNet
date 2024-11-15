@@ -39,7 +39,7 @@ namespace ZWaveDotNet.CommandClasses
             Report = 0x04,
         }
 
-        public DoorLockLogging(Node node, byte endpoint) : base(node, endpoint, CommandClass.DoorLockLogging) { }
+        internal DoorLockLogging(Node node, byte endpoint) : base(node, endpoint, CommandClass.DoorLockLogging) { }
 
         /// <summary>
         /// <b>Version 1</b>: This command is used to request the audit trail.
@@ -70,7 +70,10 @@ namespace ZWaveDotNet.CommandClasses
             return response.Payload.Span[0];
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)DoorLockLoggingCommand.Report)
             {

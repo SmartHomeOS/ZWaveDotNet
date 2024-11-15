@@ -12,7 +12,7 @@
 
 namespace ZWaveDotNet.Provisioning
 {
-    public enum TLVType : byte
+    internal enum TLVType : byte
     {
         ProductType = 0,
         ProductID = 1,

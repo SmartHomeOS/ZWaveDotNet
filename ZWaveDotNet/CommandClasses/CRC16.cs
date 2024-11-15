@@ -28,7 +28,7 @@ namespace ZWaveDotNet.CommandClasses
             Encap = 0x01
         }
 
-        public CRC16(Node node, byte endpoint) : base(node, endpoint, CommandClass.CRC16) {  }
+        internal CRC16(Node node, byte endpoint) : base(node, endpoint, CommandClass.CRC16) {  }
 
         internal static bool IsEncapsulated(ReportMessage msg)
         {
@@ -63,7 +63,7 @@ namespace ZWaveDotNet.CommandClasses
             msg.Flags |= ReportFlags.EnhancedChecksum;
         }
 
-        protected override Task<SupervisionStatus> Handle(ReportMessage message)
+        internal override Task<SupervisionStatus> Handle(ReportMessage message)
         {
             //No Reports
             return Task.FromResult(SupervisionStatus.NoSupport);

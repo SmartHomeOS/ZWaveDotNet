@@ -14,7 +14,7 @@ using ZWaveDotNet.SerialAPI.Enums;
 
 namespace ZWaveDotNet.SerialAPI.Messages
 {
-    public class Response : Message
+    internal class Response : Message
     {
         public readonly bool Success;
         public Response(Memory<byte> payload, Function function, Func<byte, bool> success) : base(function)

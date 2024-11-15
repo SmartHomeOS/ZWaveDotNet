@@ -12,6 +12,9 @@
 
 namespace ZWaveDotNet.Entities.Enums
 {
+    /// <summary>
+    /// Inclusion Strategy
+    /// </summary>
     public enum InclusionStrategy
     {
         /// <summary>

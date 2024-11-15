@@ -30,7 +30,7 @@ namespace ZWaveDotNet.CommandClasses
             Set = 0x1
         }
 
-        public SilenceAlarm(Node node, byte endpoint) : base(node, endpoint, CommandClass.SilenceAlarm)  { }
+        internal SilenceAlarm(Node node, byte endpoint) : base(node, endpoint, CommandClass.SilenceAlarm)  { }
 
         /// <summary>
         /// Remotely silence the sensor alarm
@@ -53,7 +53,7 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(AlarmSilenceCommand.Set, cancellationToken, payload);
         }
 
-        protected override Task<SupervisionStatus> Handle(ReportMessage message)
+        internal override Task<SupervisionStatus> Handle(ReportMessage message)
         {
             //Not Needed
             return Task.FromResult(SupervisionStatus.NoSupport);

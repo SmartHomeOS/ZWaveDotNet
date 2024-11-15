@@ -22,9 +22,12 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.Supervision, 2)]
     public class Supervision : CommandClassBase
     {
+        /// <summary>
+        /// Unsolicited Status Report Report
+        /// </summary>
         public event CommandClassEvent<SupervisionReport>? StatusReport;
 
-        public enum SupervisionCommand
+        enum SupervisionCommand
         {
             Get = 0x01,
             Report = 0x02
@@ -32,7 +35,7 @@ namespace ZWaveDotNet.CommandClasses
 
         private static byte sessionId;
 
-        public Supervision(Node node) : base(node, 0, CommandClass.Supervision) {  }
+        internal Supervision(Node node) : base(node, 0, CommandClass.Supervision) {  }
 
         public async Task Report(byte sessionId, SupervisionStatus status, CancellationToken cancellationToken = default)
         {
@@ -73,7 +76,10 @@ namespace ZWaveDotNet.CommandClasses
             msg.Update(msg.Payload.Slice(2));
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)SupervisionCommand.Report)
             {

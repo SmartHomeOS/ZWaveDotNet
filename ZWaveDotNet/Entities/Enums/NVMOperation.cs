@@ -12,7 +12,7 @@
 
 namespace ZWaveDotNet.Entities.Enums
 {
-    public enum NVMOperation : byte
+    internal enum NVMOperation : byte
     {
         Open = 0x0,
         Read = 0x1,

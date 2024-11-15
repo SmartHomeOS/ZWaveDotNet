@@ -33,6 +33,9 @@ using static ZWaveDotNet.Entities.Controller;
 
 namespace ZWaveDotNet.Entities
 {
+    /// <summary>
+    /// A ZWave Node
+    /// </summary>
     public class Node
     {
         private enum InterviewState { None, Started, Complete };
@@ -40,6 +43,9 @@ namespace ZWaveDotNet.Entities
         internal const ushort MULTICAST_ID = 0xFFFE;
         internal const ushort UNINITIALIZED_ID = 0x0000;
 
+        /// <summary>
+        /// Node interview completed successfully
+        /// </summary>
         public event NodeEventHandler? InterviewComplete;
 
         public readonly ushort ID;
@@ -51,8 +57,19 @@ namespace ZWaveDotNet.Entities
         private ConcurrentDictionary<CommandClass, CommandClassBase> commandClasses = new ConcurrentDictionary<CommandClass, CommandClassBase>();
         private List<EndPoint> endPoints = new List<EndPoint>();
 
+        /// <summary>
+        /// The Controller the Node is paired with
+        /// </summary>
         public Controller Controller { get { return controller; } }
+
+        /// <summary>
+        /// The Node supports ZWave Long Range
+        /// </summary>
         public bool LongRange {  get { return nodeInfo?.IsLongRange ?? false; } }
+
+        /// <summary>
+        /// The listening mode for this type of Node
+        /// </summary>
         public ListeningMode Listening { 
             get {
                 if (nodeInfo == null)
@@ -66,14 +83,32 @@ namespace ZWaveDotNet.Entities
                 return ListeningMode.Scheduled;
             } 
         }
+        /// <summary>
+        /// The Node is a repeater
+        /// </summary>
         public bool Routing { get { return nodeInfo?.Routing ?? false; } }
+        /// <summary>
+        /// Node Specific Type
+        /// </summary>
         public SpecificType SpecificType { get { return nodeInfo?.SpecificType ?? SpecificType.Unknown; } }
+        /// <summary>
+        /// Node Generic Type
+        /// </summary>
         public GenericType GenericType { get { return nodeInfo?.GenericType ?? GenericType.Unknown; } }
+        /// <summary>
+        /// Node is marked failed
+        /// </summary>
         public bool NodeFailed {  get {  return failed; } internal set { failed = value; } }
+        /// <summary>
+        /// Interview completed successfully
+        /// </summary>
         public bool Interviewed { get { return interviewed == InterviewState.Complete; } }
+        /// <summary>
+        /// Last recorded signal strength
+        /// </summary>
         public sbyte RSSI { get; private set; }
 
-        public Node(ushort id, Controller controller, NodeProtocolInfo? nodeInfo, CommandClass[]? commandClasses = null, bool failed = false)
+        internal Node(ushort id, Controller controller, NodeProtocolInfo? nodeInfo, CommandClass[]? commandClasses = null, bool failed = false)
         {
             ID = id;
             this.controller = controller;
@@ -87,7 +122,7 @@ namespace ZWaveDotNet.Entities
             AddCommandClass(CommandClass.NoOperation);
         }
 
-        public Node(NodeJSON nodeJSON, Controller controller)
+        internal Node(NodeJSON nodeJSON, Controller controller)
         {
             ID = nodeJSON.ID;
             this.controller = controller;
@@ -100,11 +135,22 @@ namespace ZWaveDotNet.Entities
             return commandClasses.TryAdd(cls, CommandClassBase.Create(cls, this, 0, secure, version));
         }
 
+        /// <summary>
+        /// Delete the return route for this node
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task DeleteReturnRoute(CancellationToken cancellationToken = default)
         {
             await controller.Flow.SendAcknowledged(Function.DeleteReturnRoute, cancellationToken, GetIDBytes(ID));
         }
 
+        /// <summary>
+        /// Assign a new return route
+        /// </summary>
+        /// <param name="associatedNodeId"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task AssignReturnRoute(ushort associatedNodeId, CancellationToken cancellationToken = default)
         {
             byte[] id = GetIDBytes(ID);
@@ -114,11 +160,22 @@ namespace ZWaveDotNet.Entities
             await controller.Flow.SendAcknowledged(Function.AssignReturnRoute, cancellationToken, cmd );
         }
 
-        public byte EndPointCount()
+        /// <summary>
+        /// The number of End Points the Node contains
+        /// </summary>
+        public byte EndPointCount
         {
-            return (byte)endPoints.Count;
+            get
+            {
+                return (byte)endPoints.Count;
+            }
         }
 
+        /// <summary>
+        /// Get an End Point by ID
+        /// </summary>
+        /// <param name="ID"></param>
+        /// <returns></returns>
         public EndPoint? GetEndPoint(byte ID)
         {
             if (ID >= endPoints.Count)
@@ -214,16 +271,29 @@ namespace ZWaveDotNet.Entities
             return SupervisionStatus.NoSupport;
         }
 
+        /// <summary>
+        /// The collection of Command Classes a Node supports
+        /// </summary>
         public ReadOnlyDictionary<CommandClass, CommandClassBase> CommandClasses
         {
             get { return new ReadOnlyDictionary<CommandClass, CommandClassBase>(commandClasses); }
         }
 
+        /// <summary>
+        /// Returns true if the CommandClass is supported
+        /// </summary>
+        /// <param name="commandClass"></param>
+        /// <returns></returns>
         public bool HasCommandClass(CommandClass commandClass)
         {
             return commandClasses.ContainsKey(commandClass);
         }
 
+        /// <summary>
+        /// Get a command class by Type
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
         public T? GetCommandClass<T>() where T : CommandClassBase
         {
             CommandClass commandClass = ((CCVersion)typeof(T).GetCustomAttribute(typeof(CCVersion))!).commandClass;
@@ -238,7 +308,7 @@ namespace ZWaveDotNet.Entities
             return null;
         }
 
-        public NodeJSON Serialize()
+        internal NodeJSON Serialize()
         {
             if (nodeInfo == null)
                 throw new ArgumentNullException("Node Info was not provided in the node constructor");
@@ -272,7 +342,7 @@ namespace ZWaveDotNet.Entities
             return json;
         }
 
-        public void Deserialize(NodeJSON json)
+        internal void Deserialize(NodeJSON json)
         {
             interviewed = json.Interviewed ? InterviewState.Complete : InterviewState.None;
             foreach (CommandClassJson cc in json.CommandClasses)
@@ -300,6 +370,11 @@ namespace ZWaveDotNet.Entities
                 }
             }
         }
+        /// <summary>
+        /// Initiate a Node interview
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task Interview(CancellationToken cancellationToken = default)
         {
             await Interview(false, cancellationToken);
@@ -535,6 +610,9 @@ namespace ZWaveDotNet.Entities
             }
         }
 
+        /// 
+        /// <inheritdoc />
+        ///
         public override string ToString()
         {
             return $"Node: {ID}, Failed: {failed}, CommandClasses: {PrintCommandClasses()}, Security: {controller.SecurityManager!.GetHighestKey(ID)?.Key}";

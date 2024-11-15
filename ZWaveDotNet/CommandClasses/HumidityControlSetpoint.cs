@@ -24,8 +24,11 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.HumidityControlSetpoint, 1, 2)]
     public class HumidityControlSetpoint : CommandClassBase
     {
+        /// <summary>
+        /// Unsolicited Humidity Setpoint Report
+        /// </summary>
         public event CommandClassEvent<HumiditySetpointReport>? Updated;
-        public HumidityControlSetpoint(Node node, byte endpoint) : base(node, endpoint, CommandClass.HumidityControlSetpoint) { }
+        internal HumidityControlSetpoint(Node node, byte endpoint) : base(node, endpoint, CommandClass.HumidityControlSetpoint) { }
 
         enum HumidityControlSetpointCommand
         {
@@ -96,7 +99,10 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(HumidityControlSetpointCommand.Set, cancellationToken, payload.Array!);
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)HumidityControlSetpointCommand.Report)
             {

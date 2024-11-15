@@ -26,7 +26,7 @@ namespace ZWaveDotNet.CommandClasses
     public class ApplicationStatus : CommandClassBase
     {
         public event CommandClassEvent<ApplicationStatusReport>? ApplicationBusy;
-        public event CommandClassEvent<ReportMessage>? RequestRejected;
+        public event CommandClassEvent<EmptyReport>? RequestRejected;
 
         enum ApplicationStatusCommands
         {
@@ -34,9 +34,12 @@ namespace ZWaveDotNet.CommandClasses
             RejectedRequest = 0x2
         }
 
-        public ApplicationStatus(Node node, byte endpoint) : base(node, endpoint, CommandClass.ApplicationStatus) { }
+        internal ApplicationStatus(Node node, byte endpoint) : base(node, endpoint, CommandClass.ApplicationStatus) { }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             switch ((ApplicationStatusCommands)message.Command)
             {

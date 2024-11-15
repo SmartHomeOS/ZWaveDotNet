@@ -22,9 +22,12 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.ManufacturerProprietary)]
     public class ManufacturerProprietary : CommandClassBase
     {
+        /// <summary>
+        /// Unsolicited Manufacturer Proprietary Report
+        /// </summary>
         public event CommandClassEvent<ManufacturerProprietaryReport>? Received;
 
-        public ManufacturerProprietary(Node node, byte endpoint) : base(node, endpoint, CommandClass.ManufacturerProprietary) { }
+        internal ManufacturerProprietary(Node node, byte endpoint) : base(node, endpoint, CommandClass.ManufacturerProprietary) { }
 
         public async Task Send(ushort Manufacturer, Memory<byte> data, CancellationToken cancellationToken = default)
         {
@@ -35,11 +38,14 @@ namespace ZWaveDotNet.CommandClasses
             payload[0] = manufacturerBytes[1];
             data.CopyTo(payload.AsMemory().Slice(1));
 
-            CommandMessage msg = new CommandMessage(controller, node.ID, endpoint, commandClass, manufacturerBytes[0], false, payload);
+            CommandMessage msg = new CommandMessage(controller, node.ID, EndPoint, CommandClass, manufacturerBytes[0], false, payload);
             await SendCommand(msg, cancellationToken);
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             ManufacturerProprietaryReport rpt = new ManufacturerProprietaryReport(message.Payload.Span);
             await FireEvent(Received, rpt);

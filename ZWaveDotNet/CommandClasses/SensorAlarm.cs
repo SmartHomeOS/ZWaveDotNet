@@ -28,6 +28,9 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.SensorAlarm)]
     public class SensorAlarm : CommandClassBase
     {
+        /// <summary>
+        /// Unsolicited Sensor Alarm Report
+        /// </summary>
         public event CommandClassEvent<SensorAlarmReport>? Alarm;
 
         enum SensorAlarmCommand
@@ -38,7 +41,7 @@ namespace ZWaveDotNet.CommandClasses
             SupportedReport = 0x04
         }
 
-        public SensorAlarm(Node node, byte endpoint) : base(node, endpoint, CommandClass.SensorAlarm)  { }
+        internal SensorAlarm(Node node, byte endpoint) : base(node, endpoint, CommandClass.SensorAlarm)  { }
 
         /// <summary>
         /// <b>Version 1</b>: This command is used to request the status of a sensor.
@@ -73,7 +76,7 @@ namespace ZWaveDotNet.CommandClasses
             return types.ToArray();
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)SensorAlarmCommand.Report)
             {

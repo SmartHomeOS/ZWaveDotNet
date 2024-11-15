@@ -24,7 +24,7 @@ namespace ZWaveDotNet.CommandClasses
     public class HumidityControlMode : CommandClassBase
     {
         public event CommandClassEvent<EnumReport<HumidityControlModeType>>? Updated;
-        public HumidityControlMode(Node node, byte endpoint) : base(node, endpoint, CommandClass.HumidityControlMode) { }
+        internal HumidityControlMode(Node node, byte endpoint) : base(node, endpoint, CommandClass.HumidityControlMode) { }
 
         enum HumidityControlModeCommand
         {
@@ -59,7 +59,10 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(HumidityControlModeCommand.Set, cancellationToken, (byte)mode);
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)HumidityControlModeCommand.Report)
             {

@@ -25,6 +25,9 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.AntiTheftUnlock, 1)]
     public class AntiTheftUnlock : CommandClassBase
     {
+        /// <summary>
+        /// Unsolicited AntiTheft Unlock Report
+        /// </summary>
         public event CommandClassEvent<AntiTheftUnlockReport>? Report;
 
         enum AntiTheftUnlockCommand : byte
@@ -35,7 +38,7 @@ namespace ZWaveDotNet.CommandClasses
             
         }
 
-        public AntiTheftUnlock(Node node, byte endpoint) : base(node, endpoint, CommandClass.AntiTheftUnlock) { }
+        internal AntiTheftUnlock(Node node, byte endpoint) : base(node, endpoint, CommandClass.AntiTheftUnlock) { }
 
         /// <summary>
         /// <b>Version 1</b>: This command is used to request the locked/unlocked state of the node.
@@ -64,7 +67,7 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(AntiTheftUnlockCommand.Set, cancellationToken, magicCode);
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)AntiTheftUnlockCommand.Report)
             {

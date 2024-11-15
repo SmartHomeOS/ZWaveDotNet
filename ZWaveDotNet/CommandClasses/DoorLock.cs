@@ -23,6 +23,9 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.DoorLock, 4)]
     public class DoorLock : CommandClassBase
     {
+        /// <summary>
+        /// Unsolicited Door Lock Report
+        /// </summary>
         public event CommandClassEvent<DoorLockReport>? Report;
 
         public record Configuration
@@ -53,7 +56,7 @@ namespace ZWaveDotNet.CommandClasses
             CapabilitiesReport = 0x08
         }
 
-        public DoorLock(Node node, byte endpoint) : base(node, endpoint, CommandClass.DoorLock) { }
+        internal DoorLock(Node node, byte endpoint) : base(node, endpoint, CommandClass.DoorLock) { }
 
         public async Task<DoorLockReport> Get(CancellationToken cancellationToken = default)
         {
@@ -108,7 +111,10 @@ namespace ZWaveDotNet.CommandClasses
             return new DoorLockCapabilitiesReport(response.Payload.Span);
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)DoorLockCommand.Report)
             {

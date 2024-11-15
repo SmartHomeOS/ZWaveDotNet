@@ -10,6 +10,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
@@ -20,22 +21,24 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.Hail)]
     public class Hail : CommandClassBase
     {
-        public event CommandClassEvent<ReportMessage>? Hailed;
+        public event CommandClassEvent<EmptyReport>? Hailed;
         
         enum HailCommand : byte
         {
             Hail = 0x01
         }
 
-        public Hail(Node node, byte endpoint) : base(node, endpoint, CommandClass.Hail) { }
-
+        internal Hail(Node node, byte endpoint) : base(node, endpoint, CommandClass.Hail) { }
 
         public async Task SendHail(CancellationToken cancellationToken = default)
         {
             await SendCommand(HailCommand.Hail, cancellationToken);
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             await FireEvent(Hailed, null);
             return SupervisionStatus.Success;

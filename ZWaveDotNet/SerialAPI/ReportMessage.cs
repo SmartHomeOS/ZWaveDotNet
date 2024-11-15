@@ -19,7 +19,7 @@ using ZWaveDotNet.SerialAPI.Messages.Enums;
 
 namespace ZWaveDotNet.SerialAPI
 {
-    public class ReportMessage : ICommandClassReport
+    internal class ReportMessage : ICommandClassReport
     {
         public readonly ushort SourceNodeID;
         public readonly sbyte RSSI;
@@ -82,6 +82,9 @@ namespace ZWaveDotNet.SerialAPI
             }
         }
 
+        ///
+        /// <inheritdoc />
+        /// 
         public override string ToString()
         {
             return $"Node: {SourceNodeID}[{SourceEndpoint}] {CommandClass}-{Command} <S:{SecurityLevel}> ({RSSI} dBm)";

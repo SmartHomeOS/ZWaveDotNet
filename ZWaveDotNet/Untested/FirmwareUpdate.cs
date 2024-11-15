@@ -133,7 +133,7 @@ namespace ZWaveDotNet.CommandClasses
             Log.Information("@Success");
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)FirmwareUpdateCommand.UpdateStatusReport)
             {

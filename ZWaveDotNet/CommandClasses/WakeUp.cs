@@ -29,7 +29,10 @@ namespace ZWaveDotNet.CommandClasses
     public class WakeUp : CommandClassBase
     {
         private readonly ConcurrentQueue<TaskCompletionSource> taskCompletionSources = new ConcurrentQueue<TaskCompletionSource>();
-        public event CommandClassEvent<ReportMessage>? Awake;
+        /// <summary>
+        /// Node is awake
+        /// </summary>
+        public event CommandClassEvent<EmptyReport>? Awake;
 
         enum WakeUpCommand
         {
@@ -42,7 +45,7 @@ namespace ZWaveDotNet.CommandClasses
             IntervalCapabilitiesReport = 0x0A
         }
 
-        public WakeUp(Node node, byte endpoint) : base(node, endpoint, CommandClass.WakeUp) { }
+        internal WakeUp(Node node, byte endpoint) : base(node, endpoint, CommandClass.WakeUp) { }
 
         /// <summary>
         /// <b>Version 1</b>: This command is used to request the Wake Up Interval and destination of a node.
@@ -90,7 +93,10 @@ namespace ZWaveDotNet.CommandClasses
             return new WakeUpIntervalCapabilitiesReport(message.Payload.Span);
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)WakeUpCommand.Notification)
             {
@@ -103,6 +109,11 @@ namespace ZWaveDotNet.CommandClasses
             return SupervisionStatus.NoSupport;
         }
 
+        /// <summary>
+        /// Block until the Node is awake
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task WaitForAwake(CancellationToken cancellationToken = default)
         {
             TaskCompletionSource tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);

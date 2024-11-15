@@ -22,6 +22,9 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.SwitchToggleMultiLevel)]
     public class SwitchToggleMultiLevel : CommandClassBase
     {
+        /// <summary>
+        /// Unsolicited Toggle Switch MultiLevel Report
+        /// </summary>
         public event CommandClassEvent<SwitchToggleMultiLevelReport>? Changed;
 
         enum ToggleMultiLevelCommand : byte
@@ -33,7 +36,7 @@ namespace ZWaveDotNet.CommandClasses
             StopLevelChange = 0x05,
         }
 
-        public SwitchToggleMultiLevel(Node node, byte endpoint) : base(node, endpoint, CommandClass.SwitchToggleMultiLevel) {  }
+        internal SwitchToggleMultiLevel(Node node, byte endpoint) : base(node, endpoint, CommandClass.SwitchToggleMultiLevel) {  }
 
         public async Task<SwitchToggleMultiLevelReport> Get(CancellationToken cancellationToken = default)
         {
@@ -70,7 +73,7 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(ToggleMultiLevelCommand.StopLevelChange, cancellationToken);
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)ToggleMultiLevelCommand.Report)
             {

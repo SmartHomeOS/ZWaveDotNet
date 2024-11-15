@@ -28,7 +28,7 @@ namespace ZWaveDotNet.CommandClasses
             Report = 0x03
         }
 
-        public GeographicLocation(Node node) : base(node, 0, CommandClass.GeographicLocation) { }
+        internal GeographicLocation(Node node) : base(node, 0, CommandClass.GeographicLocation) { }
 
         public async Task<GeographicLocationReport> Get(CancellationToken cancellationToken = default)
         {
@@ -47,7 +47,7 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(GeographicLocationCommand.Set, cancellationToken, location.ToBytes());
         }
 
-        protected override Task<SupervisionStatus> Handle(ReportMessage message)
+        internal override Task<SupervisionStatus> Handle(ReportMessage message)
         {
             //Nothing to implement
             return Task.FromResult(SupervisionStatus.NoSupport);

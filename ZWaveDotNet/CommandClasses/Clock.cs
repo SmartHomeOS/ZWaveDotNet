@@ -28,7 +28,7 @@ namespace ZWaveDotNet.CommandClasses
             Report = 006,
         }
 
-        public Clock(Node node, byte endpoint) : base(node, endpoint, CommandClass.Clock)  { }
+        internal Clock(Node node, byte endpoint) : base(node, endpoint, CommandClass.Clock)  { }
 
         public async Task<ClockReport> Get(CancellationToken cancellationToken = default)
         {
@@ -41,7 +41,7 @@ namespace ZWaveDotNet.CommandClasses
             await SendClock(dayOfWeek, hour, minute, ClockCommand.Set, cancellationToken);
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)ClockCommand.Get)
             {
@@ -51,6 +51,9 @@ namespace ZWaveDotNet.CommandClasses
             return SupervisionStatus.NoSupport;
         }
 
+        ///
+        /// <inheritdoc />
+        ///
         public override async Task Interview(CancellationToken cancellationToken)
         {
             await SendClock(DateTime.Now.DayOfWeek, DateTime.Now.Hour, DateTime.Now.Minute, ClockCommand.Report, cancellationToken);

@@ -15,7 +15,7 @@ using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.SerialAPI.Messages
 {
-    public class SmartStartNodeInformationUpdate : ApplicationUpdate
+    internal class SmartStartNodeInformationUpdate : ApplicationUpdate
     {
         public readonly ReceiveStatus RxStatus;
         public readonly byte[] HomeID;
@@ -30,7 +30,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
             HomeID = payload.Slice(pos, 4).ToArray();
         }
 
-        public override PayloadWriter GetPayload()
+        internal override PayloadWriter GetPayload()
         {
             PayloadWriter writer = base.GetPayload();
             writer.Seek(1);

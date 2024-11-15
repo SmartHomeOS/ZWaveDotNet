@@ -27,6 +27,9 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.Meter, 1, 6)]
     public class Meter : CommandClassBase
     {
+        /// <summary>
+        /// Unsolicited Meter Report
+        /// </summary>
         public event CommandClassEvent<MeterReport>? Updated;
 
         enum MeterCommand
@@ -38,7 +41,7 @@ namespace ZWaveDotNet.CommandClasses
             Reset = 0x05
         }
 
-        public Meter(Node node, byte endpoint) : base(node, endpoint, CommandClass.Meter) { }
+        internal Meter(Node node, byte endpoint) : base(node, endpoint, CommandClass.Meter) { }
 
         /// <summary>
         /// <b>Version 1</b>: This command is used to request the current meter reading to a supporting node.
@@ -119,7 +122,7 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(MeterCommand.Reset, cancellationToken, payload);
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)MeterCommand.Report)
             {

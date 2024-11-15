@@ -32,7 +32,7 @@ namespace ZWaveDotNet.CommandClasses
             DeviceSpecificReport = 0x07
         }
 
-        public ManufacturerSpecific(Node node, byte endpoint) : base(node, endpoint, CommandClass.ManufacturerSpecific) { }
+        internal ManufacturerSpecific(Node node, byte endpoint) : base(node, endpoint, CommandClass.ManufacturerSpecific) { }
 
         /// <summary>
         /// <b>Version 1</b>: This command is used to request manufacturer specific information from another node.
@@ -57,7 +57,10 @@ namespace ZWaveDotNet.CommandClasses
             return new ManufacturerSpecificDeviceReport(response.Payload.Span);
         }
 
-        protected override Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override Task<SupervisionStatus> Handle(ReportMessage message)
         {
             //Nothing to do here
             return Task.FromResult(SupervisionStatus.NoSupport);

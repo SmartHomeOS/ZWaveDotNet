@@ -11,6 +11,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using Serilog;
+using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
@@ -24,15 +25,21 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.DeviceResetLocally)]
     public class DeviceResetLocally : CommandClassBase
     {
-        public event CommandClassEvent<ReportMessage>? DeviceReset;
-        public enum ResetLocallyCommand
+        /// <summary>
+        /// Unsolicited Device Reset Report
+        /// </summary>
+        public event CommandClassEvent<EmptyReport>? DeviceReset;
+        enum ResetLocallyCommand
         {
             Notification = 0x01
         }
 
-        public DeviceResetLocally(Node node) : base(node, 0, CommandClass.DeviceResetLocally) { }
+        internal DeviceResetLocally(Node node) : base(node, 0, CommandClass.DeviceResetLocally) { }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)ResetLocallyCommand.Notification)
             {

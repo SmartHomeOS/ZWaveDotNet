@@ -24,7 +24,7 @@ namespace ZWaveDotNet.CommandClasses
         {
             Encap = 0x01
         }
-        public MultiCommand(Node node, byte endpoint) : base(node, endpoint, CommandClass.MultiCommand) {  }
+        internal MultiCommand(Node node, byte endpoint) : base(node, endpoint, CommandClass.MultiCommand) {  }
 
         internal static bool IsEncapsulated(ReportMessage msg)
         {
@@ -61,7 +61,10 @@ namespace ZWaveDotNet.CommandClasses
             return list;
         }
 
-        protected override Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override Task<SupervisionStatus> Handle(ReportMessage message)
         {
             //No Reports
             return Task.FromResult(SupervisionStatus.NoSupport);

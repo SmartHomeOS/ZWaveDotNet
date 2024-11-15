@@ -45,7 +45,7 @@ namespace ZWaveDotNet.CommandClasses
             PropertiesReport = 0x0F
         }
 
-        public Configuration(Node node, byte endpoint) : base(node, endpoint, CommandClass.Configuration) {  }
+        internal Configuration(Node node, byte endpoint) : base(node, endpoint, CommandClass.Configuration) {  }
 
         /// <summary>
         /// <b>Version 1</b>: This command is used to query the value of a configuration parameter.
@@ -252,7 +252,10 @@ namespace ZWaveDotNet.CommandClasses
             return builder.ToString();
         }
 
-        protected override Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override Task<SupervisionStatus> Handle(ReportMessage message)
         {
             //Not Used
             return Task.FromResult(SupervisionStatus.NoSupport);

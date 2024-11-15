@@ -54,7 +54,7 @@ namespace ZWaveDotNet.CommandClasses
             CommandsSupportedReport = 0x0E
         }
 
-        public Security2(Node node, byte endpoint) : base(node, endpoint, CommandClass.Security2) { }
+        internal Security2(Node node, byte endpoint) : base(node, endpoint, CommandClass.Security2) { }
 
         /// <summary>
         /// Query the commands supported by the device when using secure communication
@@ -128,7 +128,7 @@ namespace ZWaveDotNet.CommandClasses
             controller.SecurityManager?.GetRequestedKeys(node.ID, true);
             if (type == KexFailType.KEX_FAIL_AUTH || type == KexFailType.KEX_FAIL_DECRYPT || type == KexFailType.KEX_FAIL_KEY_VERIFY || type == KexFailType.KEX_FAIL_KEY_GET)
             {
-                CommandMessage reportKex = new CommandMessage(controller, node.ID, endpoint, commandClass, (byte)Security2Command.KEXFail, false, (byte)type);
+                CommandMessage reportKex = new CommandMessage(controller, node.ID, EndPoint, CommandClass, (byte)Security2Command.KEXFail, false, (byte)type);
                 await Transmit(reportKex.Payload, SecurityManager.RecordType.ECDH_TEMP, cancellationToken).ConfigureAwait(false);
             }
             else
@@ -222,7 +222,7 @@ namespace ZWaveDotNet.CommandClasses
             encoded.CopyTo(securePayload.AsMemory().Slice(extensionData.Count));
 
             payload.Clear();
-            payload.Add((byte)commandClass);
+            payload.Add((byte)CommandClass);
             payload.Add((byte)Security2Command.MessageEncap);
             payload.AddRange(securePayload);
             Log.Verbose("Encapsulation Complete");
@@ -372,7 +372,10 @@ namespace ZWaveDotNet.CommandClasses
             return more;
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             switch ((Security2Command)message.Command)
             {
@@ -393,7 +396,7 @@ namespace ZWaveDotNet.CommandClasses
                             }
                             requestedKeys.Echo = true;
                             Log.Verbose("Responding: " + requestedKeys.ToString());
-                            CommandMessage reportKex = new CommandMessage(controller, node.ID, endpoint, commandClass, (byte)Security2Command.KEXReport, false, requestedKeys.ToBytes());
+                            CommandMessage reportKex = new CommandMessage(controller, node.ID, EndPoint, CommandClass, (byte)Security2Command.KEXReport, false, requestedKeys.ToBytes());
                             await Transmit(reportKex.Payload, SecurityManager.RecordType.ECDH_TEMP).ConfigureAwait(false);
                         }
                     }
@@ -442,7 +445,7 @@ namespace ZWaveDotNet.CommandClasses
                         default:
                             return SupervisionStatus.Fail; //Invalid Key Type - Ignore this
                     }
-                    CommandMessage data = new CommandMessage(controller, node.ID, endpoint, commandClass, (byte)Security2Command.NetworkKeyReport, false, resp);
+                    CommandMessage data = new CommandMessage(controller, node.ID, EndPoint, CommandClass, (byte)Security2Command.NetworkKeyReport, false, resp);
                     await Transmit(data.Payload, SecurityManager.RecordType.ECDH_TEMP).ConfigureAwait(false);
                     Log.Verbose($"Provided Network Key {key}");
                     return SupervisionStatus.Success;
@@ -457,7 +460,7 @@ namespace ZWaveDotNet.CommandClasses
                     }
                     Log.Information($"Revoking {message.SecurityLevel}");
                     controller.SecurityManager.RevokeKey(node.ID, SecurityManager.KeyToType(message.SecurityLevel));
-                    CommandMessage transferEnd = new CommandMessage(controller, node.ID, endpoint, commandClass, (byte)Security2Command.TransferEnd, false, KEY_VERIFIED);
+                    CommandMessage transferEnd = new CommandMessage(controller, node.ID, EndPoint, CommandClass, (byte)Security2Command.TransferEnd, false, KEY_VERIFIED);
                     await Transmit(transferEnd.Payload, SecurityManager.RecordType.ECDH_TEMP);
                     return SupervisionStatus.Success;
                 case Security2Command.NonceGet:
@@ -560,7 +563,7 @@ namespace ZWaveDotNet.CommandClasses
             await bootstrapComplete.Task;
         }
 
-        protected static Memory<byte> EncryptCCM(Memory<byte> plaintext, Memory<byte> nonce, Memory<byte> key, AdditionalAuthData ad)
+        private static Memory<byte> EncryptCCM(Memory<byte> plaintext, Memory<byte> nonce, Memory<byte> key, AdditionalAuthData ad)
         {
             Memory<byte> ret = new byte[plaintext.Length + 8];
             using (AesCcm aes = new AesCcm(key.Span))
@@ -568,7 +571,7 @@ namespace ZWaveDotNet.CommandClasses
             return ret;
         }
 
-        protected static Memory<byte> DecryptCCM(Memory<byte> cipherText, Memory<byte> nonce, Memory<byte> key, AdditionalAuthData ad)
+        private static Memory<byte> DecryptCCM(Memory<byte> cipherText, Memory<byte> nonce, Memory<byte> key, AdditionalAuthData ad)
         {
             Memory<byte> ret = new byte[cipherText.Length - 8];
             using (AesCcm aes = new AesCcm(key.Span))

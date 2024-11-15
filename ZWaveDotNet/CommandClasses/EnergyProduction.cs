@@ -28,7 +28,7 @@ namespace ZWaveDotNet.CommandClasses
             Report = 0x03
         }
 
-        public EnergyProduction(Node node, byte endpoint) : base(node, endpoint, CommandClass.EnergyProduction) { }
+        internal EnergyProduction(Node node, byte endpoint) : base(node, endpoint, CommandClass.EnergyProduction) { }
 
         public async Task<EnergyProductionReport> Get(EnergyParameter parameter, CancellationToken cancellationToken = default)
         {
@@ -39,7 +39,10 @@ namespace ZWaveDotNet.CommandClasses
             return new EnergyProductionReport(response.Payload.Span);
         }
 
-        protected override Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override Task<SupervisionStatus> Handle(ReportMessage message)
         {
             return Task.FromResult(SupervisionStatus.NoSupport);
         }

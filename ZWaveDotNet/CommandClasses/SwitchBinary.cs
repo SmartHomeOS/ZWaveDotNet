@@ -26,15 +26,18 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.SwitchBinary, 2)]
     public class SwitchBinary : CommandClassBase
     {
+        /// <summary>
+        /// Unsolicited Switch Binary Report
+        /// </summary>
         public event CommandClassEvent<SwitchBinaryReport>? SwitchReport;
-        public enum SwitchBinaryCommand
+        enum SwitchBinaryCommand
         {
             Set = 0x01,
             Get = 0x02,
             Report = 0x03
         }
 
-        public SwitchBinary(Node node, byte endpoint) : base(node, endpoint, CommandClass.SwitchBinary) { }
+        internal SwitchBinary(Node node, byte endpoint) : base(node, endpoint, CommandClass.SwitchBinary) { }
 
         /// <summary>
         /// <b>Version 1</b>: This command is used to request the current On/Off state from a node.
@@ -76,7 +79,10 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(SwitchBinaryCommand.Set, cancellationToken, value ? (byte)0xFF : (byte)0x00, time);
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)SwitchBinaryCommand.Report)
             {

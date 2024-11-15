@@ -25,13 +25,13 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.ZWavePlusInfo, 2,2)]
     public class ZWavePlus : CommandClassBase
     {
-        public enum ZwavePlusCommand
+        enum ZwavePlusCommand
         {
             InfoGet = 0x1,
             InfoReport = 0x2
         }
 
-        public ZWavePlus(Node node, byte endpoint) : base(node, endpoint, CommandClass.ZWavePlusInfo) { }
+        internal ZWavePlus(Node node, byte endpoint) : base(node, endpoint, CommandClass.ZWavePlusInfo) { }
 
         /// <summary>
         /// <b>Version 1/2</b>: Get additional information of the Z-Wave Plus device in question
@@ -44,7 +44,10 @@ namespace ZWaveDotNet.CommandClasses
             return new ZWavePlusInfo(resp.Payload.Span);
         }
 
-        protected override Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override Task<SupervisionStatus> Handle(ReportMessage message)
         {
             //Not Used
             return Task.FromResult(SupervisionStatus.NoSupport);

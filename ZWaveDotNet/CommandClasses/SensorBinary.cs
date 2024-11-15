@@ -26,6 +26,9 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.SensorBinary, 1, 2)]
     public class SensorBinary : CommandClassBase
     {
+        /// <summary>
+        /// Unsolicited Sensor Binary Report
+        /// </summary>
         public event CommandClassEvent<SensorBinaryReport>? Updated;
 
         enum SensorBinaryCommand
@@ -36,7 +39,7 @@ namespace ZWaveDotNet.CommandClasses
             SupportedReport = 0x4
         }
 
-        public SensorBinary(Node node, byte endpoint) : base(node, endpoint, CommandClass.SensorBinary) { }
+        internal SensorBinary(Node node, byte endpoint) : base(node, endpoint, CommandClass.SensorBinary) { }
 
         /// <summary>
         /// <b>Version 1</b>: This command is used to request the status of a sensor.
@@ -68,7 +71,10 @@ namespace ZWaveDotNet.CommandClasses
             return types.ToArray();
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)SensorBinaryCommand.Report)
             {

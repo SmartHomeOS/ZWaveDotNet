@@ -21,16 +21,19 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.SwitchToggleBinary)]
     public class SwitchToggleBinary : CommandClassBase
     {
+        /// <summary>
+        /// Unsolicited Switch Binary Report
+        /// </summary>
         public event CommandClassEvent<SwitchBinaryReport>? SwitchReport;
 
-        public enum SwitchToggleBinaryCommand
+        enum SwitchToggleBinaryCommand
         {
             Set = 0x01,
             Get = 0x02,
             Report = 0x03
         }
 
-        public SwitchToggleBinary(Node node, byte endpoint) : base(node, endpoint, CommandClass.SwitchToggleBinary) { }
+        internal SwitchToggleBinary(Node node, byte endpoint) : base(node, endpoint, CommandClass.SwitchToggleBinary) { }
 
         public async Task<SwitchBinaryReport> Get(CancellationToken cancellationToken = default)
         {
@@ -43,7 +46,10 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(SwitchToggleBinaryCommand.Set, cancellationToken, value ? (byte)0xFF : (byte)0x00);
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)SwitchToggleBinaryCommand.Report)
             {

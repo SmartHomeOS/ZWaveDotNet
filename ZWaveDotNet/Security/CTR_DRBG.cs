@@ -16,7 +16,7 @@ using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.Security
 {
-    public static class CTR_DRBG
+    internal static class CTR_DRBG
     {
         private const int BLOCK_LEN = 16;
         private const int SEED_LEN = 32;

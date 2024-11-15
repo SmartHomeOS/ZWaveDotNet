@@ -21,6 +21,9 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.MeterPulse)]
     public class MeterPulse : CommandClassBase
     {
+        /// <summary>
+        /// Unsolicited Meter Pulse Report
+        /// </summary>
         public event CommandClassEvent<MeterPulseReport>? Report;
         
         enum MeterPulseCommand : byte
@@ -29,7 +32,7 @@ namespace ZWaveDotNet.CommandClasses
             Report = 0x05
         }
 
-        public MeterPulse(Node node, byte endpoint) : base(node, endpoint, CommandClass.MeterPulse) { }
+        internal MeterPulse(Node node, byte endpoint) : base(node, endpoint, CommandClass.MeterPulse) { }
 
         public async Task<MeterPulseReport> Get(CancellationToken cancellationToken = default)
         {
@@ -40,7 +43,10 @@ namespace ZWaveDotNet.CommandClasses
             return new MeterPulseReport(response.Payload.Span);
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)MeterPulseCommand.Report)
             {

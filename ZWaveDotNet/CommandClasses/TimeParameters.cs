@@ -30,7 +30,7 @@ namespace ZWaveDotNet.CommandClasses
             Report = 0x03
         }
 
-        public TimeParameters(Node node, byte endpoint) : base(node, endpoint, CommandClass.TimeParams) { }
+        internal TimeParameters(Node node, byte endpoint) : base(node, endpoint, CommandClass.TimeParams) { }
 
         public async Task<DateTime> Get(CancellationToken cancellationToken = default)
         {
@@ -57,12 +57,18 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(TimeParamCommand.Set, cancellationToken, payload);
         }
 
+        ///
+        /// <inheritdoc />
+        ///
         public override async Task Interview(CancellationToken cancellationToken = default)
         {
             await Set(DateTime.UtcNow, cancellationToken);
         }
 
-        protected override Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override Task<SupervisionStatus> Handle(ReportMessage message)
         {
             //Not Used
             return Task.FromResult(SupervisionStatus.NoSupport);

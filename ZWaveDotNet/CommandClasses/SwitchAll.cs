@@ -27,7 +27,7 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.SwitchAll)]
     public class SwitchAll : CommandClassBase
     {
-        public enum SwitchAllCommand
+        enum SwitchAllCommand
         {
             Set = 0x01,
             Get = 0x02,
@@ -36,7 +36,7 @@ namespace ZWaveDotNet.CommandClasses
             Off = 0x05
         }
 
-        public SwitchAll(Node node, byte endpoint) : base(node, endpoint, CommandClass.SwitchAll) {  }
+        internal SwitchAll(Node node, byte endpoint) : base(node, endpoint, CommandClass.SwitchAll) {  }
 
         /// <summary>
         /// <b>Version 1</b>: This command is used to ask a device if it is included or excluded from the all on/all off functionality.
@@ -86,7 +86,10 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(SwitchAllCommand.Off, cancellationToken);
         }
 
-        protected override Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override Task<SupervisionStatus> Handle(ReportMessage message)
         {
             //None
             return Task.FromResult(SupervisionStatus.NoSupport);

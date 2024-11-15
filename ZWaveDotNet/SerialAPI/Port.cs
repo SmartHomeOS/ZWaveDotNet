@@ -18,7 +18,7 @@ using ZWaveDotNet.SerialAPI.Enums;
 
 namespace ZWaveDotNet.SerialAPI
 {
-    public class Port : IDisposable
+    internal class Port : IDisposable
     {
         private readonly SerialPort port;
         private readonly Channel<Frame> tx = Channel.CreateUnbounded<Frame>();

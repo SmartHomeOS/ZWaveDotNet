@@ -18,13 +18,19 @@ using ZWaveDotNet.SerialAPI;
 
 namespace ZWaveDotNet.CommandClasses
 {
+    /// <summary>
+    /// Unknown Command Class
+    /// </summary>
     public class Unknown : CommandClassBase
     {
-        public Unknown(Node node, byte endpoint, CommandClass commandClass) : base(node, endpoint, commandClass)
+        internal Unknown(Node node, byte endpoint, CommandClass commandClass) : base(node, endpoint, commandClass)
         {
         }
 
-        protected override Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override Task<SupervisionStatus> Handle(ReportMessage message)
         {
             Log.Information("Unknown Report Received: " + message.ToString());
             return Task.FromResult(SupervisionStatus.NoSupport);

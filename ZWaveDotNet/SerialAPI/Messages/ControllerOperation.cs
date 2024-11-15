@@ -16,11 +16,11 @@ using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.SerialAPI.Messages
 {
-    public class ControllerOperation : CallbackBase
+    internal class ControllerOperation : CallbackBase
     {
         public ControllerOperation(Controller controller, ushort nodeId, Function operation) : base(controller, nodeId, true, operation) { }
 
-        public override PayloadWriter GetPayload()
+        internal override PayloadWriter GetPayload()
         {
             PayloadWriter writer = base.GetPayload();
             if (controller.WideID)

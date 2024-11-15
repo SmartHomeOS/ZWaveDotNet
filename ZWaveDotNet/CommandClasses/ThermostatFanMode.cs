@@ -23,9 +23,12 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.ThermostatFanMode, 5)]
     public class ThermostatFanMode : CommandClassBase
     {
+        /// <summary>
+        /// Unsolicited Fan Mode Report
+        /// </summary>
         public event CommandClassEvent<ThermostatFanModeReport>? Updated;
 
-        public enum ThermostatFanModeCommand
+        enum ThermostatFanModeCommand
         {
             Set = 0x01,
             Get = 0x02,
@@ -34,7 +37,7 @@ namespace ZWaveDotNet.CommandClasses
             SupportedReport = 0x05
         }
 
-        public ThermostatFanMode(Node node, byte endpoint) : base(node, endpoint, CommandClass.ThermostatFanMode) { }
+        internal ThermostatFanMode(Node node, byte endpoint) : base(node, endpoint, CommandClass.ThermostatFanMode) { }
 
         public async Task<ThermostatFanModeReport> Get(CancellationToken cancellationToken = default)
         {
@@ -63,7 +66,10 @@ namespace ZWaveDotNet.CommandClasses
             return supportedTypes.ToArray();
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)ThermostatFanModeCommand.Report)
             {

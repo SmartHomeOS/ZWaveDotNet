@@ -29,7 +29,7 @@ namespace ZWaveDotNet.CommandClasses
             Report = 0x03
         }
 
-        public Language(Node node, byte endpoint) : base(node, endpoint, CommandClass.Language) { }
+        internal Language(Node node, byte endpoint) : base(node, endpoint, CommandClass.Language) { }
 
         public async Task<CultureInfo> Get(CancellationToken cancellationToken = default)
         {
@@ -47,7 +47,7 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(LanguageCommand.Set, cancellationToken, payload);
         }
 
-        protected override Task<SupervisionStatus> Handle(ReportMessage message)
+        internal override Task<SupervisionStatus> Handle(ReportMessage message)
         {
             //Not Needed
             return Task.FromResult(SupervisionStatus.NoSupport);

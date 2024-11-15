@@ -37,7 +37,7 @@ namespace ZWaveDotNet.CommandClasses
             AggregatedMembersGet = 0x0E,
             AggregatedMembersReport = 0x0F
         }
-        public MultiChannel(Node node, byte endpoint) : base(node, endpoint, CommandClass.MultiChannel) {  }
+        internal MultiChannel(Node node, byte endpoint) : base(node, endpoint, CommandClass.MultiChannel) {  }
 
         public async Task<EndPointReport> GetEndPoints(CancellationToken cancellationToken = default)
         {
@@ -107,7 +107,7 @@ namespace ZWaveDotNet.CommandClasses
             msg.Update(msg.Payload.Slice(2));
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)MultiChannelCommand.CapabilityReport)
             {

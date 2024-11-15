@@ -13,7 +13,7 @@
 namespace ZWaveDotNet.Enums
 {
     [Flags]
-    public enum ReportFlags
+    internal enum ReportFlags
     {
         None = 0x0,
         Multicast = 0x01,

@@ -29,7 +29,7 @@ namespace ZWaveDotNet.CommandClasses
     public class Security0 : CommandClassBase
     {
         private TaskCompletionSource keyVerified = new TaskCompletionSource();
-        public enum Security0Command
+        enum Security0Command
         {
             CommandsSupportedGet =	0x02,
             CommandsSupportedReport = 0x03,
@@ -44,7 +44,7 @@ namespace ZWaveDotNet.CommandClasses
             MessageEncapNonceGet = 0xC1
         }
 
-        public Security0(Node node, byte endpoint) : base(node, endpoint, CommandClass.Security0) { }
+        internal Security0(Node node, byte endpoint) : base(node, endpoint, CommandClass.Security0) { }
 
         /// <summary>
         /// Query the commands supported by the device when using secure communication
@@ -66,11 +66,11 @@ namespace ZWaveDotNet.CommandClasses
         internal async Task KeySet(CancellationToken cancellationToken = default)
         {
             Log.Verbose($"Setting Network Key on {node.ID}");
-            CommandMessage data = new CommandMessage(controller, node.ID, endpoint, commandClass, (byte)Security0Command.NetworkKeySet, false, controller.NetworkKeyS0);
+            CommandMessage data = new CommandMessage(controller, node.ID, EndPoint, CommandClass, (byte)Security0Command.NetworkKeySet, false, controller.NetworkKeyS0);
             await TransmitTemp(data.Payload, cancellationToken).ConfigureAwait(false);
         }
 
-        protected async Task<ReportMessage> GetNonce(CancellationToken cancellationToken)
+        internal async Task<ReportMessage> GetNonce(CancellationToken cancellationToken)
         {
             Log.Verbose("Fetching Nonce");
             return await SendReceive(Security0Command.NonceGet, Security0Command.NonceReport, cancellationToken);
@@ -130,7 +130,7 @@ namespace ZWaveDotNet.CommandClasses
             Array.Copy(mac, 0, securePayload, 9 + encrypted.Length, 8);
 
             payload.Clear();
-            payload.Add((byte)commandClass);
+            payload.Add((byte)CommandClass);
             payload.Add((byte)Security0Command.MessageEncap);
             payload.AddRange(securePayload);
         }
@@ -176,7 +176,10 @@ namespace ZWaveDotNet.CommandClasses
             return msg;
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             switch ((Security0Command)message.Command)
             {

@@ -12,17 +12,33 @@
 
 namespace ZWaveDotNet.Entities
 {
+    /// <summary>
+    /// End Point Routing Info
+    /// </summary>
     public struct NodeEndpoint
     {
+        /// <summary>
+        /// End Point Routing Info
+        /// </summary>
+        /// <param name="nodeId"></param>
+        /// <param name="endPoint"></param>
         public NodeEndpoint(ushort nodeId, byte endPoint)
         {
             NodeID = nodeId;
             EndpointID = (byte)(endPoint & 0x7F);
             BitmaskEndpoint = ((endPoint & 0x80) == 0x80);
         }
-
+        /// <summary>
+        /// Node ID
+        /// </summary>
         public ushort NodeID { get; set; }
+        /// <summary>
+        /// EndPoint ID
+        /// </summary>
         public byte EndpointID { get; set; }
+        /// <summary>
+        /// Bitmask EndPoint
+        /// </summary>
         public bool BitmaskEndpoint { get; set; }
     }
 }

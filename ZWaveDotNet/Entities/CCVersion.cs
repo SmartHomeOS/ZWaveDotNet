@@ -14,32 +14,51 @@ using ZWaveDotNet.Enums;
 
 namespace ZWaveDotNet.Entities
 {
+    /// <summary>
+    /// Internal use
+    /// </summary>
     public class CCVersion : Attribute
     {
+        /// <summary>
+        /// Supported Command Class
+        /// </summary>
         public CommandClass commandClass;
+
+        /// <summary>
+        /// Min supported version
+        /// </summary>
         public byte minVersion;
+
+        /// <summary>
+        /// Max supported version
+        /// </summary>
         public byte maxVersion;
+
+        /// <summary>
+        /// Implementation Complete
+        /// </summary>
         public bool complete;
-        public CCVersion(CommandClass @class)
+
+        internal CCVersion(CommandClass @class)
         {
             commandClass = @class;
             minVersion = maxVersion = 1;
             complete = true;
         }
-        public CCVersion(CommandClass @class, byte version)
+        internal CCVersion(CommandClass @class, byte version)
         {
             commandClass = @class;
             minVersion = maxVersion = version;
             complete = true;
         }
-        public CCVersion(CommandClass @class, byte minVersion, byte maxVersion)
+        internal CCVersion(CommandClass @class, byte minVersion, byte maxVersion)
         {
             commandClass = @class;
             this.minVersion = minVersion;
             this.maxVersion = maxVersion;
             complete = true;
         }
-        public CCVersion(CommandClass @class, byte minVersion, byte maxVersion, bool complete)
+        internal CCVersion(CommandClass @class, byte minVersion, byte maxVersion, bool complete)
         {
             commandClass = @class;
             this.minVersion = minVersion;

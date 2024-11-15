@@ -34,20 +34,64 @@ using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.Entities
 {
+    /// <summary>
+    /// The ZWave Contoller Node
+    /// </summary>
     public class Controller : IDisposable
     {
+        /// <summary>
+        /// Collection of paired nodes
+        /// </summary>
         public Dictionary<ushort, Node> Nodes = new Dictionary<ushort, Node>();
-        public CancellationTokenSource running = new CancellationTokenSource();
+        
+        /// <summary>
+        /// Node event
+        /// </summary>
+        /// <param name="node"></param>
+        /// <returns></returns>
         public delegate Task NodeEventHandler(Node node);
+        /// <summary>
+        /// Application Update event
+        /// </summary>
+        /// <param name="controller"></param>
+        /// <param name="args"></param>
+        /// <returns></returns>
         public delegate Task ApplicationUpdateEventHandler(Controller controller, ApplicationUpdateEventArgs args);
+        /// <summary>
+        /// Node Application Update
+        /// </summary>
+        /// <param name="node"></param>
+        /// <param name="args"></param>
+        /// <returns></returns>
         public delegate Task NodeInfoEventHandler(Node? node, ApplicationUpdateEventArgs args);
 
+        /// <summary>
+        /// A SmartStart node is available for pairing
+        /// </summary>
         public event ApplicationUpdateEventHandler? SmartStartNodeAvailable;
+        /// <summary>
+        /// A nodes information has been updated
+        /// </summary>
         public event NodeInfoEventHandler? NodeInfoUpdated;
+        /// <summary>
+        /// Security bootstrapping is complete
+        /// </summary>
         public event NodeEventHandler? SecurityBootstrapComplete;
+        /// <summary>
+        /// The node is paired and interviewed
+        /// </summary>
         public event NodeEventHandler? NodeReady;
+        /// <summary>
+        /// A node has been excluded successfully
+        /// </summary>
         public event NodeEventHandler? NodeExcluded;
+        /// <summary>
+        /// A node has been included successfully
+        /// </summary>
         public event NodeEventHandler? NodeIncluded;
+        /// <summary>
+        /// Node inclusion/exclusion has failed
+        /// </summary>
         public event EventHandler? NodeInclusionFailed;
 
         private readonly Flow flow;
@@ -59,7 +103,17 @@ namespace ZWaveDotNet.Entities
         private InclusionStrategy currentStrategy = InclusionStrategy.PreferS2;
         private readonly List<Memory<byte>> provisionList = new List<Memory<byte>>();
         private static readonly SemaphoreSlim nodeListLock = new SemaphoreSlim(1, 1);
+        private CancellationTokenSource running = new CancellationTokenSource();
 
+        /// <summary>
+        /// Create a new controller for the given serial port
+        /// </summary>
+        /// <param name="port"></param>
+        /// <param name="s0Key"></param>
+        /// <param name="s2unauth"></param>
+        /// <param name="s2auth"></param>
+        /// <param name="s2access"></param>
+        /// <exception cref="ArgumentNullException"></exception>
         public Controller(string port, byte[] s0Key, byte[] s2unauth, byte[] s2auth, byte[] s2access)
         {
             if (string.IsNullOrEmpty(port))
@@ -75,6 +129,14 @@ namespace ZWaveDotNet.Entities
             APIVersion = new System.Version();
         }
 
+        /// <summary>
+        /// Update the security keys
+        /// </summary>
+        /// <param name="s0Key"></param>
+        /// <param name="s2unauth"></param>
+        /// <param name="s2auth"></param>
+        /// <param name="s2access"></param>
+        /// <exception cref="ArgumentException"></exception>
         [MemberNotNull(["tempA", "tempE", "AuthenticationKey", "EncryptionKey", "NetworkKeyS0", "NetworkKeyS2UnAuth", "NetworkKeyS2Auth", "NetworkKeyS2Access"])]
         public void SetKeys(byte[] s0Key, byte[] s2unauth, byte[] s2auth, byte[] s2access)
         {
@@ -101,15 +163,45 @@ namespace ZWaveDotNet.Entities
             NetworkKeyS2Access = s2access;
         }
 
+        /// <summary>
+        /// Controller Node ID
+        /// </summary>
         public ushort ID { get; private set; }
+        /// <summary>
+        /// Network Home ID
+        /// </summary>
         public uint HomeID { get; private set; }
+        /// <summary>
+        /// Supports ZWave Long Range
+        /// </summary>
         public bool SupportsLongRange { get; private set; }
+        /// <summary>
+        /// The broadcast node (commands executed on this node are broadcast to all devices)
+        /// </summary>
         public Node BroadcastNode { get; private set; }
+        /// <summary>
+        /// The controller type
+        /// </summary>
         public LibraryType ControllerType { get; private set; } = LibraryType.StaticController;
+        /// <summary>
+        /// Connected to the ZWave Controller Hardware
+        /// </summary>
         public bool IsConnected { get { return flow.IsConnected; } }
+        /// <summary>
+        /// ZWave Library Version
+        /// </summary>
         public System.Version APIVersion { get; private set; }
+        /// <summary>
+        /// Controller Manufacturer ID
+        /// </summary>
         public uint Manufacturer { get; private set; }
+        /// <summary>
+        /// Primary Controller
+        /// </summary>
         public bool Primary { get; private set; }
+        /// <summary>
+        /// SIS Controller
+        /// </summary>
         public bool SIS { get; private set; }
         internal Flow Flow { get { return flow; } }
         internal byte[] AuthenticationKey { get; private set; }
@@ -121,12 +213,23 @@ namespace ZWaveDotNet.Entities
         internal SecurityManager? SecurityManager { get; private set; }
         internal bool WideID { get { return flow.WideID; } private set { flow.WideID = value; } }
 
+        /// <summary>
+        /// Soft Reset the controller
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
         public async Task Reset(CancellationToken token = default)
         {
             await flow.SendUnacknowledged(Function.SoftReset, token);
             await Task.Delay(1500, token);
         }
 
+        /// <summary>
+        /// Start the controller
+        /// </summary>
+        /// <param name="nodeDbPath"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async ValueTask Start(string? nodeDbPath = null, CancellationToken cancellationToken = default)
         {
             SecurityManager = new SecurityManager(await GetRandom(32, cancellationToken));
@@ -211,10 +314,8 @@ namespace ZWaveDotNet.Entities
             return nodes.ToArray();
         }
 
-        public async Task<Function[]> GetSupportedFunctions(CancellationToken cancellationToken = default)
+        private async Task GetSupportedFunctions(CancellationToken cancellationToken = default)
         {
-            if (supportedFunctions.Length > 0)
-                return supportedFunctions;
             PayloadMessage response = (PayloadMessage)await flow.SendAcknowledgedResponse(Function.GetSerialCapabilities, cancellationToken);
             //Bytes 4-8: product type, product id
             APIVersion = new System.Version(response.Data.Span[0], response.Data.Span[1]);
@@ -237,27 +338,48 @@ namespace ZWaveDotNet.Entities
                         supportedSubCommands |= ((SubCommand)i + 1);
                 }
             }
-            return supportedFunctions;
         }
 
-        protected bool Supports(Function function)
+        /// <summary>
+        /// Check if a controller supports a function
+        /// </summary>
+        /// <param name="function"></param>
+        /// <returns></returns>
+        public bool Supports(Function function)
         {
             if (supportedFunctions.Length == 0)
                 return true; //We don't know - assume yes?
             return supportedFunctions.Contains(function);
         }
 
-        protected bool Supports(SubCommand command)
+        /// <summary>
+        /// Check if a controller supports a subcommand
+        /// </summary>
+        /// <param name="command"></param>
+        /// <returns></returns>
+        public bool Supports(SubCommand command)
         {
             return (supportedSubCommands & command) == command;
         }
 
+        /// <summary>
+        /// Query a node for Protocol Info
+        /// </summary>
+        /// <param name="nodeId"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<NodeProtocolInfo> GetNodeProtocolInfo(ushort nodeId, CancellationToken cancellationToken = default)
         {
             byte[] cmd = NodeIDToBytes(nodeId);
             return (NodeProtocolInfo)await flow.SendAcknowledgedResponse(Function.GetNodeProtocolInfo, cancellationToken, cmd);
         }
 
+        /// <summary>
+        /// Check if a node has been marked as failed
+        /// </summary>
+        /// <param name="nodeId"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<bool> IsNodeFailed(ushort nodeId, CancellationToken cancellationToken = default)
         {
             byte[] cmd = NodeIDToBytes(nodeId);
@@ -272,6 +394,13 @@ namespace ZWaveDotNet.Entities
             return msg.Data.Span[0] == 0x1;
         }
 
+        /// <summary>
+        /// Get cryptographically secure random bytes
+        /// </summary>
+        /// <param name="length"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
         public async Task<Memory<byte>> GetRandom(byte length, CancellationToken cancellationToken = default)
         {
             if (length < 0 || length > 32)
@@ -291,6 +420,13 @@ namespace ZWaveDotNet.Entities
             return random!.Data.Slice(2);
         }
 
+        /// <summary>
+        /// Read a copy of the NVM
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        /// <exception cref="PlatformNotSupportedException"></exception>
+        /// <exception cref="InvalidOperationException"></exception>
         public async Task<byte[]> BackupNVM(CancellationToken cancellationToken = default)
         {
             if (!Supports(Function.NVMBackupRestore))
@@ -324,6 +460,13 @@ namespace ZWaveDotNet.Entities
             return buffer;
         }
 
+        /// <summary>
+        /// Enable/Disable 16-bit node IDs
+        /// </summary>
+        /// <param name="enable"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        /// <exception cref="PlatformNotSupportedException"></exception>
         public async Task<bool> Set16Bit(bool enable, CancellationToken cancellationToken = default)
         {
             if (!Supports(SubCommand.SetNodeIDBaseType))
@@ -333,6 +476,12 @@ namespace ZWaveDotNet.Entities
             return WideID;
         }
 
+        /// <summary>
+        /// Get the current RF region
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        /// <exception cref="PlatformNotSupportedException"></exception>
         public async Task<RFRegion> GetRFRegion(CancellationToken cancellationToken = default)
         {
             if (!Supports(Function.SerialAPISetup) || !Supports(SubCommand.GetRFRegion))
@@ -343,6 +492,14 @@ namespace ZWaveDotNet.Entities
             return (RFRegion)region.Data.Span[1];
         }
 
+        /// <summary>
+        /// Set the current RF region
+        /// </summary>
+        /// <param name="region"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        /// <exception cref="PlatformNotSupportedException"></exception>
+        /// <exception cref="ArgumentException"></exception>
         public async Task<bool> SetRFRegion(RFRegion region, CancellationToken cancellationToken = default)
         {
             if (!Supports(Function.SerialAPISetup) || !Supports(SubCommand.SetRFRegion))
@@ -353,6 +510,13 @@ namespace ZWaveDotNet.Entities
             return success.Data.Span[1] != 0;
         }
 
+        /// <summary>
+        /// Get the max payload size supported by the controller
+        /// </summary>
+        /// <param name="longRange"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        /// <exception cref="PlatformNotSupportedException"></exception>
         public async Task<byte> GetMaxPayload(bool longRange = false, CancellationToken cancellationToken = default)
         {
             if (!Supports(Function.SerialAPISetup) || !Supports(longRange ? SubCommand.GetLRMaxPayloadSize : SubCommand.GetMaxPayloadSize))
@@ -361,6 +525,10 @@ namespace ZWaveDotNet.Entities
             return size.Data.Span[1];
         }
 
+        /// <summary>
+        /// Interview all nodes
+        /// </summary>
+        /// <returns></returns>
         public async Task InterviewNodes()
         {
             foreach (Node n in Nodes.Values)
@@ -368,6 +536,10 @@ namespace ZWaveDotNet.Entities
         }
 
         #region Serialization
+        /// <summary>
+        /// Serialize the Node database to a string
+        /// </summary>
+        /// <returns></returns>
         public string ExportNodeDB()
         {
             nodeListLock.Wait();
@@ -381,6 +553,13 @@ namespace ZWaveDotNet.Entities
                 nodeListLock.Release();
             }
         }
+
+        /// <summary>
+        /// Serialize the Node database to a file path
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task ExportNodeDBAsync(string path, CancellationToken cancellationToken = default)
         {
             await nodeListLock.WaitAsync(cancellationToken);
@@ -433,6 +612,11 @@ namespace ZWaveDotNet.Entities
             }
         }
 
+        /// <summary>
+        /// Import the Node database from a JSON string
+        /// </summary>
+        /// <param name="json"></param>
+        /// <returns></returns>
         public bool ImportNodeDB(string json)
         {
             nodeListLock.Wait();
@@ -450,6 +634,12 @@ namespace ZWaveDotNet.Entities
             }
         }
 
+        /// <summary>
+        /// Import the Node database from a file
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<bool> ImportNodeDBAsync(string path, CancellationToken cancellationToken = default)
         {
             await nodeListLock.WaitAsync(cancellationToken);
@@ -472,6 +662,11 @@ namespace ZWaveDotNet.Entities
         #endregion Serialization
 
         #region Inclusion
+        /// <summary>
+        /// Add a SmartStart Node to the provisioning list
+        /// </summary>
+        /// <param name="DSK"></param>
+        /// <exception cref="ArgumentException"></exception>
         public void AddSmartStartNode(Memory<byte> DSK)
         {
             if (DSK.Length != 16)
@@ -480,15 +675,24 @@ namespace ZWaveDotNet.Entities
         }
 
         /// <summary>
-        /// QR Code starting with "90"
+        /// Add a SmartStart Node to the provisioning list
         /// </summary>
-        /// <param name="QRcode"></param>
+        /// <param name="QRcode">QR Code starting with "90"</param>
         public void AddSmartStartNode(string QRcode)
         {
             QRParser parser = new QRParser(QRcode);
             AddSmartStartNode(parser.DSK);
         }
 
+        /// <summary>
+        /// Start Node inclusion using the specified strategy
+        /// </summary>
+        /// <param name="strategy"></param>
+        /// <param name="pin"></param>
+        /// <param name="cancellationToken"></param>
+        /// <param name="fullPower"></param>
+        /// <param name="networkWide"></param>
+        /// <returns></returns>
         public async Task StartInclusion(InclusionStrategy strategy, ushort pin = 0, CancellationToken cancellationToken = default, bool fullPower = true, bool networkWide = true)
         {
             this.currentStrategy = strategy;
@@ -509,6 +713,12 @@ namespace ZWaveDotNet.Entities
             await flow.SendAcknowledged(Function.AddNodeToNetwork, cancellationToken, (byte)mode, 0x1, NWIHomeID[0], NWIHomeID[1], NWIHomeID[2], NWIHomeID[3], AuthHomeID[0], AuthHomeID[1], AuthHomeID[2], AuthHomeID[3]);
         }
 
+        /// <summary>
+        /// Start SmartStart inclusion using the specified strategy
+        /// </summary>
+        /// <param name="strategy"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task StartSmartStartInclusion(InclusionStrategy strategy = InclusionStrategy.PreferS2, CancellationToken cancellationToken = default)
         {
             this.currentStrategy = strategy;
@@ -569,6 +779,12 @@ namespace ZWaveDotNet.Entities
             await flow.SendAcknowledged(specificNode ? Function.RemoveNodeIdFromNetwork : Function.RemoveNodeFromNetwork, cancellationToken, (byte)AddRemoveNodeMode.StopNetworkIncludeExclude, 0x1);
         }
 
+        /// <summary>
+        /// Remove a Node that has been marked as failed
+        /// </summary>
+        /// <param name="nodeId"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<bool> RemoveFailedNode(ushort nodeId, CancellationToken cancellationToken = default)
         {
             DataCallback? dc = null;
@@ -822,6 +1038,9 @@ namespace ZWaveDotNet.Entities
                 return new byte[] { (byte)nodeId };
         }
 
+        ///
+        /// <inheritdoc />
+        /// 
         public override string ToString()
         {
             StringBuilder ret = new StringBuilder();
@@ -835,6 +1054,9 @@ namespace ZWaveDotNet.Entities
             return ret.ToString();
         }
 
+        ///
+        /// <inheritdoc />
+        /// 
         public void Dispose()
         {
             running.Cancel();

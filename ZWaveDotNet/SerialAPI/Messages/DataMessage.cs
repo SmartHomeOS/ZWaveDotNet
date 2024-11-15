@@ -34,7 +34,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
                 Options |= TransmitOptions.ExploreNPDUs;
         }
 
-        public override PayloadWriter GetPayload()
+        internal override PayloadWriter GetPayload()
         {
             PayloadWriter writer = base.GetPayload();
             if (Function == Function.SendDataBridge)

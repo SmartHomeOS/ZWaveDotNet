@@ -22,6 +22,9 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.MTPWindowCovering)]
     public class MTPWindowCovering : CommandClassBase
     {
+        /// <summary>
+        /// Unsolicited MTP Window Covering Report
+        /// </summary>
         public event CommandClassEvent<MTPWindowCoveringReport>? PositionChanged;
         
         enum MTPWindowCommand : byte
@@ -31,7 +34,7 @@ namespace ZWaveDotNet.CommandClasses
             Report = 0x03
         }
 
-        public MTPWindowCovering(Node node, byte endpoint) : base(node, endpoint, CommandClass.MTPWindowCovering) { }
+        internal MTPWindowCovering(Node node, byte endpoint) : base(node, endpoint, CommandClass.MTPWindowCovering) { }
 
         public async Task<MTPWindowCoveringReport> Get(CancellationToken cancellationToken = default)
         {
@@ -52,7 +55,10 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(MTPWindowCommand.Set, cancellationToken, (value < 100) ? value : (byte)0xFF);
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)MTPWindowCommand.Report)
             {

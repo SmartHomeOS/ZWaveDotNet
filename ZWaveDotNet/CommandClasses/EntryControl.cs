@@ -40,7 +40,7 @@ namespace ZWaveDotNet.CommandClasses
             ConfigurationReport = 0x8
         }
 
-        public EntryControl(Node node, byte endpoint) : base(node, endpoint, CommandClass.EntryControl) {  }
+        internal EntryControl(Node node, byte endpoint) : base(node, endpoint, CommandClass.EntryControl) {  }
 
         /// <summary>
         /// <b>Version 1</b>: Query the keys that a device implements for entry of user credentials
@@ -94,7 +94,7 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(EntryControlCommand.ConfigurationSet, cancellationToken, cacheSize, (byte)cacheTime.TotalSeconds);
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)EntryControlCommand.Notification)
             {

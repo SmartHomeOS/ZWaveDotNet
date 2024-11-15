@@ -12,7 +12,7 @@
 
 namespace ZWaveDotNet.Util
 {
-    public class CRC16_CCITT
+    internal class CRC16_CCITT
     {
         const ushort poly = 4129;
         readonly ushort[] table = new ushort[256];

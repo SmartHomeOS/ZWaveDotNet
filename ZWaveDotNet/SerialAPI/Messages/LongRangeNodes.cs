@@ -16,7 +16,7 @@ using ZWaveDotNet.SerialAPI.Enums;
 
 namespace ZWaveDotNet.SerialAPI.Messages
 {
-    public class LongRangeNodes : Message
+    internal class LongRangeNodes : Message
     {
         public bool MoreNodes { get; private set; }
         public byte Offset { get; private set; }

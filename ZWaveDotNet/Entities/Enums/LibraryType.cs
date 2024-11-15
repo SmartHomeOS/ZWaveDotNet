@@ -12,19 +12,58 @@
 
 namespace ZWaveDotNet.CommandClassReports.Enums
 {
+    /// <summary>
+    /// Type of Controller
+    /// </summary>
     public enum LibraryType : byte
     {
+        /// <summary>
+        /// Not Applicable
+        /// </summary>
         NA = 0x0,
+        /// <summary>
+        /// Static Controller
+        /// </summary>
         StaticController = 0x1,
+        /// <summary>
+        /// Portable Controller
+        /// </summary>
         PortableController = 0x2,
+        /// <summary>
+        /// Enhanced End Node
+        /// </summary>
         EnhancedEndNode = 0x3,
+        /// <summary>
+        /// End Node
+        /// </summary>
         EndNode = 0x4,
+        /// <summary>
+        /// Installer
+        /// </summary>
         Installer = 0x5,
+        /// <summary>
+        /// Routing End Node
+        /// </summary>
         RoutingEndNode = 0x6,
+        /// <summary>
+        /// Bridge Controller
+        /// </summary>
         BridgeController = 0x7,
+        /// <summary>
+        /// Device Under Test
+        /// </summary>
         DUT = 0x8,
+        /// <summary>
+        /// Not Applicable
+        /// </summary>
         NA2 = 0x9,
+        /// <summary>
+        /// A/V Remote
+        /// </summary>
         AVRemote = 0xA,
+        /// <summary>
+        /// A/V Device
+        /// </summary>
         AVDevice = 0xB
     }
 }

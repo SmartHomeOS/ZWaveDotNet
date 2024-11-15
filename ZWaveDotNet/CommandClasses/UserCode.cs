@@ -51,7 +51,7 @@ namespace ZWaveDotNet.CommandClasses
             ChecksumReport = 0x12,
         }
 
-        public UserCode(Node node, byte endpoint) : base(node, endpoint, CommandClass.UserCode) { }
+        internal UserCode(Node node, byte endpoint) : base(node, endpoint, CommandClass.UserCode) { }
 
         /// <summary>
         /// <b>Version 1</b>: This command is used to request the User Code of a specific User Identifier.
@@ -101,7 +101,7 @@ namespace ZWaveDotNet.CommandClasses
             return response.Payload.Span[0];
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)UserCodeCommand.Report)
             {

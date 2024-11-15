@@ -38,7 +38,7 @@ namespace ZWaveDotNet.CommandClasses
             SpecificGroupGet = 0x0B,
             SpecificGroupReport = 0x0C
         }
-        public Association(Node node, byte endpoint) : base(node, endpoint, CommandClass.Association) { }
+        internal Association(Node node, byte endpoint) : base(node, endpoint, CommandClass.Association) { }
 
         /// <summary>
         /// <b>Version 1</b>: Request the current destinations of a given association group
@@ -98,13 +98,17 @@ namespace ZWaveDotNet.CommandClasses
             return new AssociationGroupsReport(response.Payload.Span);
         }
 
+        ///
+        /// <inheritdoc />
+        ///
         public override async Task Interview(CancellationToken cancellationToken = default)
         {
             await Add(LIFELINE_GROUP, cancellationToken, (byte)controller.ID);
             Log.Information("Assigned Lifeline Group");
         }
 
-        protected override Task<SupervisionStatus> Handle(ReportMessage message)
+        /// <inheritdoc />
+        internal override Task<SupervisionStatus> Handle(ReportMessage message)
         {
             //Nothing Unsolicited
             return Task.FromResult(SupervisionStatus.NoSupport);

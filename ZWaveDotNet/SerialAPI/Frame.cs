@@ -16,7 +16,7 @@ using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.SerialAPI
 {
-    public class Frame
+    internal class Frame
     {
         public static readonly Frame ACK = new Frame(FrameType.ACK);
         public static readonly Frame NAK = new Frame(FrameType.NAK);

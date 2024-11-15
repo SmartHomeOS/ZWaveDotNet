@@ -24,8 +24,11 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.Lock, 1, 1)]
     public class Lock : CommandClassBase
     {
+        /// <summary>
+        /// Unsolicited Lock Report
+        /// </summary>
         public CommandClassEvent<BasicReport>? Report;
-        public Lock(Node node, byte endpoint) : base(node, endpoint, CommandClass.Lock) { }
+        internal Lock(Node node, byte endpoint) : base(node, endpoint, CommandClass.Lock) { }
 
         enum LockCommand
         {
@@ -56,7 +59,10 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(LockCommand.Set, cancellationToken, (byte)(locked ? 0x1 : 0x0));
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)LockCommand.Report)
             {

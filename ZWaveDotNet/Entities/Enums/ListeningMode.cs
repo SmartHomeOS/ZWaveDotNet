@@ -12,8 +12,14 @@
 
 namespace ZWaveDotNet.Entities.Enums
 {
+    /// <summary>
+    /// How a Node listens to the network
+    /// </summary>
     public enum ListeningMode
     {
+        /// <summary>
+        /// Node is unresponsive / unknown
+        /// </summary>
         Never,
         /// <summary>
         /// Always Listening

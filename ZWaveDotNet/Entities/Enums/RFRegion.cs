@@ -12,6 +12,9 @@
 
 namespace ZWaveDotNet.Entities.Enums
 {
+    /// <summary>
+    /// RF Region
+    /// </summary>
     public enum RFRegion
     {
         /// <summary>

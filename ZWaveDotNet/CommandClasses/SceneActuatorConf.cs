@@ -32,7 +32,7 @@ namespace ZWaveDotNet.CommandClasses
             Report = 0x03
         }
 
-        public SceneActuatorConf(Node node, byte endpoint) : base(node, endpoint, CommandClass.SceneActuatorConf) { }
+        internal SceneActuatorConf(Node node, byte endpoint) : base(node, endpoint, CommandClass.SceneActuatorConf) { }
 
         /// <summary>
         /// Request the settings for a given scene identifier or for the scene currently active
@@ -69,7 +69,10 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(SceneActuatorConfCommand.Set, cancellationToken, sceneId, PayloadConverter.GetByte(duration), level != null ? (byte)0x40 : (byte)0x0, level != null ? (byte)level : (byte)0x0);
         }
 
-        protected override Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override Task<SupervisionStatus> Handle(ReportMessage message)
         {
             return Task.FromResult(SupervisionStatus.NoSupport);
         }

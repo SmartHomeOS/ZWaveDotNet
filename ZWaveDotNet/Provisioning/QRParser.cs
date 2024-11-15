@@ -20,16 +20,39 @@ using ZWaveDotNet.SerialAPI.Enums;
 
 namespace ZWaveDotNet.Provisioning
 {
+    /// <summary>
+    /// Parse ZWave Plus QR Codes
+    /// </summary>
     public class QRParser
     {
+        /// <summary>
+        /// ZWave Plus Version
+        /// </summary>
         public byte Version { get; private set; }
+        /// <summary>
+        /// Requested Security Keys
+        /// </summary>
         public SecurityKey Keys { get; private set; }
+        /// <summary>
+        /// Parsed Node DSK
+        /// </summary>
         public byte[] DSK { get; private set; }
+        /// <summary>
+        /// Extensions present in the barcode
+        /// </summary>
         public IProductInfo[] Extensions { get; private set; }
+        /// <summary>
+        /// Supports SmartStart Inclusion
+        /// </summary>
         public bool SupportsSmartStart { get { return Version >= 1; } }
-
+        /// <summary>
+        /// Max Inclusion Request Interval
+        /// </summary>
         public ushort? MaxInclusionRequestInterval { get; private set; }
 
+        /// <summary>
+        /// Return the PIN code
+        /// </summary>
         public ushort PIN
         { 
             get {
@@ -37,6 +60,12 @@ namespace ZWaveDotNet.Provisioning
             } 
         }
 
+        /// <summary>
+        /// Parse the Digit String
+        /// </summary>
+        /// <param name="digitString"></param>
+        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="InvalidDataException"></exception>
         public QRParser(string digitString)
         {
             if (digitString.Length < 52)

@@ -22,8 +22,6 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.HRVControl, 1, 1)]
     public class HRVControl : CommandClassBase
     {
-        public HRVControl(Node node, byte endpoint) : base(node, endpoint, CommandClass.HRVControl) { }
-
         enum HRVControlCommand
         {
             ModeSet = 0x01,
@@ -38,6 +36,8 @@ namespace ZWaveDotNet.CommandClasses
             SupportedGet = 0x0A,
             SupportedReport = 0x0B
         }
+
+        internal HRVControl(Node node, byte endpoint) : base(node, endpoint, CommandClass.HRVControl) { }
 
         public async Task<HRVModeType[]> GetSupportedParameters(CancellationToken cancellationToken = default)
         {
@@ -97,7 +97,10 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(HRVControlCommand.VentRateSet, cancellationToken, amount);
         }
 
-        protected override Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override Task<SupervisionStatus> Handle(ReportMessage message)
         {
             return Task.FromResult(SupervisionStatus.NoSupport);
         }

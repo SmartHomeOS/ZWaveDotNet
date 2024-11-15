@@ -14,9 +14,20 @@ using ZWaveDotNet.SerialAPI.Messages;
 
 namespace ZWaveDotNet.Entities
 {
+    /// <summary>
+    /// An application update message
+    /// </summary>
     public class ApplicationUpdateEventArgs : EventArgs
     {
+        /// <summary>
+        /// An application update message
+        /// </summary>
         public ApplicationUpdate ApplicationUpdate { get; private set; }
+
+        /// <summary>
+        /// An application update message
+        /// </summary>
+        /// <param name="appUpdate"></param>
         public ApplicationUpdateEventArgs(ApplicationUpdate appUpdate)
         {
             this.ApplicationUpdate = appUpdate;

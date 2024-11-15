@@ -22,8 +22,11 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.HumidityControlOperatingState, 1, 1)]
     public class HumidityControlOperatingState : CommandClassBase
     {
-        public HumidityControlOperatingState(Node node, byte endpoint) : base(node, endpoint, CommandClass.HumidityControlOperatingState) { }
+        internal HumidityControlOperatingState(Node node, byte endpoint) : base(node, endpoint, CommandClass.HumidityControlOperatingState) { }
 
+        /// <summary>
+        /// Unsolicited Humidity Control Mode Type Report
+        /// </summary>
         public event CommandClassEvent<EnumReport<HumidityControlModeType>>? Updated;
 
         enum HumidityControlOperatingStateCommand
@@ -38,7 +41,7 @@ namespace ZWaveDotNet.CommandClasses
             return (HumidityControlModeType)response.Payload.Span[0];
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)HumidityControlOperatingStateCommand.Report)
             {

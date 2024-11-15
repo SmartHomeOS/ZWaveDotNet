@@ -22,14 +22,17 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.ThermostatFanState, 2)]
     public class ThermostatFanState : CommandClassBase
     {
+        /// <summary>
+        /// Unsolicited Fan State Report
+        /// </summary>
         public event CommandClassEvent<ThermostatFanStateReport>? Updated;
-        public enum ThermostatFanStateCommand
+        enum ThermostatFanStateCommand
         {
             Get = 0x02,
             Report = 0x03
         }
 
-        public ThermostatFanState(Node node, byte endpoint) : base(node, endpoint, CommandClass.ThermostatFanState) { }
+        internal ThermostatFanState(Node node, byte endpoint) : base(node, endpoint, CommandClass.ThermostatFanState) { }
 
         public async Task<FanState> Get(CancellationToken cancellationToken = default)
         {
@@ -37,7 +40,10 @@ namespace ZWaveDotNet.CommandClasses
             return (FanState)(0xF & response.Payload.Span[0]);
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)ThermostatFanStateCommand.Report)
             {

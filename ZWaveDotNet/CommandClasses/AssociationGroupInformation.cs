@@ -27,6 +27,9 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.AssociationGroupInformation, 1, 3)]
     public class AssociationGroupInformation : CommandClassBase
     {
+        /// <summary>
+        /// Unsolicited Association Group Info Report
+        /// </summary>
         public event CommandClassEvent<AssociationGroupsInfoReport>? Report;
         enum AssociationGroupCommand : byte
         {
@@ -38,7 +41,7 @@ namespace ZWaveDotNet.CommandClasses
             CommandListReport = 0x6,
         }
 
-        public AssociationGroupInformation(Node node, byte endpoint) : base(node, endpoint, CommandClass.AssociationGroupInformation) {  }
+        internal AssociationGroupInformation(Node node, byte endpoint) : base(node, endpoint, CommandClass.AssociationGroupInformation) {  }
 
         /// <summary>
         /// <b>Version 1</b>: Request the properties of one or more association group
@@ -88,7 +91,10 @@ namespace ZWaveDotNet.CommandClasses
             return new AssociationGroupCommandListReport(response.Payload.Span);
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)AssociationGroupCommand.InfoReport)
             {

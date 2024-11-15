@@ -27,6 +27,9 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.Protection, 1)]
     public class Protection : CommandClassBase
     {
+        /// <summary>
+        /// Unsolicited Protection Report
+        /// </summary>
         public event CommandClassEvent<ProtectionReport>? Report;
 
         enum ProtectionCommand : byte
@@ -44,7 +47,7 @@ namespace ZWaveDotNet.CommandClasses
             TimeoutReport = 0x11,
         }
 
-        public Protection(Node node, byte endpoint) : base(node, endpoint, CommandClass.Protection) {  }
+        internal Protection(Node node, byte endpoint) : base(node, endpoint, CommandClass.Protection) {  }
 
         /// <summary>
         /// <b>Version 1</b>: Request the protection state from a device.
@@ -79,7 +82,10 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(ProtectionCommand.Set, cancellationToken, (byte)localProtection, (byte)remoteProtection);
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)ProtectionCommand.Report)
             {

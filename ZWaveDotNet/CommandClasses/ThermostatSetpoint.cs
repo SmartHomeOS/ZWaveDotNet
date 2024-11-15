@@ -24,9 +24,12 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.ThermostatSetpoint, 3)]
     public class ThermostatSetpoint : CommandClassBase
     {
+        /// <summary>
+        /// Unsolicited Thermostat Setpoint Report
+        /// </summary>
         public event CommandClassEvent<ThermostatSetpointReport>? Updated;
 
-        public enum ThermostatSetpointCommand
+        enum ThermostatSetpointCommand
         {
             Set = 0x01,
             Get = 0x02,
@@ -37,7 +40,7 @@ namespace ZWaveDotNet.CommandClasses
             CapabilitiesReport = 0x0A
         }
 
-        public ThermostatSetpoint(Node node, byte endpoint) : base(node, endpoint, CommandClass.ThermostatSetpoint) { }
+        internal ThermostatSetpoint(Node node, byte endpoint) : base(node, endpoint, CommandClass.ThermostatSetpoint) { }
 
         public async Task<ThermostatSetpointReport> Get(ThermostatModeType type, CancellationToken cancellationToken = default)
         {
@@ -78,7 +81,10 @@ namespace ZWaveDotNet.CommandClasses
             return supportedTypes.ToArray();
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)ThermostatSetpointCommand.Report)
             {

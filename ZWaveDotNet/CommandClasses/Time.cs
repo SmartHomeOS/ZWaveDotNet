@@ -24,7 +24,7 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.Time, 1, 2)]
     public class Time : CommandClassBase
     {
-        public enum TimeCommand
+        enum TimeCommand
         {
             TimeGet = 0x01,
             TimeReport = 0x02,
@@ -35,7 +35,7 @@ namespace ZWaveDotNet.CommandClasses
             TimeOffsetReport = 0x07,
         }
 
-        public Time(Node node, byte endpoint) : base(node, endpoint, CommandClass.Time) {  }
+        internal Time(Node node, byte endpoint) : base(node, endpoint, CommandClass.Time) {  }
 
         public async Task<TimeOnly> GetTime(CancellationToken cancellationToken = default)
         {
@@ -61,6 +61,9 @@ namespace ZWaveDotNet.CommandClasses
             return new TimeOffsetReport(response.Payload.Span);
         }
 
+        ///
+        /// <inheritdoc />
+        ///
         public override async Task Interview(CancellationToken cancellationToken = default)
         {
             TimeZoneInfo tz = TimeZoneInfo.Local;
@@ -80,7 +83,10 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(TimeCommand.TimeOffsetSet, cancellationToken, utcHours, (byte)utcOffset.Minutes, offsetMins, (byte)dstStart.Month, (byte)dstStart.Day, (byte)dstStart.Hour, (byte)dstEnd.Month, (byte)dstEnd.Day, (byte)dstEnd.Hour);
         }
 
-        protected override Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override Task<SupervisionStatus> Handle(ReportMessage message)
         {
             //None
             return Task.FromResult(SupervisionStatus.NoSupport);

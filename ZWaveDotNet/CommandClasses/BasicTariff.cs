@@ -22,6 +22,9 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.BasicTariff)]
     public class BasicTariff : CommandClassBase
     {
+        /// <summary>
+        /// Unsolicited Basic Tariff Report
+        /// </summary>
         public event CommandClassEvent<BasicTariffReport>? Report;
         
         enum BasicTariffCommand : byte
@@ -30,7 +33,7 @@ namespace ZWaveDotNet.CommandClasses
             Report = 0x02
         }
 
-        public BasicTariff(Node node, byte endpoint) : base(node, endpoint, CommandClass.BasicTariff) { }
+        internal BasicTariff(Node node, byte endpoint) : base(node, endpoint, CommandClass.BasicTariff) { }
 
         public async Task<BasicTariffReport> Get(CancellationToken cancellationToken = default)
         {
@@ -41,7 +44,10 @@ namespace ZWaveDotNet.CommandClasses
             return new BasicTariffReport(response.Payload.Span);
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)BasicTariffCommand.Report)
             {

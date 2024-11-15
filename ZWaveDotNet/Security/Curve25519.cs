@@ -15,7 +15,7 @@ using System.Security.Cryptography;
 
 namespace ZWaveDotNet.Security
 {
-    public class Curve25519
+    internal class Curve25519
     {
         /* key size */
         public const int KeySize = 32;

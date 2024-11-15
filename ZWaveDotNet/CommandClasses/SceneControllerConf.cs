@@ -32,7 +32,7 @@ namespace ZWaveDotNet.CommandClasses
             Report = 0x03
         }
 
-        public SceneControllerConf(Node node, byte endpoint) : base(node, endpoint, CommandClass.SceneControllerConf) { }
+        internal SceneControllerConf(Node node, byte endpoint) : base(node, endpoint, CommandClass.SceneControllerConf) { }
 
         /// <summary>
         /// Request the settings for a given association grouping identifier or the active settings
@@ -72,7 +72,7 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(SceneActuatorConfCommand.Set, cancellationToken, groupId, sceneId, PayloadConverter.GetByte(duration));
         }
 
-        protected override Task<SupervisionStatus> Handle(ReportMessage message)
+        internal override Task<SupervisionStatus> Handle(ReportMessage message)
         {
             return Task.FromResult(SupervisionStatus.NoSupport);
         }

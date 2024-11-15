@@ -26,7 +26,7 @@ namespace ZWaveDotNet.CommandClasses
             StopLevelChange = 0x02
         }
 
-        public BasicWindowCovering(Node node, byte endpoint) : base(node, endpoint, CommandClass.BasicWindowCovering) { }
+        internal BasicWindowCovering(Node node, byte endpoint) : base(node, endpoint, CommandClass.BasicWindowCovering) { }
 
 
         public async Task StartLevelChange(bool close, CancellationToken cancellationToken = default)
@@ -39,7 +39,7 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(BasicCommand.StopLevelChange, cancellationToken);
         }
 
-        protected override Task<SupervisionStatus> Handle(ReportMessage message)
+        internal override Task<SupervisionStatus> Handle(ReportMessage message)
         {
             //No Reports
             return Task.FromResult(SupervisionStatus.NoSupport);

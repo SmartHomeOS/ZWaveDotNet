@@ -16,26 +16,77 @@ using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.SerialAPI.Messages
 {
+    /// <summary>
+    /// Application Update Message
+    /// </summary>
     public class ApplicationUpdate : Message
     {
+        /// <summary>
+        /// Application Command
+        /// </summary>
         public enum ApplicationUpdateType
         {
+            /// <summary>
+            /// Smart Start Home ID Found
+            /// </summary>
             SmartStartHomeIdReceivedLR = 0x87,
+            /// <summary>
+            /// Smart Start Node Info
+            /// </summary>
             SmartStartNodeInfoReceived = 0x86,
+            /// <summary>
+            /// Smart Start ID Received
+            /// </summary>
             SmartStartHomeIdReceived = 0x85,
+            /// <summary>
+            /// Node Info Received
+            /// </summary>
             NodeInfoReceived = 0x84,
+            /// <summary>
+            /// NOP Power Received
+            /// </summary>
             NopPowerReceived = 0x83,
+            /// <summary>
+            /// Node Info Request Completed
+            /// </summary>
             NodeInfoRequestDone = 0x82,
+            /// <summary>
+            /// Node Info Request Failed
+            /// </summary>
             NodeInfoRequestFailed = 0x81,
+            /// <summary>
+            /// Routing Pending
+            /// </summary>
             RoutingPending = 0x80,
+            /// <summary>
+            /// Node Added
+            /// </summary>
             NodeAdded = 0x40,
+            /// <summary>
+            /// Node Removed
+            /// </summary>
             NodeRemoved = 0x20,
+            /// <summary>
+            /// SUC ID Changed
+            /// </summary>
             SUCIDChanged = 0x10,
         }
 
-        public ApplicationUpdateType UpdateType;
-        public ushort NodeId;
+        /// <summary>
+        /// Application Update Command
+        /// </summary>
+        public ApplicationUpdateType UpdateType { get; init; }
+        /// <summary>
+        /// Node ID
+        /// </summary>
+        public ushort NodeId { get; init; }
 
+        /// <summary>
+        /// Application Update Message
+        /// </summary>
+        /// <param name="payload"></param>
+        /// <param name="wideId"></param>
+        /// <exception cref="InvalidDataException"></exception>
         public ApplicationUpdate(Span<byte> payload, bool wideId) : base(Function.ApplicationUpdate)
         {
             if (payload.Length == 0)
@@ -47,6 +98,13 @@ namespace ZWaveDotNet.SerialAPI.Messages
                 NodeId = payload[1];
         }
 
+        /// <summary>
+        /// Create Application Update Message
+        /// </summary>
+        /// <param name="payload"></param>
+        /// <param name="wideId"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidDataException"></exception>
         public static ApplicationUpdate From(Span<byte> payload, bool wideId)
         {
             if (payload.Length == 0)
@@ -72,7 +130,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
             }
         }
 
-        public override PayloadWriter GetPayload()
+        internal override PayloadWriter GetPayload()
         {
             PayloadWriter stream = base.GetPayload();
             stream.Write((byte)UpdateType);
@@ -80,6 +138,9 @@ namespace ZWaveDotNet.SerialAPI.Messages
             return stream;
         }
 
+        ///
+        /// <inheritdoc />
+        ///
         public override string ToString()
         {
             return base.ToString() + $"Application Update ({UpdateType}) - Node {NodeId}";

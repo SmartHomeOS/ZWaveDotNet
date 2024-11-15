@@ -15,7 +15,7 @@ using ZWaveDotNet.Entities;
 
 namespace ZWaveDotNet.Security
 {
-    public class AdditionalAuthData
+    internal class AdditionalAuthData
     {
         private readonly ushort sender;
         private readonly ushort destination;

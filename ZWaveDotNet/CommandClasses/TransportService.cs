@@ -32,7 +32,7 @@ namespace ZWaveDotNet.CommandClasses
         private static readonly Dictionary<int, HashSet<Range>> segments = new Dictionary<int, HashSet<Range>>();
         private static readonly Dictionary<int, DataMessage> transmitting = new Dictionary<int, DataMessage>();
 
-        public enum TransportServiceCommand
+        enum TransportServiceCommand
         {
             FirstFragment = 0xC0,
             FragmentComplete = 0xE8,
@@ -41,7 +41,7 @@ namespace ZWaveDotNet.CommandClasses
             SubsequentFragment = 0xE0
         }
 
-        public TransportService(Node node, byte endpoint) : base(node, endpoint, CommandClass.TransportService) {  }
+        internal TransportService(Node node, byte endpoint) : base(node, endpoint, CommandClass.TransportService) {  }
 
         internal async Task SendComplete(byte sessionId, CancellationToken cancellationToken = default)
         {
@@ -58,12 +58,12 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(TransportServiceCommand.FragmentWait, cancellationToken, pendingSegments);
         }
 
-        public static bool IsEncapsulated(ReportMessage msg)
+        internal static bool IsEncapsulated(ReportMessage msg)
         {
             return msg.CommandClass == CommandClass.TransportService && (msg.Command == (byte)TransportServiceCommand.FirstFragment || msg.Command == (byte)TransportServiceCommand.SubsequentFragment);
         }
 
-        public static async Task<bool> Transmit (DataMessage message, CancellationToken token)
+        internal static async Task<bool> Transmit (DataMessage message, CancellationToken token)
         {
             Log.Debug("Transmitting message using transmit encapsulation");
             //Get Session Key
@@ -214,7 +214,10 @@ namespace ZWaveDotNet.CommandClasses
             return (nodeId << 8) | sessionId;
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage msg)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override async Task<SupervisionStatus> Handle(ReportMessage msg)
         {
             switch ((TransportServiceCommand)(msg.Command & 0xF8))
             {

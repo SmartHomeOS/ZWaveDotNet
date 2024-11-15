@@ -12,7 +12,10 @@
 
 namespace ZWaveDotNet.SerialAPI.Enums
 {
-    public enum FrameType : byte
+    /// <summary>
+    /// ZWave Frame Type
+    /// </summary>
+    internal enum FrameType : byte
     {
         /// <summary>
         /// Start of Frame

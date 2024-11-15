@@ -23,7 +23,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
             this.Function = function;
         }
 
-        public virtual PayloadWriter GetPayload()
+        internal virtual PayloadWriter GetPayload()
         {
             return new PayloadWriter(256);
         }

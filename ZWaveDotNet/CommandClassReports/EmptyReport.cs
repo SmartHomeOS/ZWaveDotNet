@@ -10,29 +10,16 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using ZWaveDotNet.CommandClassReports;
-
-namespace ZWaveDotNet.CommandClasses
+namespace ZWaveDotNet.CommandClassReports
 {
     /// <summary>
-    /// A Command Class report event
+    /// An empty report
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    public class CommandClassEventArgs<T> : EventArgs where T : ICommandClassReport
+    public class EmptyReport : ICommandClassReport
     {
-        /// <summary>
-        /// The unsolicited Report
-        /// </summary>
-        public T? Report { get; set; }
-        /// <summary>
-        /// The Source of the report
-        /// </summary>
-        public CommandClassBase Source { get; set; }
-
-        internal CommandClassEventArgs(CommandClassBase source, T? report)
+        public override string ToString()
         {
-            Report = report;
-            Source = source;
+            return "Empty Report";
         }
     }
 }

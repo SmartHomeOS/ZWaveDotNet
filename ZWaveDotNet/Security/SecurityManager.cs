@@ -18,7 +18,7 @@ using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.Security
 {
-    public class SecurityManager
+    internal class SecurityManager
     {
         private readonly byte[] publicKey;
         private readonly Memory<byte> privateKey;

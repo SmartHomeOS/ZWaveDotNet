@@ -31,7 +31,7 @@ namespace ZWaveDotNet.CommandClasses
             ReportLocation = 0x06,
         }
 
-        public NodeNaming(Node node, byte endpoint) : base(node, endpoint, CommandClass.NodeNaming) { }
+        internal NodeNaming(Node node, byte endpoint) : base(node, endpoint, CommandClass.NodeNaming) { }
 
         public async Task<string> GetName(CancellationToken cancellationToken = default)
         {
@@ -65,7 +65,10 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(command, cancellationToken, payload.ToArray());
         }
 
-        protected override Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override Task<SupervisionStatus> Handle(ReportMessage message)
         {
             //No unsolicited message
             return Task.FromResult(SupervisionStatus.NoSupport);

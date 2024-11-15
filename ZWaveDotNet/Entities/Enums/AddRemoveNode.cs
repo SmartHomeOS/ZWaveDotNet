@@ -13,7 +13,7 @@
 namespace ZWaveDotNet.Entities.Enums
 {
     [Flags]
-    public enum AddRemoveNodeMode : byte
+    internal enum AddRemoveNodeMode : byte
     {
         AnyNode = 0x01,
         [Obsolete]

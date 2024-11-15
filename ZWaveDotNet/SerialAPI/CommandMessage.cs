@@ -18,7 +18,7 @@ using ZWaveDotNet.SerialAPI.Messages;
 
 namespace ZWaveDotNet.SerialAPI
 {
-    public class CommandMessage
+    internal class CommandMessage
     {
         private readonly Controller controller;
         public byte DestinationEndpoint;

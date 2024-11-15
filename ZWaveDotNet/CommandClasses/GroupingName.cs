@@ -28,7 +28,7 @@ namespace ZWaveDotNet.CommandClasses
             ReportName = 0x03
         }
 
-        public GroupingName(Node node, byte endpoint) : base(node, endpoint, CommandClass.GroupingName) { }
+        internal GroupingName(Node node, byte endpoint) : base(node, endpoint, CommandClass.GroupingName) { }
 
         public async Task<string> GetName(byte group, CancellationToken cancellationToken = default)
         {
@@ -44,7 +44,7 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(GroupNameCommand.SetName, cancellationToken, (byte[]) payload.ToArray().Prepend(group));
         }
 
-        protected override Task<SupervisionStatus> Handle(ReportMessage message)
+        internal override Task<SupervisionStatus> Handle(ReportMessage message)
         {
             //No unsolicited message
             return Task.FromResult(SupervisionStatus.NoSupport);

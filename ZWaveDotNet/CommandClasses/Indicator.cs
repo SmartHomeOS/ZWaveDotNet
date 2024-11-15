@@ -28,6 +28,9 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.Indicator, 4)]
     public class Indicator : CommandClassBase
     {
+        /// <summary>
+        /// Unsolicited Indicator Report
+        /// </summary>
         public event CommandClassEvent<IndicatorReport>? Report;
         
         enum IndicatorCommand : byte
@@ -41,7 +44,7 @@ namespace ZWaveDotNet.CommandClasses
             DescriptionReport = 0x07
         }
 
-        public Indicator(Node node, byte endpoint) : base(node, endpoint, CommandClass.Indicator) { }
+        internal Indicator(Node node, byte endpoint) : base(node, endpoint, CommandClass.Indicator) { }
 
         /// <summary>
         /// <b>Version 1</b>: This command is used to request the state of the indicator resource.
@@ -142,7 +145,7 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(IndicatorCommand.Set, cancellationToken, payload);
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)IndicatorCommand.Report)
             {

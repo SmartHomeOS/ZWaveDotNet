@@ -42,7 +42,7 @@ namespace ZWaveDotNet.CommandClasses
             SignalReport = 0x08
         }
 
-        public BarrierOperator(Node node, byte endpoint) : base(node, endpoint, CommandClass.BarrierOperator) { }
+        internal BarrierOperator(Node node, byte endpoint) : base(node, endpoint, CommandClass.BarrierOperator) { }
 
         /// <summary>
         /// Request the current state of a barrier operator device
@@ -117,7 +117,10 @@ namespace ZWaveDotNet.CommandClasses
             return KeyValuePair.Create((BarrierSignal)response.Payload.Span[0], response.Payload.Span[1] != 0x0);
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)BarrierOperatorCommand.Report)
             {

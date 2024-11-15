@@ -23,17 +23,42 @@ using System.Collections.Concurrent;
 
 namespace ZWaveDotNet.CommandClasses
 {
+    /// <summary>
+    /// Base Command Class
+    /// </summary>
     public abstract class CommandClassBase
     {
+        /// <summary>
+        /// A Command Class Event
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="sender"></param>
+        /// <param name="args"></param>
+        /// <returns></returns>
         public delegate Task CommandClassEvent<T>(Node sender,  CommandClassEventArgs<T> args) where T : ICommandClassReport;
-        public bool Secure;
+        /// <summary>
+        /// The Node requires security to execute commands
+        /// </summary>
+        public bool Secure { get; set; }
 
+        /// <summary>
+        /// Parent Node
+        /// </summary>
         protected Node node;
+        /// <summary>
+        /// Parent Controller
+        /// </summary>
         protected Controller controller;
-        protected CommandClass commandClass;
-        protected byte endpoint;
-        protected ConcurrentDictionary<byte, BlockingCollection<TaskCompletionSource<ReportMessage>>> callbacks = new ConcurrentDictionary<byte, BlockingCollection<TaskCompletionSource<ReportMessage>>>();
+        private CommandClass commandClass;
+        private byte endpoint;
+        private ConcurrentDictionary<byte, BlockingCollection<TaskCompletionSource<ReportMessage>>> callbacks = new ConcurrentDictionary<byte, BlockingCollection<TaskCompletionSource<ReportMessage>>>();
 
+        /// <summary>
+        /// Base Class
+        /// </summary>
+        /// <param name="node"></param>
+        /// <param name="endpoint"></param>
+        /// <param name="commandClass"></param>
         protected CommandClassBase(Node node, byte endpoint, CommandClass commandClass)
         {
             this.node = node;
@@ -42,13 +67,34 @@ namespace ZWaveDotNet.CommandClasses
             this.endpoint = endpoint;
         }
 
+        /// <summary>
+        /// Maximum version supported by the Node
+        /// </summary>
         public byte Version { get; internal set; } = 1;
+
+        /// <summary>
+        /// Attached End Point
+        /// </summary>
         public byte EndPoint { get { return endpoint; } }
+
+        /// <summary>
+        /// Implemented Command Class
+        /// </summary>
         public CommandClass CommandClass { get { return commandClass; } }
 
-        protected abstract Task<SupervisionStatus> Handle(ReportMessage message);
+        /// <summary>
+        /// Handle an unsolicited Report and report Supervision status
+        /// </summary>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        internal abstract Task<SupervisionStatus> Handle(ReportMessage message);
 
-        public async Task<SupervisionStatus> ProcessMessage(ReportMessage message)
+        /// <summary>
+        /// Process an unsolicited message
+        /// </summary>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        internal async Task<SupervisionStatus> ProcessMessage(ReportMessage message)
         {
             if (callbacks.TryGetValue(message.Command, out BlockingCollection<TaskCompletionSource<ReportMessage>>? lst))
             {
@@ -67,6 +113,15 @@ namespace ZWaveDotNet.CommandClasses
             return await Handle(message);
         }
 
+        /// <summary>
+        /// Create a Command Class instance
+        /// </summary>
+        /// <param name="cc"></param>
+        /// <param name="node"></param>
+        /// <param name="endpoint"></param>
+        /// <param name="secure"></param>
+        /// <param name="version"></param>
+        /// <returns></returns>
         public static CommandClassBase Create(CommandClass cc,Node node, byte endpoint, bool secure, byte version)
         {
             CommandClassBase instance = Create(cc, node, endpoint, version);
@@ -75,6 +130,14 @@ namespace ZWaveDotNet.CommandClasses
             return instance;
         }
 
+        /// <summary>
+        /// Create a Command Class instance
+        /// </summary>
+        /// <param name="cc"></param>
+        /// <param name="node"></param>
+        /// <param name="endpoint"></param>
+        /// <param name="version"></param>
+        /// <returns></returns>
         public static CommandClassBase Create(CommandClass cc, Node node, byte endpoint, byte version)
         {
             switch (cc)
@@ -236,11 +299,26 @@ namespace ZWaveDotNet.CommandClasses
             return new Unknown(node, endpoint, cc);
         }
 
+        /// <summary>
+        /// Send a command (No response expected)
+        /// </summary>
+        /// <param name="command"></param>
+        /// <param name="token"></param>
+        /// <param name="payload"></param>
+        /// <returns></returns>
         protected async Task<bool> SendCommand(Enum command, CancellationToken token, params byte[] payload)
         {
             return await SendCommand(command, token, false, payload).ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Send a command (no response expected)
+        /// </summary>
+        /// <param name="command"></param>
+        /// <param name="token"></param>
+        /// <param name="supervised"></param>
+        /// <param name="payload"></param>
+        /// <returns></returns>
         protected async Task<bool> SendCommand(Enum command, CancellationToken token, bool supervised = false, params byte[] payload)
         {
             // TODO - Multicast
@@ -248,7 +326,14 @@ namespace ZWaveDotNet.CommandClasses
             return await SendCommand(data, token).ConfigureAwait(false);
         }
 
-        protected async Task<bool> SendCommand(CommandMessage data, CancellationToken token)
+        /// <summary>
+        /// Send a command (no response expected)
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        internal async Task<bool> SendCommand(CommandMessage data, CancellationToken token)
         { 
             if (data.Payload.Count > 1 && IsSecure(data.Payload[1]))
             {
@@ -281,7 +366,15 @@ namespace ZWaveDotNet.CommandClasses
             return false;
         }
 
-        protected async Task<bool> AttemptTransmission(DataMessage message, CancellationToken cancellationToken, bool ex = false)
+        /// <summary>
+        /// Attempts a Send operation
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="cancellationToken"></param>
+        /// <param name="ex"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        internal async Task<bool> AttemptTransmission(DataMessage message, CancellationToken cancellationToken, bool ex = false)
         {
             DataCallback dc = await controller.Flow.SendAcknowledgedResponseCallback(message, b => b != 0x0, cancellationToken).ConfigureAwait(false);
             if (dc.Status != TransmissionStatus.CompleteOk && dc.Status != TransmissionStatus.CompleteNoAck && dc.Status != TransmissionStatus.CompleteVerified)
@@ -293,17 +386,35 @@ namespace ZWaveDotNet.CommandClasses
             return true;
         }
 
+        /// <summary>
+        /// Is security required to interact with this Command Class
+        /// </summary>
+        /// <param name="command"></param>
+        /// <returns></returns>
         protected virtual bool IsSecure(byte command)
         {
             return Secure;
         }
 
+        /// <summary>
+        /// Interview the Command Class and store retrieved information
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public virtual Task Interview(CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
         }
 
-        protected async Task<ReportMessage> SendReceive(Enum command, Enum response, CancellationToken token, params byte[] payload)
+        /// <summary>
+        /// Send a command and receive a reply
+        /// </summary>
+        /// <param name="command"></param>
+        /// <param name="response"></param>
+        /// <param name="token"></param>
+        /// <param name="payload"></param>
+        /// <returns></returns>
+        internal async Task<ReportMessage> SendReceive(Enum command, Enum response, CancellationToken token, params byte[] payload)
         {
             for (int i = 0; i < 3; i++)
             {
@@ -329,14 +440,29 @@ namespace ZWaveDotNet.CommandClasses
             return null!;
         }
 
-        protected async Task<ReportMessage> SendReceive(Enum command, Enum response, CancellationToken token, bool supervised = false, params byte[] payload)
+        /// <summary>
+        /// Send a command and receive a reply
+        /// </summary>
+        /// <param name="command"></param>
+        /// <param name="response"></param>
+        /// <param name="token"></param>
+        /// <param name="supervised"></param>
+        /// <param name="payload"></param>
+        /// <returns></returns>
+        internal async Task<ReportMessage> SendReceive(Enum command, Enum response, CancellationToken token, bool supervised = false, params byte[] payload)
         {
             Task<ReportMessage> receive = Receive(response, token);
             await SendCommand(command, token, supervised, payload);
             return await receive;
         }
 
-        protected Task<ReportMessage> Receive(Enum response, CancellationToken token)
+        /// <summary>
+        /// Receive Only
+        /// </summary>
+        /// <param name="response"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        internal Task<ReportMessage> Receive(Enum response, CancellationToken token)
         {
             TaskCompletionSource<ReportMessage> src = new TaskCompletionSource<ReportMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
             token.Register(() => src.TrySetCanceled());
@@ -353,6 +479,13 @@ namespace ZWaveDotNet.CommandClasses
             return src.Task;
         }
 
+        /// <summary>
+        /// Trigger a command class event
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="evt"></param>
+        /// <param name="report"></param>
+        /// <returns></returns>
         protected async Task FireEvent<T>(CommandClassEvent<T>? evt, T? report) where T : ICommandClassReport
         {
             if (evt != null)

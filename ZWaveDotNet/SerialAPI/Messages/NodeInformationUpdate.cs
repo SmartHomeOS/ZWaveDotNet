@@ -16,7 +16,7 @@ using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.SerialAPI.Messages
 {
-    public class NodeInformationUpdate : ApplicationUpdate
+    internal class NodeInformationUpdate : ApplicationUpdate
     {
         public readonly CommandClass[] CommandClasses;
         public readonly BasicType BasicType;
@@ -35,7 +35,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
             CommandClasses = PayloadConverter.GetCommandClasses(payload.Slice(pos)).ToArray();
         }
 
-        public override PayloadWriter GetPayload()
+        internal override PayloadWriter GetPayload()
         {
             PayloadWriter writer = base.GetPayload();
             writer.Write((byte)CommandClasses.Length);

@@ -34,7 +34,7 @@ namespace ZWaveDotNet.CommandClasses
             ConfigReport = 0x06
         }
 
-        public CentralScene(Node node, byte endpoint) : base(node, endpoint, CommandClass.CentralScene) { }
+        internal CentralScene(Node node, byte endpoint) : base(node, endpoint, CommandClass.CentralScene) { }
 
         public async Task<CentralSceneSupportedReport> GetSupported(CancellationToken cancellationToken = default)
         {
@@ -61,7 +61,10 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(CentralSceneCommand.ConfigSet, cancellationToken, slowRefresh ? (byte)0x80 : (byte)0x0);
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)CentralSceneCommand.Notification)
             {

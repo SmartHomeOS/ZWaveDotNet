@@ -16,7 +16,7 @@ using ZWaveDotNet.Enums;
 
 namespace ZWaveDotNet.Util
 {
-    public static class PayloadConverter
+    internal static class PayloadConverter
     {
         public static byte[] FromUInt24(uint value)
         {

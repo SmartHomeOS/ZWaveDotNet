@@ -23,7 +23,7 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.ThermostatOperatingState, 2)]
     public class ThermostatOperatingState : CommandClassBase
     {
-        public enum ThermostatOperatingStateCommand
+        enum ThermostatOperatingStateCommand
         {
             LoggingSupportedGet = 0x01,
             Get = 0x02,
@@ -33,7 +33,7 @@ namespace ZWaveDotNet.CommandClasses
             LoggingReport = 0x06
         }
 
-        public ThermostatOperatingState(Node node, byte endpoint) : base(node, endpoint, CommandClass.ThermostatOperatingState) { }
+        internal ThermostatOperatingState(Node node, byte endpoint) : base(node, endpoint, CommandClass.ThermostatOperatingState) { }
 
         public async Task<ThermostatOperatingStateType> Get(CancellationToken cancellationToken = default)
         {
@@ -60,7 +60,10 @@ namespace ZWaveDotNet.CommandClasses
             return new ThermostatOperatingStateLoggingReport(response.Payload.Span);
         }
 
-        protected override Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override Task<SupervisionStatus> Handle(ReportMessage message)
         {
             return Task.FromResult(SupervisionStatus.NoSupport);
         }

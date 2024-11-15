@@ -37,7 +37,7 @@ namespace ZWaveDotNet.CommandClasses
             ZWaveSoftwareReport = 0x18
         }
 
-        public Version(Node node, byte endpoint) : base(node, endpoint, CommandClass.Version) { }
+        internal Version(Node node, byte endpoint) : base(node, endpoint, CommandClass.Version) { }
 
         /// <summary>
         /// <b>Version 1</b>: The Command is used to request the library type, protocol version and application version from a device that supports the Version Command Class.
@@ -87,7 +87,10 @@ namespace ZWaveDotNet.CommandClasses
             return response.Payload.Span[1];
         }
 
-        protected override Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override Task<SupervisionStatus> Handle(ReportMessage message)
         {
             //Everything should be get/response
             return Task.FromResult(SupervisionStatus.NoSupport);

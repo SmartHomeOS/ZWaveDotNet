@@ -17,7 +17,7 @@ using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.SerialAPI.Messages
 {
-    public class InclusionStatus : Message
+    internal class InclusionStatus : Message
     {
         public readonly InclusionExclusionStatus Status;
         public readonly ushort NodeID;

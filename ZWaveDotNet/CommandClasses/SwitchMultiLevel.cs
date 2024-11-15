@@ -26,6 +26,9 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.SwitchMultiLevel, 1, 4)]
     public class SwitchMultiLevel : CommandClassBase
     {
+        /// <summary>
+        /// Unsolicited Switch MultiLevel Report
+        /// </summary>
         public event CommandClassEvent<SwitchMultiLevelReport>? Changed;
         enum MultiLevelCommand : byte
         {
@@ -38,7 +41,7 @@ namespace ZWaveDotNet.CommandClasses
             SupportedReport = 0x07
         }
 
-        public SwitchMultiLevel(Node node, byte endpoint) : base(node, endpoint, CommandClass.SwitchMultiLevel) { }
+        internal SwitchMultiLevel(Node node, byte endpoint) : base(node, endpoint, CommandClass.SwitchMultiLevel) { }
 
         /// <summary>
         /// <b>Version 1</b>: Request the status of a multilevel device.
@@ -124,7 +127,7 @@ namespace ZWaveDotNet.CommandClasses
             return new SwitchMultiLevelSupportedReport(response.Payload.Span);
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)MultiLevelCommand.Report)
             {

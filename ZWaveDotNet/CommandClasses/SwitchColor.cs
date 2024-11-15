@@ -28,6 +28,9 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.SwitchColor, 1, 3)]
     public class SwitchColor : CommandClassBase
     {
+        /// <summary>
+        /// Unsolicited Switch Color Report
+        /// </summary>
         public event CommandClassEvent<SwitchColorReport>? ColorChange;
 
         enum SwitchColorCommand
@@ -41,7 +44,7 @@ namespace ZWaveDotNet.CommandClasses
             StopLevelChange = 0x07
         }
 
-        public SwitchColor(Node node, byte endpoint) : base(node, endpoint, CommandClass.SwitchColor) { }
+        internal SwitchColor(Node node, byte endpoint) : base(node, endpoint, CommandClass.SwitchColor) { }
 
         /// <summary>
         /// <b>Version 1</b>: Control one or more color components in a device (V1 nodes ignore duration)
@@ -126,7 +129,7 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(SwitchColorCommand.StopLevelChange, cancellationToken, (byte)component);
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)SwitchColorCommand.Report)
             {

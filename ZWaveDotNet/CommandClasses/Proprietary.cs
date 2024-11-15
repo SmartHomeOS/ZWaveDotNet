@@ -10,6 +10,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
@@ -20,7 +21,10 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.Proprietary)]
     public class Proprietary : CommandClassBase
     {
-        public event CommandClassEvent<ReportMessage>? Report;
+        /// <summary>
+        /// Unsolicited Proprietary Report
+        /// </summary>
+        public event CommandClassEvent<ProprietaryReport>? Report;
         
         enum ProprietaryCommand : byte
         {
@@ -29,14 +33,14 @@ namespace ZWaveDotNet.CommandClasses
             Report = 0x03
         }
 
-        public Proprietary(Node node, byte endpoint) : base(node, endpoint, CommandClass.Proprietary) { }
+        internal Proprietary(Node node, byte endpoint) : base(node, endpoint, CommandClass.Proprietary) { }
 
-        public async Task<ReportMessage> Get(CancellationToken cancellationToken = default)
+        public async Task<ProprietaryReport> Get(CancellationToken cancellationToken = default)
         {
             if (node.ID == Node.BROADCAST_ID)
                 throw new MethodAccessException("GET methods may not be called on broadcast nodes");
-
-            return await SendReceive(ProprietaryCommand.Get, ProprietaryCommand.Report, cancellationToken);
+            ReportMessage response = await SendReceive(ProprietaryCommand.Get, ProprietaryCommand.Report, cancellationToken);
+            return new ProprietaryReport(response.Payload);
         }
 
         public async Task Set(byte[] payload, CancellationToken cancellationToken = default)
@@ -44,11 +48,11 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(ProprietaryCommand.Set, cancellationToken, payload);
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)ProprietaryCommand.Report)
             {
-                await FireEvent(Report, message);
+                await FireEvent(Report, new ProprietaryReport(message.Payload));
                 return SupervisionStatus.Working;
             }
             return SupervisionStatus.NoSupport;

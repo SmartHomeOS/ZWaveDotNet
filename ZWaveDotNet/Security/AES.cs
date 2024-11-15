@@ -15,7 +15,7 @@ using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.Security
 {
-    public static class AES
+    internal static class AES
     {
         private const int BLOCK_SIZE = 16;
         public static readonly byte[] EMPTY_IV = new byte[] { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };

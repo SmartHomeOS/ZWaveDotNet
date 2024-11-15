@@ -23,6 +23,9 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.Alarm, 1, 2)]
     public class Alarm : CommandClassBase
     {
+        /// <summary>
+        /// Unsolicited Alarm Report
+        /// </summary>
         public event CommandClassEvent<AlarmReport>? Updated;
 
         enum AlarmCommand
@@ -34,7 +37,7 @@ namespace ZWaveDotNet.CommandClasses
             SupportedReport = 0x08
         }
 
-        public Alarm(Node node, byte endpoint) : base(node, endpoint, CommandClass.Alarm) { }
+        internal Alarm(Node node, byte endpoint) : base(node, endpoint, CommandClass.Alarm) { }
 
         public async Task<AlarmReport> Get(CancellationToken cancellationToken = default)
         {
@@ -54,7 +57,10 @@ namespace ZWaveDotNet.CommandClasses
             return new AlarmSupportedReport(response.Payload.Span);
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        ///
+        /// <inheritdoc />
+        /// 
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)AlarmCommand.Report)
             {

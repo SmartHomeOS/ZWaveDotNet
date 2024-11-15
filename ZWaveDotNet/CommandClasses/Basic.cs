@@ -25,6 +25,9 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.Basic, 2)]
     public class Basic : CommandClassBase
     {
+        /// <summary>
+        /// Unsolicited Basic Report
+        /// </summary>
         public event CommandClassEvent<BasicReport>? Report;
         
         enum BasicCommand : byte
@@ -34,7 +37,7 @@ namespace ZWaveDotNet.CommandClasses
             Report = 0x03
         }
 
-        public Basic(Node node, byte endpoint) : base(node, endpoint, CommandClass.Basic) { }
+        internal Basic(Node node, byte endpoint) : base(node, endpoint, CommandClass.Basic) { }
 
         /// <summary>
         /// <b>Version 1</b>: Request the status of a supporting device
@@ -61,7 +64,7 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(BasicCommand.Set, cancellationToken, value);
         }
 
-        protected override async Task<SupervisionStatus> Handle(ReportMessage message)
+        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
         {
             if (message.Command == (byte)BasicCommand.Report)
             {

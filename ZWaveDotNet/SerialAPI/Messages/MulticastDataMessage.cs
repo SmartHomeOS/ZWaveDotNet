@@ -19,7 +19,7 @@ using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.SerialAPI.Messages
 {
-    public class MulticastDataMessage : Message
+    internal class MulticastDataMessage : Message
     {
         public readonly ushort SourceNodeID;
         public readonly ushort[] DestinationNodeIDs;
@@ -94,7 +94,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
             this.controller = controller;
         }
 
-        public override PayloadWriter GetPayload()
+        internal override PayloadWriter GetPayload()
         {
             PayloadWriter writer = base.GetPayload();
             if (Function == Function.SendDataBridgeMulticast)
