@@ -22,4 +22,6 @@ An implementation of ZWave Plus using the 2024a public specification.
 #### Other Projects
 * Check out my other projects for [HomeKit](https://github.com/SmartHomeOS/HomeKitDotNet)
 
+Support is always appreciated:<br/><a href="https://www.buymeacoffee.com/jdomnitz" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-red.png" alt="Buy Me A Pizza" style="height: 60px !important;width: 217px !important;" ></a>
+
 Testers, Tickets, Feedback and PRs are welcome.

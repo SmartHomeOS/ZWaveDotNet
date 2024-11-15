@@ -10,19 +10,17 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using ZWaveDotNet.CommandClasses.Enums;
-using ZWaveDotNet.SerialAPI.Messages;
-
-namespace ZWaveDotNet.Entities
+namespace ZWaveDotNet.Entities.JSON
 {
-    public class NodeJSON
+    #pragma warning disable CS1591
+    public class ControllerJSON
     {
         #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-        public NodeProtocolInfo NodeProtocolInfo { get; set; }
-        public bool Interviewed { get; set; }
+        public uint HomeID { get; set; }
         public ushort ID { get; set; }
-        public CommandClassJson[] CommandClasses {  get; set; }
-        public SecurityKey[] GrantedKeys { get; set; }
+        public byte DbVersion { get; set; }
+        public NodeJSON[] Nodes { get; set; }
         #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     }
+    #pragma warning restore CS1591
 }

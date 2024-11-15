@@ -22,6 +22,7 @@ using ZWaveDotNet.CommandClasses.Enums;
 using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities.Enums;
+using ZWaveDotNet.Entities.JSON;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.Security;
 using ZWaveDotNet.SerialAPI;
@@ -34,21 +35,21 @@ namespace ZWaveDotNet.Entities
 {
     public class Node
     {
-        protected enum InterviewState { None, Started, Complete };
-        public const ushort BROADCAST_ID = 0xFFFF;
-        public const ushort MULTICAST_ID = 0xFFFE;
-        public const ushort UNINITIALIZED_ID = 0x0000;
+        private enum InterviewState { None, Started, Complete };
+        internal const ushort BROADCAST_ID = 0xFFFF;
+        internal const ushort MULTICAST_ID = 0xFFFE;
+        internal const ushort UNINITIALIZED_ID = 0x0000;
 
         public event NodeEventHandler? InterviewComplete;
 
         public readonly ushort ID;
-        protected readonly Controller controller;
-        protected readonly NodeProtocolInfo? nodeInfo;
-        protected bool failed;
-        protected InterviewState interviewed;
-        
-        protected ConcurrentDictionary<CommandClass, CommandClassBase> commandClasses = new ConcurrentDictionary<CommandClass, CommandClassBase>();
-        protected List<EndPoint> endPoints = new List<EndPoint>();
+        private readonly Controller controller;
+        private readonly NodeProtocolInfo? nodeInfo;
+        private bool failed;
+        private InterviewState interviewed;
+
+        private ConcurrentDictionary<CommandClass, CommandClassBase> commandClasses = new ConcurrentDictionary<CommandClass, CommandClassBase>();
+        private List<EndPoint> endPoints = new List<EndPoint>();
 
         public Controller Controller { get { return controller; } }
         public bool LongRange {  get { return nodeInfo?.IsLongRange ?? false; } }

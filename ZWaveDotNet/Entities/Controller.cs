@@ -22,6 +22,7 @@ using ZWaveDotNet.CommandClasses.Enums;
 using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities.Enums;
+using ZWaveDotNet.Entities.JSON;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.Provisioning;
 using ZWaveDotNet.Security;
