@@ -15,9 +15,14 @@ using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ZWaveDotNet.CommandClasses
 {
+    /// <summary>
+    /// The Proprietary Command Class is used to transfer data between devices. 
+    /// The data content MUST be vendor specific and commands MUST NOT provide any value-add with respect to the Home Automation application in general.
+    /// </summary>
     [CCVersion(CommandClass.Proprietary)]
     public class Proprietary : CommandClassBase
     {
@@ -35,6 +40,12 @@ namespace ZWaveDotNet.CommandClasses
 
         internal Proprietary(Node node, byte endpoint) : base(node, endpoint, CommandClass.Proprietary) { }
 
+        /// <summary>
+        /// This command is used to request data from a device.
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        /// <exception cref="MethodAccessException"></exception>
         public async Task<ProprietaryReport> Get(CancellationToken cancellationToken = default)
         {
             if (node.ID == Node.BROADCAST_ID)
@@ -43,6 +54,12 @@ namespace ZWaveDotNet.CommandClasses
             return new ProprietaryReport(response.Payload);
         }
 
+        /// <summary>
+        /// This command is used to transfer data to a device.
+        /// </summary>
+        /// <param name="payload"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task Set(byte[] payload, CancellationToken cancellationToken = default)
         {
             await SendCommand(ProprietaryCommand.Set, cancellationToken, payload);

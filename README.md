@@ -16,11 +16,11 @@ An implementation of ZWave Plus using the 2024a public specification.
 #### Getting Started:
 * See our [Examples Page](Examples.md)
 
-#### Work in progress:
+#### Not Supported:
 * Multicast is not fully implemented (including secure multicast)
 
 #### Other Projects
-* Check out my other projects for [HomeKit](https://github.com/SmartHomeOS/HomeKitDotNet)
+* Check out my other projects for [HomeKit](https://github.com/SmartHomeOS/HomeKitDotNet) and [Matter](https://github.com/SmartHomeOS/MatterDotNet).
 
 Support is always appreciated:<br/><a href="https://www.buymeacoffee.com/jdomnitz" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-red.png" alt="Buy Me A Pizza" style="height: 60px !important;width: 217px !important;" ></a>
 

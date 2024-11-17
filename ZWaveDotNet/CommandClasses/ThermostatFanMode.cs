@@ -20,6 +20,10 @@ using ZWaveDotNet.SerialAPI;
 
 namespace ZWaveDotNet.CommandClasses
 {
+    /// <summary>
+    /// The Thermostat Fan Mode Command Class is an extension to support control and status monitoring functions of air-conditioning devices 
+    /// in order to achieve a global framework that covers the majority of generic functions implemented by world-wide air-conditioning manufacturer.
+    /// </summary>
     [CCVersion(CommandClass.ThermostatFanMode, 5)]
     public class ThermostatFanMode : CommandClassBase
     {
@@ -39,12 +43,24 @@ namespace ZWaveDotNet.CommandClasses
 
         internal ThermostatFanMode(Node node, byte endpoint) : base(node, endpoint, CommandClass.ThermostatFanMode) { }
 
+        /// <summary>
+        /// <b>Version 1</b>: This command is used to request the fan mode in the device.
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<ThermostatFanModeReport> Get(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(ThermostatFanModeCommand.Get, ThermostatFanModeCommand.Report, cancellationToken);
             return new ThermostatFanModeReport(response.Payload.Span);
         }
 
+        /// <summary>
+        /// <b>Version 1</b>: This command is used to set the fan mode in the device.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="off"><b>Version 2</b>: Switch the fan off in any mode</param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task Set(FanMode value, bool off, CancellationToken cancellationToken = default)
         {
             byte cmd = (byte)value;
@@ -53,6 +69,11 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(ThermostatFanModeCommand.Set, cancellationToken, cmd);
         }
 
+        /// <summary>
+        /// <b>Version 1</b>: This command is used to request the supported fan modes from the device.
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<FanMode[]> GetSupportedModes(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(ThermostatFanModeCommand.SupportedGet, ThermostatFanModeCommand.SupportedReport, cancellationToken);
