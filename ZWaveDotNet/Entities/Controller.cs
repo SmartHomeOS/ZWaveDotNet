@@ -546,7 +546,7 @@ namespace ZWaveDotNet.Entities
             try
             {
                 ControllerJSON json = Serialize();
-                return JsonSerializer.Serialize(json);
+                return JsonSerializer.Serialize(json, SourceGenerationContext.Default.ControllerJSON);
             }
             finally
             {
@@ -568,7 +568,7 @@ namespace ZWaveDotNet.Entities
                 using (FileStream outputStream = new FileStream(path + ".tmp", FileMode.Create))
                 {
                     ControllerJSON json = Serialize();
-                    await JsonSerializer.SerializeAsync(outputStream, json, (JsonSerializerOptions?)null, cancellationToken);
+                    await JsonSerializer.SerializeAsync(outputStream, json, SourceGenerationContext.Default.ControllerJSON, cancellationToken);
                     await outputStream.FlushAsync(cancellationToken);
                 }
                 File.Move(path + ".tmp", path, true);
@@ -622,7 +622,7 @@ namespace ZWaveDotNet.Entities
             nodeListLock.Wait();
             try
             {
-                ControllerJSON? entity = JsonSerializer.Deserialize<ControllerJSON>(json);
+                ControllerJSON? entity = JsonSerializer.Deserialize(json, SourceGenerationContext.Default.ControllerJSON);
                 if (entity == null)
                     return false;
                 Deserialize(entity);
@@ -647,7 +647,7 @@ namespace ZWaveDotNet.Entities
             {
                 using (FileStream fs = new FileStream(path, FileMode.Open))
                 {
-                    ControllerJSON? entity = await JsonSerializer.DeserializeAsync<ControllerJSON>(fs, (JsonSerializerOptions?)null, cancellationToken);
+                    ControllerJSON? entity = await JsonSerializer.DeserializeAsync(fs, SourceGenerationContext.Default.ControllerJSON, cancellationToken);
                     if (entity == null)
                         return false;
                     Deserialize(entity);
