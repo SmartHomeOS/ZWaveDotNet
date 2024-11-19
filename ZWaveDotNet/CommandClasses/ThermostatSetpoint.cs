@@ -11,6 +11,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System.Collections;
+using System.Xml.Linq;
 using ZWaveDotNet.CommandClasses.Enums;
 using ZWaveDotNet.CommandClassReports;
 using ZWaveDotNet.CommandClassReports.Enums;
@@ -21,6 +22,9 @@ using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.CommandClasses
 {
+    /// <summary>
+    /// The Thermostat Setpoint Command Class is used to configure setpoints for the modes supported by a thermostat.
+    /// </summary>
     [CCVersion(CommandClass.ThermostatSetpoint, 3)]
     public class ThermostatSetpoint : CommandClassBase
     {
@@ -42,18 +46,39 @@ namespace ZWaveDotNet.CommandClasses
 
         internal ThermostatSetpoint(Node node, byte endpoint) : base(node, endpoint, CommandClass.ThermostatSetpoint) { }
 
+        /// <summary>
+        /// <b>Version 1</b>: Request the target value for a given setpoint type that is currently configured at a supporting node.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<ThermostatSetpointReport> Get(ThermostatModeType type, CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(ThermostatSetpointCommand.Get, ThermostatSetpointCommand.Report, cancellationToken, (byte)type);
             return new ThermostatSetpointReport(response.Payload.Span);
         }
 
+        /// <summary>
+        /// <b>Version 3</b>: Request the supported setpoint value range for an actual Setpoint Type
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<ThermostatSetpointCapabilitiesReport> GetCapabilities(ThermostatModeType type, CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(ThermostatSetpointCommand.CapabilitiesGet, ThermostatSetpointCommand.CapabilitiesReport, cancellationToken, (byte)type);
             return new ThermostatSetpointCapabilitiesReport(response.Payload.Span);
         }
 
+        /// <summary>
+        /// <b>Version 1</b>: Specify the target value for the specified Setpoint Type at a supporting node.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="value"></param>
+        /// <param name="unit"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
         public async Task Set(ThermostatModeType type, float value, Units unit, CancellationToken cancellationToken = default)
         {
             ArraySegment<byte> cmd = new byte[6];
@@ -68,6 +93,11 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(ThermostatSetpointCommand.Set, cancellationToken, cmd.Array!);
         }
 
+        /// <summary>
+        /// <b>Version 1</b>: Query the supported setpoint types.
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<ThermostatModeType[]> GetSupportedModes(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(ThermostatSetpointCommand.SupportedGet, ThermostatSetpointCommand.SupportedReport, cancellationToken);

@@ -20,6 +20,9 @@ using ZWaveDotNet.SerialAPI;
 
 namespace ZWaveDotNet.CommandClasses
 {
+    /// <summary>
+    /// Control which mode a thermostat operates
+    /// </summary>
     [CCVersion(CommandClass.ThermostatMode, 3)]
     public class ThermostatMode : CommandClassBase
     {
@@ -39,12 +42,25 @@ namespace ZWaveDotNet.CommandClasses
 
         internal ThermostatMode(Node node, byte endpoint) : base(node, endpoint, CommandClass.ThermostatMode) { }
 
+        /// <summary>
+        /// <b>Version 1</b>: Request the current mode set at the receiving node
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<ThermostatModeReport> Get(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(ThermostatModeCommand.Get, ThermostatModeCommand.Report, cancellationToken);
             return new ThermostatModeReport(response.Payload.Span);
         }
 
+        /// <summary>
+        /// <b>Version 1</b>: Set the thermostat mode at the receiving node
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="manufacturerData"><b>Version 3</b>: This field is used to provide a configuration for the MANUFACTURER SPECIFIC mode</param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
         public async Task Set(ThermostatModeType value, byte[]? manufacturerData = null, CancellationToken cancellationToken = default)
         {
             byte[] cmd = new byte[(manufacturerData?.Length ?? 0) + 1];
@@ -61,6 +77,11 @@ namespace ZWaveDotNet.CommandClasses
             await SendCommand(ThermostatModeCommand.Set, cancellationToken, cmd);
         }
 
+        /// <summary>
+        /// <b>Version 1</b>: Request the supported modes of a node
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<ThermostatModeType[]> GetSupportedModes(CancellationToken cancellationToken = default)
         {
             ReportMessage response = await SendReceive(ThermostatModeCommand.SupportedGet, ThermostatModeCommand.SupportedReport, cancellationToken);
