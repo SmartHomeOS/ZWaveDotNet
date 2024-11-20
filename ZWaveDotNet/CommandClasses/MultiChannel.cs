@@ -20,12 +20,18 @@ using ZWaveDotNet.SerialAPI.Enums;
 
 namespace ZWaveDotNet.CommandClasses
 {
+    /// <summary>
+    /// The Multi Channel Command Class is used to address one or more End Points in a Multi Channel device.
+    /// </summary>
     [CCVersion(CommandClass.MultiChannel, 1, 4)]
     public class MultiChannel : CommandClassBase
     {
+        /// <summary>
+        /// Unsolicited End Point Capabilities Report
+        /// </summary>
         public event CommandClassEvent<EndPointCapabilities>? EndpointCapabilitiesUpdated;
 
-        public enum MultiChannelCommand
+        enum MultiChannelCommand
         {
             EndPointGet = 0x07,
             EndPointReport = 0x08,
@@ -39,6 +45,12 @@ namespace ZWaveDotNet.CommandClasses
         }
         internal MultiChannel(Node node, byte endpoint) : base(node, endpoint, CommandClass.MultiChannel) {  }
 
+        /// <summary>
+        /// <b>Version 3</b>: Query the number of End Points implemented by the receiving node
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        /// <exception cref="MethodAccessException"></exception>
         public async Task<EndPointReport> GetEndPoints(CancellationToken cancellationToken = default)
         {
             if (node.ID == Node.BROADCAST_ID)
@@ -47,6 +59,13 @@ namespace ZWaveDotNet.CommandClasses
             return new EndPointReport(response.Payload.Span);
         }
 
+        /// <summary>
+        /// <b>Version 3</b>: Query the non-secure Command Class capabilities of an End Point
+        /// </summary>
+        /// <param name="endpointId"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        /// <exception cref="MethodAccessException"></exception>
         public async Task<EndPointCapabilities> GetCapabilities(byte endpointId, CancellationToken cancellationToken = default)
         {
             if (node.ID == Node.BROADCAST_ID)
@@ -55,6 +74,14 @@ namespace ZWaveDotNet.CommandClasses
             return new EndPointCapabilities(response.Payload.Span);
         }
 
+        /// <summary>
+        /// <b>Version 3</b>: Request End Points having a specific GenericType or SpecificType.
+        /// </summary>
+        /// <param name="generic"></param>
+        /// <param name="specific"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        /// <exception cref="MethodAccessException"></exception>
         public async Task<EndPointFindReport> FindEndPoints(GenericType generic, SpecificType specific, CancellationToken cancellationToken = default)
         {
             if (node.ID == Node.BROADCAST_ID)
@@ -63,6 +90,13 @@ namespace ZWaveDotNet.CommandClasses
             return new EndPointFindReport(response.Payload.Span);
         }
 
+        /// <summary>
+        /// <b>Version 4</b>: This command is used to query the members of an Aggregated End Point.
+        /// </summary>
+        /// <param name="endpointId"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        /// <exception cref="MethodAccessException"></exception>
         public async Task<List<byte>> GetAggregatedMembers(byte endpointId, CancellationToken cancellationToken = default)
         {
             if (node.ID == Node.BROADCAST_ID)

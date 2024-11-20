@@ -13,7 +13,9 @@
 using System.Collections.ObjectModel;
 using System.Reflection;
 using ZWaveDotNet.CommandClasses;
+using ZWaveDotNet.CommandClasses.Enums;
 using ZWaveDotNet.CommandClassReports.Enums;
+using ZWaveDotNet.Entities.JSON;
 using ZWaveDotNet.Enums;
 using ZWaveDotNet.SerialAPI;
 
@@ -42,7 +44,7 @@ namespace ZWaveDotNet.Entities
         /// <param name="id"></param>
         /// <param name="node"></param>
         /// <param name="commandClasses"></param>
-        public EndPoint(byte id, Node node, CommandClass[]? commandClasses = null)
+        public EndPoint(byte id, Node node, CommandClass[] commandClasses)
         {
             ID = id;
             this.node = node;
@@ -54,10 +56,43 @@ namespace ZWaveDotNet.Entities
             AddCommandClass(CommandClass.NoOperation);
         }
 
+        /// <summary>
+        /// Deserialize End Point
+        /// </summary>
+        /// <param name="ep"></param>
+        /// <param name="node"></param>
+        public EndPoint(EndPointJson ep, Node node)
+        {
+            ID = ep.ID;
+            this.node = node;
+            foreach (CommandClassJson cc in ep.CommandClasses)
+                AddCommandClass(cc.CommandClass, cc.Secure, cc.Version);
+        }
+
+        internal EndPointJson Serialize()
+        {
+            EndPointJson json = new EndPointJson()
+            {
+                ID = ID,
+                CommandClasses = new CommandClassJson[commandClasses.Count]
+            };
+            for (int i = 0; i < commandClasses.Count; i++)
+            {
+                CommandClass cls = commandClasses.ElementAt(i).Key;
+                json.CommandClasses[i] = new CommandClassJson
+                {
+                    CommandClass = cls,
+                    Version = commandClasses[cls].Version,
+                    Secure = commandClasses[cls].Secure
+                };
+            }
+            return json;
+        }
+
         internal async Task<SupervisionStatus> HandleReport(ReportMessage msg)
         {
-            if (!CommandClasses.ContainsKey(msg.CommandClass))
-                AddCommandClass(msg.CommandClass);
+            if (!HasCommandClass(msg.CommandClass))
+                AddCommandClass(msg.CommandClass, (msg.SecurityLevel != SecurityKey.None));
             return await CommandClasses[msg.CommandClass].ProcessMessage(msg);
         }
 
@@ -98,10 +133,10 @@ namespace ZWaveDotNet.Entities
             return null;
         }
 
-        private void AddCommandClass(CommandClass cls, bool secure = false)
+        private void AddCommandClass(CommandClass cls, bool secure = false, byte version = 1)
         {
-            if (!this.commandClasses.ContainsKey(cls))
-                this.commandClasses.Add(cls, CommandClassBase.Create(cls, node, ID, secure, 1)); //TODO
+            if (!HasCommandClass(cls))
+                this.commandClasses.Add(cls, CommandClassBase.Create(cls, node, ID, secure, version));
         }
 
         /// 

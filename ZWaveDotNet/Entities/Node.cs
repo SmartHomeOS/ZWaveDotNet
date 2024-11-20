@@ -178,7 +178,8 @@ namespace ZWaveDotNet.Entities
         /// <returns></returns>
         public EndPoint? GetEndPoint(byte ID)
         {
-            if (ID >= endPoints.Count)
+            ID--;
+            if (ID >= endPoints.Count || ID < 0)
                 return null;
             return endPoints[ID];
         }
@@ -258,7 +259,7 @@ namespace ZWaveDotNet.Entities
         {
             if (msg.SourceEndpoint == 0)
             {
-                if (!commandClasses.ContainsKey(msg.CommandClass))
+                if (!HasCommandClass(msg.CommandClass))
                     AddCommandClass(msg.CommandClass, (msg.SecurityLevel != SecurityKey.None));
                 return await commandClasses[msg.CommandClass].ProcessMessage(msg);
             }
@@ -266,7 +267,7 @@ namespace ZWaveDotNet.Entities
             {
                 EndPoint? ep = GetEndPoint(msg.SourceEndpoint);
                 if (ep != null)
-                    return await ep.HandleReport(msg).ConfigureAwait(false);
+                    return await ep.HandleReport(msg);
             }
             return SupervisionStatus.NoSupport;
         }
@@ -317,7 +318,8 @@ namespace ZWaveDotNet.Entities
                 NodeProtocolInfo = nodeInfo,
                 ID = ID,
                 CommandClasses = new CommandClassJson[commandClasses.Count],
-                Interviewed = Interviewed
+                Interviewed = Interviewed,
+                EndPoints = new EndPointJson[endPoints.Count]
             };
             if (controller.SecurityManager != null)
             {
@@ -334,11 +336,13 @@ namespace ZWaveDotNet.Entities
                 CommandClass cls = commandClasses.ElementAt(i).Key;
                 json.CommandClasses[i] = new CommandClassJson
                 {
-                    CommandClass = commandClasses[cls].CommandClass,
+                    CommandClass = cls,
                     Version = commandClasses[cls].Version,
                     Secure = commandClasses[cls].Secure
                 };
             }
+            for (int i = 0; i < endPoints.Count; i++)
+                json.EndPoints[i] = endPoints[i].Serialize();
             return json;
         }
 
@@ -347,6 +351,9 @@ namespace ZWaveDotNet.Entities
             interviewed = json.Interviewed ? InterviewState.Complete : InterviewState.None;
             foreach (CommandClassJson cc in json.CommandClasses)
                 AddCommandClass(cc.CommandClass, cc.Secure, cc.Version);
+
+            foreach (EndPointJson ep in json.EndPoints)
+                endPoints.Add(new EndPoint(ep, this));
 
             if (controller.SecurityManager != null)
             {
@@ -394,7 +401,7 @@ namespace ZWaveDotNet.Entities
                 if (!newlyIncluded && key == null)
                 {
                     //We need to try keys one at a time
-                    if (commandClasses.ContainsKey(CommandClass.Security0))
+                    if (HasCommandClass(CommandClass.Security0))
                     {
                         controller.SecurityManager.GrantKey(ID, SecurityManager.RecordType.S0);
                         Log.Information("Checking S0 Security");
@@ -426,7 +433,7 @@ namespace ZWaveDotNet.Entities
                             controller.SecurityManager.RevokeKey(ID, SecurityManager.RecordType.S0);
                         }
                     }
-                    if (commandClasses.ContainsKey(CommandClass.Security2))
+                    if (HasCommandClass(CommandClass.Security2))
                     {
                         controller.SecurityManager.GrantKey(ID, SecurityManager.RecordType.S2UnAuth, controller.NetworkKeyS2UnAuth);
                         Log.Information("Checking S2 Unauth Security");
@@ -525,22 +532,25 @@ namespace ZWaveDotNet.Entities
                 else
                 {
                     //Whatever keys we have is what the device has
-                    if (key != null && key.Key == SecurityManager.RecordType.S0 && commandClasses.ContainsKey(CommandClass.Security0))
+                    if (key != null && key.Key == SecurityManager.RecordType.S0 && HasCommandClass(CommandClass.Security0))
                         await RequestS0(cancellationToken).ConfigureAwait(false);
-                    else if (key != null && commandClasses.ContainsKey(CommandClass.Security2))
+                    else if (key != null && HasCommandClass(CommandClass.Security2))
                         await RequestS2(cancellationToken).ConfigureAwait(false);
                 }
             }
-            if (this.commandClasses.ContainsKey(CommandClass.MultiChannel))
+            if (HasCommandClass(CommandClass.MultiChannel))
             {
                 Log.Information("Requesting MultiChannel EndPoints");
-                EndPointReport epReport = await ((MultiChannel)commandClasses[CommandClass.MultiChannel]).GetEndPoints(cancellationToken);
+                EndPointReport epReport = await GetCommandClass<MultiChannel>()!.GetEndPoints(cancellationToken);
                 for (int i = 0; i < epReport.IndividualEndPoints; i++)
-                    endPoints.Add(new EndPoint((byte)(i + 1), this));
+                {
+                    EndPointCapabilities caps = await GetCommandClass<MultiChannel>()!.GetCapabilities((byte)(i + 1), cancellationToken);
+                    endPoints.Add(new EndPoint((byte)(i + 1), this, caps.CommandClasses));
+                }
             }
 
             Log.Information("Checking Command Class Versions");
-            if (this.commandClasses.ContainsKey(CommandClass.Version))
+            if (HasCommandClass(CommandClass.Version))
             {
                 CommandClasses.Version version = (CommandClasses.Version)commandClasses[CommandClass.Version];
                 foreach (CommandClassBase cc in commandClasses.Values)
@@ -557,6 +567,11 @@ namespace ZWaveDotNet.Entities
                                 try
                                 {
                                     cc.Version = await version.GetCommandClassVersion(cc.CommandClass, cts.Token);
+                                    foreach (EndPoint ep in endPoints)
+                                    {
+                                        if (HasCommandClass(cc.CommandClass))
+                                            ep.CommandClasses[cc.CommandClass].Version = cc.Version;
+                                    }
                                 }
                                 catch (OperationCanceledException oc)
                                 {
