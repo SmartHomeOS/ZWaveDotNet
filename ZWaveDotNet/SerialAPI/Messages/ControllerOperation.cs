@@ -18,12 +18,16 @@ namespace ZWaveDotNet.SerialAPI.Messages
 {
     internal class ControllerOperation : CallbackBase
     {
-        public ControllerOperation(Controller controller, ushort nodeId, Function operation) : base(controller, nodeId, true, operation) { }
+        public readonly ushort DestinationNodeID;
+        public ControllerOperation(Controller controller, ushort nodeId, Function operation) : base(controller, true, operation)
+        {
+            DestinationNodeID = nodeId;
+        }
 
         internal override PayloadWriter GetPayload()
         {
             PayloadWriter writer = base.GetPayload();
-            if (controller.WideID)
+            if (Controller.WideID)
                 writer.Write(DestinationNodeID);
             else
                 writer.Write((byte)DestinationNodeID);

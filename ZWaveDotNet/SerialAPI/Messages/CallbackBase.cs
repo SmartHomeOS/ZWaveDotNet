@@ -15,19 +15,24 @@ using ZWaveDotNet.SerialAPI.Enums;
 
 namespace ZWaveDotNet.SerialAPI.Messages
 {
+    /// <summary>
+    /// Messsages which request a callback
+    /// </summary>
     public class CallbackBase : Message
     {
         private static object callbackSync = new object();
-        public readonly byte SessionID;
-        public readonly ushort DestinationNodeID;
-
-        public readonly Controller controller;
         private static byte callbackID = 1;
 
-        public CallbackBase(Controller controller, ushort nodeId, bool callback, Function operation) : base(operation)
+        /// <summary>
+        /// Session ID
+        /// </summary>
+        public byte SessionID { get; init; }
+
+        internal Controller Controller { get; init; }
+
+        internal CallbackBase(Controller controller, bool callback, Function operation) : base(operation)
         {
-            this.controller = controller;
-            this.DestinationNodeID = nodeId;
+            this.Controller = controller;
 
             if (callback)
                 SessionID = GetCallbackID();
@@ -35,7 +40,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
                 SessionID = 0;
         }
 
-        protected static byte GetCallbackID()
+        private static byte GetCallbackID()
         {
             byte nextId;
             lock (callbackSync)
@@ -47,9 +52,10 @@ namespace ZWaveDotNet.SerialAPI.Messages
             return nextId;
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
-            return base.ToString() + $"Data To {DestinationNodeID}";
+            return base.ToString() + $"Data Session {SessionID}";
         }
     }
 }

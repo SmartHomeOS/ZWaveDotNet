@@ -49,9 +49,9 @@ namespace ZWaveDotNet.CommandClasses
         /// Parent Controller
         /// </summary>
         protected Controller controller;
-        private CommandClass commandClass;
-        private byte endpoint;
-        private ConcurrentDictionary<byte, BlockingCollection<TaskCompletionSource<ReportMessage>>> callbacks = new ConcurrentDictionary<byte, BlockingCollection<TaskCompletionSource<ReportMessage>>>();
+        private readonly CommandClass commandClass;
+        private readonly byte endpoint;
+        private readonly ConcurrentDictionary<byte, BlockingCollection<TaskCompletionSource<ReportMessage>>> callbacks = new ConcurrentDictionary<byte, BlockingCollection<TaskCompletionSource<ReportMessage>>>();
 
         /// <summary>
         /// Base Class
@@ -319,10 +319,26 @@ namespace ZWaveDotNet.CommandClasses
         /// <param name="supervised"></param>
         /// <param name="payload"></param>
         /// <returns></returns>
-        protected async Task<bool> SendCommand(Enum command, CancellationToken token, bool supervised = false, params byte[] payload)
+        protected Task<bool> SendCommand(Enum command, CancellationToken token, bool supervised = false, params byte[] payload)
         {
-            // TODO - Multicast
-            CommandMessage data = new CommandMessage(controller, node.ID, endpoint, commandClass, Convert.ToByte(command), supervised, payload);
+            return SendCommand(Convert.ToByte(command), token, supervised, payload);
+        }
+
+        /// <summary>
+        /// Send a command (no response expected)
+        /// </summary>
+        /// <param name="command"></param>
+        /// <param name="token"></param>
+        /// <param name="supervised"></param>
+        /// <param name="payload"></param>
+        /// <returns></returns>
+        protected async Task<bool> SendCommand(byte command, CancellationToken token, bool supervised = false, params byte[] payload)
+        {
+            CommandMessage data;
+            if (node is NodeGroup group)
+                data = new CommandMessage(controller, group.MemberIDs, 0, commandClass, command, supervised, payload);
+            else
+                data = new CommandMessage(controller, [node.ID], endpoint, commandClass, Convert.ToByte(command), supervised, payload);
             return await SendCommand(data, token).ConfigureAwait(false);
         }
 
@@ -339,9 +355,7 @@ namespace ZWaveDotNet.CommandClasses
             {
                 if (controller.SecurityManager == null)
                     throw new InvalidOperationException("Secure command requires security manager");
-                SecurityManager.NetworkKey? key = controller.SecurityManager.GetHighestKey(node.ID);
-                if (key == null)
-                    throw new InvalidOperationException($"Command classes are secure but no keys exist for node {node.ID}");
+                SecurityManager.NetworkKey key = controller.SecurityManager.GetHighestKey(node.ID) ?? throw new InvalidOperationException($"Command classes are secure but no keys exist for node {node.ID}");
                 if (key.Key == SecurityManager.RecordType.S0)
                     await node.GetCommandClass<Security0>()!.Encapsulate(data.Payload, token).ConfigureAwait(false);
                 else if (key.Key > SecurityManager.RecordType.S0)
@@ -350,10 +364,12 @@ namespace ZWaveDotNet.CommandClasses
                     throw new InvalidOperationException("Security required but no keys are available");
             }
             
-            DataMessage message = data.ToMessage();
+            CallbackBase message = data.ToMessage();
             if ((!node.LongRange && data.Payload.Count > 46) || (data.Payload.Count > 120))
             {
-                return await TransportService.Transmit(message, token);
+                if (message is DataMessage msg)
+                    return await TransportService.Transmit(msg, token);
+                throw new InvalidOperationException("Multicast Transport Commands are not supported");
             }
             
             for (int i = 0; i < 3; i++)
@@ -374,7 +390,7 @@ namespace ZWaveDotNet.CommandClasses
         /// <param name="ex"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        internal async Task<bool> AttemptTransmission(DataMessage message, CancellationToken cancellationToken, bool ex = false)
+        internal async Task<bool> AttemptTransmission(CallbackBase message, CancellationToken cancellationToken, bool ex = false)
         {
             DataCallback dc = await controller.Flow.SendAcknowledgedResponseCallback(message, b => b != 0x0, cancellationToken).ConfigureAwait(false);
             if (dc.Status != TransmissionStatus.CompleteOk && dc.Status != TransmissionStatus.CompleteNoAck && dc.Status != TransmissionStatus.CompleteVerified)
@@ -471,8 +487,10 @@ namespace ZWaveDotNet.CommandClasses
                 cbList.Add(src, token);
             else
             {
-                BlockingCollection<TaskCompletionSource<ReportMessage>> newCallbacks = new BlockingCollection<TaskCompletionSource<ReportMessage>>();
-                newCallbacks.Add(src, token);
+                BlockingCollection<TaskCompletionSource<ReportMessage>> newCallbacks = new BlockingCollection<TaskCompletionSource<ReportMessage>>
+                {
+                    { src, token }
+                };
                 if (!callbacks.TryAdd(cmd, newCallbacks))
                     callbacks[cmd].Add(src, token);
             }

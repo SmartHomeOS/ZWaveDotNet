@@ -104,6 +104,7 @@ namespace ZWaveDotNet.Entities
         private readonly List<Memory<byte>> provisionList = new List<Memory<byte>>();
         private static readonly SemaphoreSlim nodeListLock = new SemaphoreSlim(1, 1);
         private CancellationTokenSource running = new CancellationTokenSource();
+        private volatile byte GroupID = 1;
 
         /// <summary>
         /// Create a new controller for the given serial port
@@ -798,6 +799,22 @@ namespace ZWaveDotNet.Entities
             if (dc == null)
                 return false;
             return (int)dc.Status == 0x1;
+        }
+
+        /// <summary>
+        /// Create a Node Group which supports Multicast Commands to all members
+        /// </summary>
+        /// <param name="nodes"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        public NodeGroup CreateGroup(params Node[] nodes)
+        {
+            if (nodes == null || nodes.Length == 0)
+                throw new ArgumentException("Cannot create a group without members");
+            NodeGroup group = new NodeGroup(GroupID++, this, nodes[0]);
+            for (int i = 1; i < nodes.Length; i++)
+                group.AddNode(nodes[i]);
+            return group;
         }
 
         private async Task<bool> BootstrapUnsecure(Node node)

@@ -17,7 +17,7 @@ An implementation of ZWave Plus using the 2024a public specification.
 * See our [Examples Page](Examples.md)
 
 #### Not Supported:
-* Multicast is not fully implemented (including secure multicast)
+* Secure Multicast is not fully implemented
 
 #### Other Projects
 * Check out my other projects for [HomeKit](https://github.com/SmartHomeOS/HomeKitDotNet) and [Matter](https://github.com/SmartHomeOS/MatterDotNet).

@@ -19,15 +19,17 @@ using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.SerialAPI.Messages
 {
-    public class DataMessage : CallbackBase
+    internal class DataMessage : CallbackBase
     {
-        public readonly ushort SourceNodeID;
-        public List<byte> Data;
-        public readonly TransmitOptions Options;
+        public ushort SourceNodeID { get; init; }
+        public List<byte> Data { get; init; }
+        public TransmitOptions Options { get; init; }
+        public readonly ushort DestinationNodeID;
 
-        public DataMessage(Controller controller, ushort nodeId, List<byte> data, bool callback, bool exploreNPDUs) : base(controller, nodeId, callback, controller.ControllerType == LibraryType.BridgeController ? Function.SendDataBridge : Function.SendData)
+        internal DataMessage(Controller controller, ushort nodeId, List<byte> data, bool callback, bool exploreNPDUs) : base(controller, callback, controller.ControllerType == LibraryType.BridgeController ? Function.SendDataBridge : Function.SendData)
         {
             SourceNodeID = controller.ID;
+            DestinationNodeID = nodeId;
             Data = data;
             Options = TransmitOptions.RequestAck | TransmitOptions.AutoRouting;
             if (exploreNPDUs)
@@ -39,12 +41,12 @@ namespace ZWaveDotNet.SerialAPI.Messages
             PayloadWriter writer = base.GetPayload();
             if (Function == Function.SendDataBridge)
             {
-                if (controller.WideID)
+                if (Controller.WideID)
                     writer.Write(SourceNodeID);
                 else
                     writer.Write((byte)SourceNodeID);
             }
-            if (controller.WideID)
+            if (Controller.WideID)
                 writer.Write(DestinationNodeID);
             else
                 writer.Write((byte)DestinationNodeID);
@@ -63,5 +65,5 @@ namespace ZWaveDotNet.SerialAPI.Messages
         }
     }
 
-    
+
 }

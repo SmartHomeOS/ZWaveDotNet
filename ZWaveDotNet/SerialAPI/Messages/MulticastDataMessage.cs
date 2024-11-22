@@ -10,7 +10,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System.Buffers.Binary;
 using ZWaveDotNet.CommandClassReports.Enums;
 using ZWaveDotNet.Entities;
 using ZWaveDotNet.SerialAPI.Enums;
@@ -19,79 +18,21 @@ using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.SerialAPI.Messages
 {
-    internal class MulticastDataMessage : Message
+    internal class MulticastDataMessage : CallbackBase
     {
-        public readonly ushort SourceNodeID;
+        public ushort SourceNodeID { get; init; }
+        public List<byte> Data { get; init; }
+        public TransmitOptions Options { get; init; }
         public readonly ushort[] DestinationNodeIDs;
-        public readonly Memory<byte> Data;
-        public readonly TransmitOptions Options;
-        public readonly byte SessionID;
-        private readonly Controller controller;
-        private static object callbackSync = new object();
 
-        private static byte callbackID = 1;
-
-        public MulticastDataMessage(Controller controller, Memory<byte> payload) : base(controller.ControllerType == LibraryType.BridgeController ? Function.SendDataBridgeMulticast : Function.SendDataMulticast)
+        internal MulticastDataMessage(Controller controller, ushort[] nodeIds, List<byte> data, bool callback, bool exploreNPDUs) : base(controller, callback, controller.ControllerType == LibraryType.BridgeController ? Function.SendDataBridgeMulticast : Function.SendDataMulticast)
         {
-            if (payload.Length < 4)
-                throw new InvalidDataException("Empty MulticastDataMessage received");
-            
-            if (Function == Function.SendDataBridgeMulticast)
-            {
-                if (controller.WideID)
-                {
-                    SourceNodeID = BinaryPrimitives.ReadUInt16BigEndian(payload.Span);
-                    payload = payload.Slice(2);
-                }
-                else
-                {
-                    SourceNodeID = payload.Span[0];
-                    payload = payload.Slice(1);
-                }
-            }
-
-            byte nodeLen = payload.Span[0];
-            DestinationNodeIDs = new ushort[nodeLen];
-            if (controller.WideID)
-                nodeLen *= 2;
-            Memory<byte> ids = payload.Slice(1, nodeLen);
-            for (byte i = 0; i < DestinationNodeIDs.Length; i++)
-            {
-                if (controller.WideID)
-                {
-                    DestinationNodeIDs[i / 2] = BinaryPrimitives.ReadUInt16BigEndian(ids.Slice(i, 2).Span);
-                    i++;
-                }
-                else
-                    DestinationNodeIDs[i] = ids.Span[i];
-            }
-
-            byte dataLen = payload.Span[nodeLen + 1];
-            if (payload.Length < dataLen + 4 + nodeLen)
-                throw new InvalidDataException("Truncated MulticastDataMessage received");
-            Data = payload.Slice(nodeLen + 2, dataLen);
-            Options = (TransmitOptions)payload.Span[2 + dataLen + nodeLen];
-            SessionID = payload.Span[3 + dataLen + nodeLen];
-            this.controller = controller;
-        }
-
-        public MulticastDataMessage(Controller controller, ushort[] nodeIds, Memory<byte> data, bool callback) : base(controller.ControllerType == LibraryType.BridgeController ? Function.SendDataBridgeMulticast : Function.SendDataMulticast)
-        {
+            SourceNodeID = controller.ID;
             DestinationNodeIDs = nodeIds;
             Data = data;
-            Options = TransmitOptions.RequestAck | TransmitOptions.AutoRouting | TransmitOptions.ExploreNPDUs;
-            if (callback)
-            {
-                lock (callbackSync)
-                {
-                    SessionID = callbackID++;
-                    if (callbackID == 0)
-                        callbackID++;
-                }
-            }
-            else
-                SessionID = 0;
-            this.controller = controller;
+            Options = TransmitOptions.RequestAck | TransmitOptions.AutoRouting;
+            if (exploreNPDUs)
+                Options |= TransmitOptions.ExploreNPDUs;
         }
 
         internal override PayloadWriter GetPayload()
@@ -99,29 +40,30 @@ namespace ZWaveDotNet.SerialAPI.Messages
             PayloadWriter writer = base.GetPayload();
             if (Function == Function.SendDataBridgeMulticast)
             {
-                if (controller.WideID)
-                    writer.Write(controller.ID);
+                if (Controller.WideID)
+                    writer.Write(SourceNodeID);
                 else
-                    writer.Write((byte)controller.ID);
+                    writer.Write((byte)SourceNodeID);
             }
             writer.Write((byte)DestinationNodeIDs.Length);
             foreach (ushort id in DestinationNodeIDs)
             {
-                if (controller.WideID)
+                if (Controller.WideID)
                     writer.Write(id);
                 else
                     writer.Write((byte)id);
             }
-            writer.Write((byte)Data.Length);
+            writer.Write((byte)Data.Count);
             writer.Write(Data);
             writer.Write((byte)Options);
             writer.Write(SessionID);
             return writer;
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
-            return base.ToString() + $"Data To {string.Join(',',DestinationNodeIDs)} - Payload {BitConverter.ToString(Data.ToArray())}";
+            return base.ToString() + $" - Multicast Payload {BitConverter.ToString(Data.ToArray())}";
         }
     }
 

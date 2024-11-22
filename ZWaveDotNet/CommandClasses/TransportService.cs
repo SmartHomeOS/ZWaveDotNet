@@ -81,8 +81,8 @@ namespace ZWaveDotNet.CommandClasses
             bool success = true;
             for (int i = 0; i < message.Data.Count; i += MAX_SEGMENT)
             {
-                DataMessage segment = new DataMessage(message.controller, message.DestinationNodeID, message.Data.GetRange(i, Math.Min(message.Data.Count, i + MAX_SEGMENT) - i), true, (message.Options & TransmitOptions.ExploreNPDUs) == TransmitOptions.ExploreNPDUs);
-                success &= await message.controller.Nodes[message.SourceNodeID].GetCommandClass<TransportService>()!.TransmitSegment(segment, sessionId, i, message.Data.Count, token);
+                DataMessage segment = new DataMessage(message.Controller, message.DestinationNodeID, message.Data.GetRange(i, Math.Min(message.Data.Count, i + MAX_SEGMENT) - i), true, (message.Options & TransmitOptions.ExploreNPDUs) == TransmitOptions.ExploreNPDUs);
+                success &= await message.Controller.Nodes[message.SourceNodeID].GetCommandClass<TransportService>()!.TransmitSegment(segment, sessionId, i, message.Data.Count, token);
             }
             return success;
         }
@@ -231,8 +231,8 @@ namespace ZWaveDotNet.CommandClasses
                         int offset = ((0x7 & msg.Payload.Span[0] << 8) | msg.Payload.Span[1]);
                         Log.Information("Retransmitting segment " + offset + " for session " + (msg.Payload.Span[0] >> 4));
 
-                        DataMessage segment = new DataMessage(message.controller, message.DestinationNodeID, message.Data.GetRange(offset, Math.Min(message.Data.Count, offset + MAX_SEGMENT) - offset), true, (message.Options & TransmitOptions.ExploreNPDUs) == TransmitOptions.ExploreNPDUs);
-                        await message.controller.Nodes[message.SourceNodeID].GetCommandClass<TransportService>()!.TransmitSegment(segment, (byte)(msg.Payload.Span[0] >> 4), offset, message.Data.Count);
+                        DataMessage segment = new DataMessage(message.Controller, message.DestinationNodeID, message.Data.GetRange(offset, Math.Min(message.Data.Count, offset + MAX_SEGMENT) - offset), true, (message.Options & TransmitOptions.ExploreNPDUs) == TransmitOptions.ExploreNPDUs);
+                        await message.Controller.Nodes[message.SourceNodeID].GetCommandClass<TransportService>()!.TransmitSegment(segment, (byte)(msg.Payload.Span[0] >> 4), offset, message.Data.Count);
                     }
                     break;
             }

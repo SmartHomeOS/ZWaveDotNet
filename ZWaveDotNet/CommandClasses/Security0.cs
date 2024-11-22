@@ -66,7 +66,7 @@ namespace ZWaveDotNet.CommandClasses
         internal async Task KeySet(CancellationToken cancellationToken = default)
         {
             Log.Verbose($"Setting Network Key on {node.ID}");
-            CommandMessage data = new CommandMessage(controller, node.ID, EndPoint, CommandClass, (byte)Security0Command.NetworkKeySet, false, controller.NetworkKeyS0);
+            CommandMessage data = new CommandMessage(controller, [node.ID], EndPoint, CommandClass, (byte)Security0Command.NetworkKeySet, false, controller.NetworkKeyS0);
             await TransmitTemp(data.Payload, cancellationToken).ConfigureAwait(false);
         }
 
@@ -95,7 +95,7 @@ namespace ZWaveDotNet.CommandClasses
             Log.Verbose("Creating Temp Payload for " + node.ID.ToString());
             byte[] receiversNonce = report.Payload.ToArray();
             byte[] sendersNonce = new byte[8];
-            new Random().NextBytes(sendersNonce);
+            Random.Shared.NextBytes(sendersNonce);
             payload.Insert(0, 0x0); //Sequenced = False
             byte[] encrypted = EncryptDecryptPayload(payload.ToArray(), sendersNonce, receiversNonce, controller.tempE);
             byte[] mac = AES.ComputeMAC(controller.ID, node.ID, (byte)Security0Command.MessageEncap, sendersNonce, receiversNonce, encrypted, controller.tempA);
@@ -118,7 +118,7 @@ namespace ZWaveDotNet.CommandClasses
             Log.Verbose("Creating Payload for " + node.ID.ToString());
             byte[] receiversNonce = report.Payload.ToArray();
             byte[] sendersNonce = new byte[8];
-            new Random().NextBytes(sendersNonce);
+            Random.Shared.NextBytes(sendersNonce);
             payload.Insert(0, 0x0); //Sequenced = False
             byte[] encrypted = EncryptDecryptPayload(payload.ToArray(), sendersNonce, receiversNonce, controller.EncryptionKey);
             byte[] mac = AES.ComputeMAC(controller.ID, node.ID, (byte)Security0Command.MessageEncap, sendersNonce, receiversNonce, encrypted, controller.AuthenticationKey);

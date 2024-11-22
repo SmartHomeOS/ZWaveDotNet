@@ -34,7 +34,7 @@ namespace ZWaveDotNet.CommandClasses
         private const byte TRANSFER_COMPLETE = 0x1;
         public event CommandClassEvent<ErrorReport>? SecurityError;
         TaskCompletionSource bootstrapComplete = new TaskCompletionSource();
-        private static uint sequence = (uint)new Random().Next();
+        private static uint sequence = (uint)Random.Shared.Next();
 
         internal enum Security2Command
         {
@@ -128,7 +128,7 @@ namespace ZWaveDotNet.CommandClasses
             controller.SecurityManager?.GetRequestedKeys(node.ID, true);
             if (type == KexFailType.KEX_FAIL_AUTH || type == KexFailType.KEX_FAIL_DECRYPT || type == KexFailType.KEX_FAIL_KEY_VERIFY || type == KexFailType.KEX_FAIL_KEY_GET)
             {
-                CommandMessage reportKex = new CommandMessage(controller, node.ID, EndPoint, CommandClass, (byte)Security2Command.KEXFail, false, (byte)type);
+                CommandMessage reportKex = new CommandMessage(controller, [node.ID], EndPoint, CommandClass, (byte)Security2Command.KEXFail, false, (byte)type);
                 await Transmit(reportKex.Payload, SecurityManager.RecordType.ECDH_TEMP, cancellationToken).ConfigureAwait(false);
             }
             else
@@ -386,6 +386,8 @@ namespace ZWaveDotNet.CommandClasses
                     {
                         if (controller.SecurityManager == null)
                             return SupervisionStatus.Fail;
+                        if (message.IsMulticastMethod)
+                            return SupervisionStatus.Fail;
                         KeyExchangeReport? requestedKeys = controller.SecurityManager.GetRequestedKeys(node.ID);
                         if (requestedKeys != null)
                         {
@@ -396,7 +398,7 @@ namespace ZWaveDotNet.CommandClasses
                             }
                             requestedKeys.Echo = true;
                             Log.Verbose("Responding: " + requestedKeys.ToString());
-                            CommandMessage reportKex = new CommandMessage(controller, node.ID, EndPoint, CommandClass, (byte)Security2Command.KEXReport, false, requestedKeys.ToBytes());
+                            CommandMessage reportKex = new CommandMessage(controller, [node.ID], EndPoint, CommandClass, (byte)Security2Command.KEXReport, false, requestedKeys.ToBytes());
                             await Transmit(reportKex.Payload, SecurityManager.RecordType.ECDH_TEMP).ConfigureAwait(false);
                         }
                     }
@@ -445,12 +447,14 @@ namespace ZWaveDotNet.CommandClasses
                         default:
                             return SupervisionStatus.Fail; //Invalid Key Type - Ignore this
                     }
-                    CommandMessage data = new CommandMessage(controller, node.ID, EndPoint, CommandClass, (byte)Security2Command.NetworkKeyReport, false, resp);
+                    CommandMessage data = new CommandMessage(controller, [node.ID], EndPoint, CommandClass, (byte)Security2Command.NetworkKeyReport, false, resp);
                     await Transmit(data.Payload, SecurityManager.RecordType.ECDH_TEMP).ConfigureAwait(false);
                     Log.Verbose($"Provided Network Key {key}");
                     return SupervisionStatus.Success;
                 case Security2Command.NetworkKeyVerify:
                     if (controller.SecurityManager == null)
+                        return SupervisionStatus.Fail;
+                    if (message.IsMulticastMethod)
                         return SupervisionStatus.Fail;
                     Log.Verbose("Network Key Verified!");
                     if (message.SecurityLevel == SecurityKey.None || (message.Flags & ReportFlags.Security) != ReportFlags.Security)
@@ -460,7 +464,7 @@ namespace ZWaveDotNet.CommandClasses
                     }
                     Log.Information($"Revoking {message.SecurityLevel}");
                     controller.SecurityManager.RevokeKey(node.ID, SecurityManager.KeyToType(message.SecurityLevel));
-                    CommandMessage transferEnd = new CommandMessage(controller, node.ID, EndPoint, CommandClass, (byte)Security2Command.TransferEnd, false, KEY_VERIFIED);
+                    CommandMessage transferEnd = new CommandMessage(controller, [node.ID], EndPoint, CommandClass, (byte)Security2Command.TransferEnd, false, KEY_VERIFIED);
                     await Transmit(transferEnd.Payload, SecurityManager.RecordType.ECDH_TEMP);
                     return SupervisionStatus.Success;
                 case Security2Command.NonceGet:
@@ -534,6 +538,8 @@ namespace ZWaveDotNet.CommandClasses
                     bootstrapComplete.TrySetResult();
                     return SupervisionStatus.Success;
                 case Security2Command.KEXFail:
+                    if (message.IsMulticastMethod)
+                        return SupervisionStatus.Fail;
                     ErrorReport errorMessage = new ErrorReport(message.Payload.Span[0], ((KexFailType)message.Payload.Span[0]).ToString());
                     Log.Error("Key Exchange Failure " +  errorMessage);
                     await FireEvent(SecurityError, errorMessage);

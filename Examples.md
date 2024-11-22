@@ -63,9 +63,18 @@ async Task Meter_Update(Node sender, CommandClassEventArgs args)
 }
 ```
 
-#### Broadcasting Commands:
+#### Broadcast Commands:
 The controller contains a broadcast node with a set of command classes prepopulated. Broadcast commands do not reflect what command classes the network may or may not support.
 ```c#
 await controller.BroadcastNode.GetCommandClass<SwitchBinary>()!.Set(true);
 ```
 _This example turns on all switches in the network_
+
+#### Multicast Commands:
+The controller can create Multicast Groups of multiple Nodes. Multicast Command Classes will be the minimum set supported by all group members.
+```c#
+1: NodeGroup group = controller.CreateGroup(node1, node2);
+2: await group.GetCommandClass<SwitchBinary>()!.Set(true, TimeSpan.FromSeconds(1));
+```
+_Line 1 Creates a group with two members._\
+_Line 2 Turn on all binary switches in the group with a single multicast command._
