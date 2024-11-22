@@ -54,7 +54,10 @@ namespace ZWaveDotNet.Entities
         private bool failed;
         private InterviewState interviewed;
 
-        private ConcurrentDictionary<CommandClass, CommandClassBase> commandClasses = new ConcurrentDictionary<CommandClass, CommandClassBase>();
+        /// <summary>
+        /// Command Class Instances
+        /// </summary>
+        protected ConcurrentDictionary<CommandClass, CommandClassBase> commandClasses = new ConcurrentDictionary<CommandClass, CommandClassBase>();
         private List<EndPoint> endPoints = new List<EndPoint>();
 
         /// <summary>
@@ -130,7 +133,14 @@ namespace ZWaveDotNet.Entities
             nodeInfo = nodeJSON.NodeProtocolInfo;
         }
 
-        private bool AddCommandClass(CommandClass cls, bool secure = false, byte version = 1)
+        /// <summary>
+        /// Create a command class of the given type
+        /// </summary>
+        /// <param name="cls"></param>
+        /// <param name="secure"></param>
+        /// <param name="version"></param>
+        /// <returns></returns>
+        protected bool AddCommandClass(CommandClass cls, bool secure = false, byte version = 1)
         {
             return commandClasses.TryAdd(cls, CommandClassBase.Create(cls, this, 0, secure, version));
         }
@@ -197,7 +207,8 @@ namespace ZWaveDotNet.Entities
         internal async Task HandleApplicationCommand(ApplicationCommand cmd)
         {
             ReportMessage? msg = new ReportMessage(cmd);
-            RSSI = msg.RSSI;
+            if (msg.RSSI != ApplicationCommand.INVALID_RSSI)
+                RSSI = msg.RSSI;
 
             //Encapsulation Order (inner to outer) - MultiCommand, Supervision, Multichannel, security, transport, crc16
             if (CRC16.IsEncapsulated(msg))

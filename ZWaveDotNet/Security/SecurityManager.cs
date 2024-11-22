@@ -325,7 +325,7 @@ namespace ZWaveDotNet.Security
             byte[] nonce = new byte[8];
             do
             {
-                new Random().NextBytes(nonce);
+                Random.Shared.NextBytes(nonce);
             } while (GetS0Nonce(nodeId, nonce[0]) != null);
             SpanRecord nr = new SpanRecord()
             {

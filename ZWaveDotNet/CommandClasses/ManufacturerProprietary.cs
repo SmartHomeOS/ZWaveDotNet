@@ -38,8 +38,7 @@ namespace ZWaveDotNet.CommandClasses
             payload[0] = manufacturerBytes[1];
             data.CopyTo(payload.AsMemory().Slice(1));
 
-            CommandMessage msg = new CommandMessage(controller, node.ID, EndPoint, CommandClass, manufacturerBytes[0], false, payload);
-            await SendCommand(msg, cancellationToken);
+            await SendCommand(manufacturerBytes[0], cancellationToken, false, payload);
         }
 
         ///

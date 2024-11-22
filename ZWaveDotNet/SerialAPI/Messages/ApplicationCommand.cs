@@ -16,7 +16,7 @@ using ZWaveDotNet.SerialAPI.Messages.Enums;
 
 namespace ZWaveDotNet.SerialAPI.Messages
 {
-    public class ApplicationCommand : Message
+    internal class ApplicationCommand : Message
     {
         public const sbyte INVALID_RSSI = 0x7D;
         public const ushort LOCAL_NODE = 0xFF;

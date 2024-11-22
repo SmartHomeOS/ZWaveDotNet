@@ -51,12 +51,6 @@ namespace ZWaveDotNet.SerialAPI
             await SendAcknowledged(frame, cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task SendAcknowledged(Message message, CancellationToken cancellationToken = default)
-        {
-            Frame frame = new Frame(FrameType.SOF, DataFrameType.Request, message.Function, message.GetPayload());
-            await SendAcknowledged(frame, cancellationToken).ConfigureAwait(false);
-        }
-
         public async Task SendAcknowledged(Frame frame, CancellationToken cancellationToken = default)
         {
             var reader = port.CreateReader();
@@ -73,13 +67,6 @@ namespace ZWaveDotNet.SerialAPI
             Frame frame = new Frame(FrameType.SOF, DataFrameType.Request, function, payload);
             Frame response = await SendAcknowledgedResponse(frame, cancellationToken).ConfigureAwait(false);
             return GetMessage(response);
-        }
-
-        public async Task<Message> SendAcknowledgedResponse(Message message, CancellationToken cancellationToken = default)
-        {
-            Frame frame = new Frame(FrameType.SOF, DataFrameType.Request, message.Function, message.GetPayload());
-            Frame response = await SendAcknowledgedResponse(frame, cancellationToken).ConfigureAwait(false);
-            return GetMessage(response)!;
         }
 
         public async Task<Frame> SendAcknowledgedResponse(Frame frame, CancellationToken cancellationToken = default)

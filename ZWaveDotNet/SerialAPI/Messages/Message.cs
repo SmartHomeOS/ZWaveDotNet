@@ -15,9 +15,19 @@ using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.SerialAPI.Messages
 {
+    /// <summary>
+    /// Base class for all ZWave Messages
+    /// </summary>
     public abstract class Message
     {
+        /// <summary>
+        /// Serial API Function
+        /// </summary>
         public readonly Function Function;
+        /// <summary>
+        /// Base class for all ZWave Messages
+        /// </summary>
+        /// <param name="function"></param>
         protected Message(Function function)
         {
             this.Function = function;
@@ -28,6 +38,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
             return new PayloadWriter(256);
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return "[msg] ";

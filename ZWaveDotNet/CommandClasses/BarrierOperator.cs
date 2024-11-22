@@ -28,6 +28,9 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.BarrierOperator, 1)]
     public class BarrierOperator : CommandClassBase
     {
+        /// <summary>
+        /// Unsolicited Barrer Report
+        /// </summary>
         public event CommandClassEvent<BarrierReport>? BarrierState;
         
         enum BarrierOperatorCommand : byte

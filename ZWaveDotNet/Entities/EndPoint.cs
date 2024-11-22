@@ -31,7 +31,7 @@ namespace ZWaveDotNet.Entities
         /// </summary>
         public byte ID { get; init; }
         private readonly Node node;
-        private Dictionary<CommandClass, CommandClassBase> commandClasses = new Dictionary<CommandClass, CommandClassBase>();
+        private readonly Dictionary<CommandClass, CommandClassBase> commandClasses = new Dictionary<CommandClass, CommandClassBase>();
 
         /// <summary>
         /// The parent Node

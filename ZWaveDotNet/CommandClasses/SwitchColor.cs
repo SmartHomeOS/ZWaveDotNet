@@ -101,7 +101,7 @@ namespace ZWaveDotNet.CommandClasses
         /// </summary>
         /// <param name="up"></param>
         /// <param name="component"></param>
-        /// <param name="startLevel">If < 0, start level is ignored</param>
+        /// <param name="startLevel">If &lt; 0, start level is ignored</param>
         /// <param name="duration"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
