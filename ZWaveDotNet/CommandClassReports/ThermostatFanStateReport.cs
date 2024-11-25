@@ -28,6 +28,7 @@ namespace ZWaveDotNet.CommandClassReports
             State = (FanState)payload[0];
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"State:{State}";

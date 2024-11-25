@@ -17,6 +17,7 @@ namespace ZWaveDotNet.CommandClassReports
     /// </summary>
     public class EmptyReport : ICommandClassReport
     {
+        /// <inheritdoc />
         public override string ToString()
         {
             return "Empty Report";

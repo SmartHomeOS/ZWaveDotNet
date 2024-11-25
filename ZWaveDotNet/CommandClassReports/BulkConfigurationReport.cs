@@ -65,6 +65,7 @@ namespace ZWaveDotNet.CommandClassReports
                 SetResponse = true;
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             StringBuilder ret = new StringBuilder();

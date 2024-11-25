@@ -38,6 +38,7 @@ namespace ZWaveDotNet.CommandClassReports
                 WakeOnDemand = (payload[12] & 0x1) == 0x1;
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Min:{MinWakeupInterval}, Max:{MaxWakeupInterval}, Default:{DefaultWakeupInterval}, Step:{WakeupIntervalStep}, Wake: {WakeOnDemand}";

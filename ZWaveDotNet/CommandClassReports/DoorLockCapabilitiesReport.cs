@@ -74,6 +74,7 @@ namespace ZWaveDotNet.CommandClassReports
             ARS = (support & 0x8) == 0x8;
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Timed Operation:{TimedOperation}, Supported Modes: {SupportedModes}";

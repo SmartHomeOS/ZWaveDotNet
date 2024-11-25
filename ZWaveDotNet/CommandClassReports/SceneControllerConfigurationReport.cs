@@ -21,7 +21,7 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly byte SceneID;
         public readonly TimeSpan Duration;
 
-        public SceneControllerConfigurationReport(Span<byte> payload)
+        internal SceneControllerConfigurationReport(Span<byte> payload)
         {
             if (payload.Length < 3)
                 throw new DataException($"The Scene Controller Configuration Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
@@ -31,6 +31,7 @@ namespace ZWaveDotNet.CommandClassReports
             Duration = PayloadConverter.ToTimeSpan(payload[2]);
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Group {GroupID}, Scene {SceneID}, Duration {Duration}";

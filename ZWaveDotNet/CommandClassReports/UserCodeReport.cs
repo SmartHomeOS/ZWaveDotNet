@@ -34,6 +34,7 @@ namespace ZWaveDotNet.CommandClassReports
             UserCode = Encoding.ASCII.GetString(payload.Slice(2));
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"User Identifier:{UserIdentifier}, Status:{Status}";

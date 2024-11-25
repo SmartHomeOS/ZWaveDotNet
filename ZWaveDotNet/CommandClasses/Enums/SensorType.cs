@@ -12,6 +12,9 @@
 
 namespace ZWaveDotNet.CommandClasses.Enums
 {
+    /// <summary>
+    /// Type of multi-level sensor
+    /// </summary>
     public enum SensorType : byte
     {
         Undefined = 0x00,

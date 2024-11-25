@@ -12,11 +12,26 @@
 
 namespace ZWaveDotNet.CommandClassReports.Enums
 {
+    /// <summary>
+    /// Supervision Status
+    /// </summary>
     public enum SupervisionStatus : byte
     {
+        /// <summary>
+        /// Supervision Unsupported
+        /// </summary>
         NoSupport = 0x0,
+        /// <summary>
+        /// Operation In Progress
+        /// </summary>
         Working = 0x1,
+        /// <summary>
+        /// Operation Failed
+        /// </summary>
         Fail = 0x2,
+        /// <summary>
+        /// Operation Successful
+        /// </summary>
         Success = 0xFF
     }
 }

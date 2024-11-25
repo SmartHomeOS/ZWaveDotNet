@@ -12,8 +12,15 @@
 
 namespace ZWaveDotNet.CommandClassReports
 {
+    /// <summary>
+    /// Base interface for all command class reports
+    /// </summary>
     public interface ICommandClassReport
     {
+        /// <summary>
+        /// A summary string of the Command Class Report
+        /// </summary>
+        /// <returns></returns>
         public string? ToString();
     }
 }

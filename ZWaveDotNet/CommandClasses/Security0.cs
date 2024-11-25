@@ -239,6 +239,7 @@ namespace ZWaveDotNet.CommandClasses
             await keyVerified.Task;
         }
 
+        /// <inheritdoc />
         protected override bool IsSecure(byte command)
         {
             switch ((Security0Command)command)

@@ -29,6 +29,7 @@ namespace ZWaveDotNet.CommandClassReports
 
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Value:{Pulses}";

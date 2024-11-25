@@ -14,14 +14,14 @@ using ZWaveDotNet.CommandClasses.Enums;
 
 namespace ZWaveDotNet.CommandClassReports
 {
-    public class KeyExchangeReport
+    internal class KeyExchangeReport
     {
         public bool Echo;
         public bool ClientSideAuth;
         public bool Scheme1;
         public bool Curve25519;
         public SecurityKey Keys;
-        public KeyExchangeReport(Span<byte> payload)
+        internal KeyExchangeReport(Span<byte> payload)
         {
             if (payload.Length < 4)
                 throw new ArgumentException("Invalid KEX Report");
@@ -56,6 +56,7 @@ namespace ZWaveDotNet.CommandClassReports
             return ret;
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Key Exchange Report (Echo {Echo}, ClientSideAuth {ClientSideAuth}, Keys {Keys}, Valid {Curve25519&Scheme1}";

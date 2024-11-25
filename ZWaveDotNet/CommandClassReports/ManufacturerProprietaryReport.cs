@@ -30,6 +30,7 @@ namespace ZWaveDotNet.CommandClassReports
             Data = payload.Slice(2).ToArray();
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Manufacturer {Manufacturer}: {Data.Length} Bytes";

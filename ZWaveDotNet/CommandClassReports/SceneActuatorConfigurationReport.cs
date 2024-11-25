@@ -31,6 +31,7 @@ namespace ZWaveDotNet.CommandClassReports
             Duration = PayloadConverter.ToTimeSpan(payload[2]);
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Scene {SceneID}: Level {Level}, Duration {Duration}";

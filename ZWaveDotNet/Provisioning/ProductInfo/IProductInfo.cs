@@ -12,6 +12,9 @@
 
 namespace ZWaveDotNet.Provisioning.ProductInfo
 {
+    /// <summary>
+    /// Product Info Extension
+    /// </summary>
     public interface IProductInfo
     {
     }

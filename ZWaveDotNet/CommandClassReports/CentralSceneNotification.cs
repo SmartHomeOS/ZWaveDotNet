@@ -35,6 +35,7 @@ namespace ZWaveDotNet.CommandClassReports
             SceneNumber = payload[2];
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Sequence:{SequenceNumber}, KeyState:{KeyAttributes}, Scene:{SceneNumber}";

@@ -29,6 +29,7 @@ namespace ZWaveDotNet.CommandClassReports
             CacheTime = TimeSpan.FromSeconds(payload[1]);
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Cache Size:{CacheSize}, Cache Time: {CacheTime}";

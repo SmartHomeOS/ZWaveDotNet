@@ -23,7 +23,7 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly SupervisionStatus Status;
         public readonly TimeSpan Duration;
 
-        public SupervisionReport(Span<byte> payload)
+        internal SupervisionReport(Span<byte> payload)
         {
             MoreReports = ((payload[0] & 0x80) == 0x80);
             WakeUpRequest = ((payload[0] & 0x40) == 0x40);
@@ -32,6 +32,7 @@ namespace ZWaveDotNet.CommandClassReports
             Duration = PayloadConverter.ToTimeSpan(payload[2]);
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Status:{Status}, Duration:{Duration}";

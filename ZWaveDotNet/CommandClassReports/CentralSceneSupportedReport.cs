@@ -57,6 +57,7 @@ namespace ZWave.CommandClasses
             }
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Scene:{SceneCount}";

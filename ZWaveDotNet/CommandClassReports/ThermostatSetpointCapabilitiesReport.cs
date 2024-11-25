@@ -43,6 +43,7 @@ namespace ZWaveDotNet.CommandClassReports
                 return Units.degF;
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Type:{CapabilityType}, Min Value:\"{Minimum} {Unit}\", Max Value:\"{Maximum} {Unit}\"";

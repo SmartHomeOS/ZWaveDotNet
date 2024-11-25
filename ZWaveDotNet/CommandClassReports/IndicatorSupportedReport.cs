@@ -41,6 +41,7 @@ namespace ZWaveDotNet.CommandClassReports
             SupportedProperties = ret.ToArray();
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Indicator:{CurrentIndicator}, Next Indicator:{NextIndicator}, Supported:{string.Join(',', SupportedProperties)}";

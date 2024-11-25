@@ -46,9 +46,9 @@ namespace ZWaveDotNet.CommandClasses
         ///
         /// <inheritdoc />
         /// 
-        internal override async Task<SupervisionStatus> Handle(ReportMessage message)
+        internal override Task<SupervisionStatus> Handle(ReportMessage message)
         {
-            return SupervisionStatus.NoSupport;
+            return Task.FromResult(SupervisionStatus.NoSupport);
         }
     }
 }

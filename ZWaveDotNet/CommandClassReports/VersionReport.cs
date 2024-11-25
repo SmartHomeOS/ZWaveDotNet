@@ -49,6 +49,7 @@ namespace ZWaveDotNet.CommandClassReports
             Firmware = firmwares.ToArray();
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Library:{Library}, Firmware:{string.Join(",", Firmware)}, Protocol:{Protocol},Hardware:{Hardware}";

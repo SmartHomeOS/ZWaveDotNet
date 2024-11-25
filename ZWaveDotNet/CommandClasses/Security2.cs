@@ -32,6 +32,9 @@ namespace ZWaveDotNet.CommandClasses
     {
         private const byte KEY_VERIFIED = 0x2;
         private const byte TRANSFER_COMPLETE = 0x1;
+        /// <summary>
+        /// Provides an error report for security failures
+        /// </summary>
         public event CommandClassEvent<ErrorReport>? SecurityError;
         TaskCompletionSource bootstrapComplete = new TaskCompletionSource();
         private static uint sequence = (uint)Random.Shared.Next();
@@ -550,6 +553,7 @@ namespace ZWaveDotNet.CommandClasses
             }
         }
 
+        /// <inheritdoc />
         protected override bool IsSecure(byte command)
         {
             switch ((Security2Command)command)

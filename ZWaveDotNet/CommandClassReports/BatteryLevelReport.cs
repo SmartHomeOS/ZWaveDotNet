@@ -65,6 +65,7 @@ namespace ZWaveDotNet.CommandClassReports
                 State = BatteryChargingState.Unknown;
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return (IsLow ? "Low" : $"Value:{LevelPercent}%") + $" {State}";

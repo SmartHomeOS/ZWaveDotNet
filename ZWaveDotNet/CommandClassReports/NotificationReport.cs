@@ -109,6 +109,7 @@ namespace ZWaveDotNet.CommandClassReports
             return null;
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Type:{Type}, Level:{V1Level}, Event:{Event}, Param: {Param}";

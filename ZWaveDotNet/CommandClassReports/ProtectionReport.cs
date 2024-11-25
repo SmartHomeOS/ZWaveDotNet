@@ -38,6 +38,7 @@ namespace ZWaveDotNet.CommandClassReports
                 RemoteControl = RFProtectionState.Unprotected;
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Protection State:{LocalControl}";

@@ -20,7 +20,7 @@ namespace ZWaveDotNet.CommandClassReports
     {
         public readonly TimeSpan WaitTime;
         public readonly ApplicationBusyStatus Status;
-        public ApplicationStatusReport(Span<byte> payload)
+        internal ApplicationStatusReport(Span<byte> payload)
         {
             if (payload.Length < 1)
                 throw new DataException($"The Application Status Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
@@ -29,6 +29,7 @@ namespace ZWaveDotNet.CommandClassReports
             WaitTime = TimeSpan.FromSeconds(payload[1]);
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Status: {Status} [Time {WaitTime}]";

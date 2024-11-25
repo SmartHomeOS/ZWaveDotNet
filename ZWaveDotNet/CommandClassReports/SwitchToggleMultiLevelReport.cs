@@ -38,6 +38,7 @@ namespace ZWaveDotNet.CommandClassReports
                 throw new DataException($"The Switch Multi Level Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"CurrentValue:{CurrentValue}, TargetValue:{TargetValue}, Duration:{Duration}";

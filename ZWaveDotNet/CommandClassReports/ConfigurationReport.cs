@@ -53,6 +53,7 @@ namespace ZWaveDotNet.CommandClassReports
             }
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Parameter:{Parameter}, Value:{Value}";

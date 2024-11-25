@@ -29,6 +29,7 @@ namespace ZWaveDotNet.CommandClassReports
             Temperatures = PayloadConverter.ToFloats(payload.Slice(1), out byte scale);
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Max Capacity: {CapacityPercent}, Battery Temps: {string.Join(',', Temperatures)}";

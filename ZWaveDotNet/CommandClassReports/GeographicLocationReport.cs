@@ -20,7 +20,7 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly double Latitude;
         public readonly double Longitude;
 
-        public GeographicLocationReport(Span<byte> payload)
+        internal GeographicLocationReport(Span<byte> payload)
         {
             if (payload.Length < 4)
                 throw new DataException($"The Geographic Location was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
@@ -55,6 +55,7 @@ namespace ZWaveDotNet.CommandClassReports
             return ret;
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Lat:{Latitude}, Lon: {Longitude}";

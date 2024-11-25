@@ -37,6 +37,7 @@ namespace ZWaveDotNet.CommandClassReports
             LockingID = BinaryPrimitives.ReadUInt16BigEndian(payload.Slice(Hint.Length + 3, 2));
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Locked:{Locked}, Restricted:{Restricted}, Manufacturer: {ManufacturerID}, Locking ID: {LockingID}";

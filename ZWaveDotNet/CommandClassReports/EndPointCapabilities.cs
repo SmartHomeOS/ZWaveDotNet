@@ -24,7 +24,7 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly GenericType GenericType;
         public readonly SpecificType SpecificType;
 
-        public EndPointCapabilities(Span<byte> payload)
+        internal EndPointCapabilities(Span<byte> payload)
         {
             EndPointID = (byte)(payload[0] & 0x7F);
             Dynamic = (payload[0] & 0x80) == 0x80;

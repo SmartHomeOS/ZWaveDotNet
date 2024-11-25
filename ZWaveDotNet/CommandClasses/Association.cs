@@ -26,6 +26,9 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.Association, 1, 3)]
     public class Association : CommandClassBase
     {
+        /// <summary>
+        /// Lifeline Association Group
+        /// </summary>
         public const byte LIFELINE_GROUP = 0x1;
         enum AssociationCommand
         {

@@ -51,6 +51,7 @@ namespace ZWaveDotNet.CommandClassReports
             }
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Type:{StatusType}, Value:\"{Value} {Unit}\"";

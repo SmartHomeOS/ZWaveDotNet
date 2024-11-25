@@ -42,6 +42,7 @@ namespace ZWaveDotNet.CommandClassReports
                 throw new DataException($"The Firmware Activation Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Manufacturer:{Manufacturer}, ID:{FirmwareID}, Checksum:{Checksum}, Status:{Status}";

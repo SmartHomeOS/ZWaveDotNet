@@ -65,6 +65,7 @@ namespace ZWaveDotNet.CommandClasses
         /// <summary>
         /// <b>Version 1</b>: Query the name of an association group
         /// </summary>
+        /// <param name="groupNumber"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
         public async Task<string> GetName(byte groupNumber, CancellationToken cancellationToken = default)

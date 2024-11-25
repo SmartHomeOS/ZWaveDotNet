@@ -41,6 +41,7 @@ namespace ZWaveDotNet.CommandClassReports
                 return Units.gramPerCubicMeter;
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Type:{SetpointType}, Value:\"{Value} {Unit}\"";

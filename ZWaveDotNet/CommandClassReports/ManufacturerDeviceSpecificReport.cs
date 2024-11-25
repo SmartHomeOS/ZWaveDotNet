@@ -40,6 +40,7 @@ namespace ZWaveDotNet.CommandClassReports
                 ID = Encoding.UTF8.GetString(payload.Slice(2, len));
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Type:{Type}, ID:{ID}";

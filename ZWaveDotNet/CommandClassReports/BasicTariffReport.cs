@@ -27,7 +27,7 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly byte E2CurrentRateNumber;
         public readonly uint E2ConsumptionWh;
 
-        public BasicTariffReport(Span<byte> payload)
+        internal BasicTariffReport(Span<byte> payload)
         {
             if (payload.Length < 9)
                 throw new DataException($"The Basic Tariff Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
@@ -45,6 +45,7 @@ namespace ZWaveDotNet.CommandClassReports
             }
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             string ret = $"E1:{E1ConsumptionWh} W/h, Rate:{E1CurrentRateNumber}, Next Rate:{NextRate}";

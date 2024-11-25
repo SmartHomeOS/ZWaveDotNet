@@ -35,6 +35,7 @@ namespace ZWaveDotNet.CommandClassReports
                 Groups[i] = new KeyValuePair<byte, ushort>(payload[(7 * i) + 1], BinaryPrimitives.ReadUInt16BigEndian(payload.Slice((7 * i) + 3, 2)));
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Groups: {string.Join(',', Groups)}";

@@ -40,6 +40,7 @@ namespace ZWaveDotNet.CommandClassReports
             ApplicationVersion = new Version(payload[18], payload[19], payload[20], app_build);
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"SDK: {SDKVersion}, Framework: {ApplicationFrameworkVersion}, Interface: {HostInterfaceVersion}, Protocol: {ZWaveProtocolVersion}, App: {ApplicationVersion}";

@@ -34,6 +34,7 @@ namespace ZWaveDotNet.CommandClassReports
             UserIcon = BinaryPrimitives.ReadUInt16BigEndian(payload.Slice(5, 2));
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Version: {Version}, Role:{RoleType}, Node:{NodeType}, Installer Icon:{InstallerIcon}, User Icon:{UserIcon}";

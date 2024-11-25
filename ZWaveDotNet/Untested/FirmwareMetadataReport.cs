@@ -51,6 +51,7 @@ namespace ZWaveDotNet.CommandClassReports
             Checksum = BinaryPrimitives.ReadUInt16BigEndian(payload.Slice(4, 2).Span);
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Manufacturer: {Manufacturer}, ID:{FirmwareIDs[0]}, Checksum:{Checksum}";

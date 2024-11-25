@@ -87,6 +87,7 @@ namespace ZWaveDotNet.SerialAPI.Messages
             }
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"SpecificType = {SpecificType}, GenericType = {GenericType}, BasicType = {BasicType}, Listening = {IsListening}, Version = {Version}, Security = [{Security}], Routing = {Routing}, BaudRates = {string.Join(",", BaudRates)}";

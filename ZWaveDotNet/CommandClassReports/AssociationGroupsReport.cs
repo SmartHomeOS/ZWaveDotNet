@@ -27,6 +27,7 @@ namespace ZWaveDotNet.CommandClassReports
             GroupsSupported = payload[0];
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"GroupsSupported:{GroupsSupported}";

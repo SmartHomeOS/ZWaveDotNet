@@ -22,7 +22,7 @@ namespace ZWaveDotNet.CommandClassReports
         public byte IndividualEndPoints;
         public byte AggregatedEndPoints;
 
-        public EndPointReport(Span<byte> payload)
+        internal EndPointReport(Span<byte> payload)
         {
             if (payload.Length < 2)
                 throw new DataException($"The EndPoint Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");

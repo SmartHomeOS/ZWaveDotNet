@@ -56,6 +56,7 @@ namespace ZWaveDotNet.CommandClassReports
             Commands = commands.ToArray();
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Groups: {string.Join(',', (object[])Commands)}";

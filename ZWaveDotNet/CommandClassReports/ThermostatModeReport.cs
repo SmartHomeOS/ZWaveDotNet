@@ -33,9 +33,10 @@ namespace ZWaveDotNet.CommandClassReports
                 ManufacturerData = Array.Empty<byte>();
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
-            return $"Mode:{Mode}";
+            return $"Mode: {Mode}";
         }
     }
 }

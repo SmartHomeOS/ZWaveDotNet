@@ -15,14 +15,14 @@ using ZWaveDotNet.Util;
 
 namespace ZWaveDotNet.CommandClassReports
 {
-    public class NonceReport
+    internal class NonceReport
     {
         public byte Sequence;
         public bool SPAN_OS;
         public bool MPAN_OS;
         public Memory<byte> Entropy;
 
-        public NonceReport(Span<byte> payload)
+        internal NonceReport(Span<byte> payload)
         {
             Sequence = payload[0];
             SPAN_OS = (payload[1] & 0x1) == 0x1;
@@ -56,6 +56,7 @@ namespace ZWaveDotNet.CommandClassReports
             return ret;
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Nonce: SPAN {SPAN_OS}, Seq {Sequence}, Entropy: {MemoryUtil.Print(Entropy)}";

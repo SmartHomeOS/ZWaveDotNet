@@ -23,7 +23,7 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly SpecificType SpecificType;
         public byte[] EndPointIDs;
 
-        public EndPointFindReport(Span<byte> payload) 
+        internal EndPointFindReport(Span<byte> payload) 
         {
             if (payload.Length < 3)
                 throw new DataException($"The Find EndPoint response was not in the expected format. Payload: {MemoryUtil.Print(payload)}");

@@ -33,6 +33,7 @@ namespace ZWaveDotNet.CommandClassReports
                 SensorType = SensorBinaryType.FirstSupported;
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Value:{Value}, Type{SensorType}";

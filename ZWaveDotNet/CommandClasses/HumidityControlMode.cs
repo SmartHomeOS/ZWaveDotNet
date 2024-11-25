@@ -23,6 +23,9 @@ namespace ZWaveDotNet.CommandClasses
     [CCVersion(CommandClass.HumidityControlMode, 1, 1)]
     public class HumidityControlMode : CommandClassBase
     {
+        /// <summary>
+        /// Unsolicited Humidity Control Mode Report
+        /// </summary>
         public event CommandClassEvent<EnumReport<HumidityControlModeType>>? Updated;
         internal HumidityControlMode(Node node, byte endpoint) : base(node, endpoint, CommandClass.HumidityControlMode) { }
 

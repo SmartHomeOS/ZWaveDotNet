@@ -34,6 +34,7 @@ namespace ZWaveDotNet.CommandClassReports
             Duration = PayloadConverter.ToTimeSpan(payload[3]);
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Parameter:{Parameter}, Current Value:{CurrentValue}, Target Value:{TargetValue}, Duration:{Duration}";

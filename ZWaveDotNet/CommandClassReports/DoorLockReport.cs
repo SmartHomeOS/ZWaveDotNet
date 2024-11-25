@@ -27,7 +27,7 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly TimeSpan? RemainingLockTime;
         public readonly TimeSpan? RemainingOperationTime;
 
-        public DoorLockReport(Span<byte> payload)
+        internal DoorLockReport(Span<byte> payload)
         {
             if (payload.Length < 5)
                 throw new DataException($"The Door Lock Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
@@ -62,6 +62,7 @@ namespace ZWaveDotNet.CommandClassReports
             }
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Mode:{TargetMode}, Condition: {Condition}, Remaining Lock Time: {RemainingLockTime}";

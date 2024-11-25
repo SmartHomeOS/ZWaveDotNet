@@ -39,6 +39,7 @@ namespace ZWaveDotNet.CommandClassReports
                 EnergySavingMode = true;
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Type: {Type}";

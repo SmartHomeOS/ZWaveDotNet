@@ -12,22 +12,70 @@
 
 namespace ZWaveDotNet.CommandClasses.Enums
 {
+    /// <summary>
+    /// Type of binary sensor
+    /// </summary>
     public enum SensorBinaryType : byte
     {
+        /// <summary>
+        /// Reserved for future use
+        /// </summary>
         Reserved = 0x0,
+        /// <summary>
+        /// General Purpose Sensor
+        /// </summary>
         GeneralPurpose = 0x1,
+        /// <summary>
+        /// Smoke Alarm
+        /// </summary>
         Smoke = 0x2,
+        /// <summary>
+        /// CO Alarm
+        /// </summary>
         CarbonMonoxide = 0x3,
+        /// <summary>
+        /// CO2 Alarm
+        /// </summary>
         CarbonDioxide = 0x4,
+        /// <summary>
+        /// Heat Alarm
+        /// </summary>
         Heat = 0x5,
+        /// <summary>
+        /// Water / Leak Alarm
+        /// </summary>
         Water = 0x6,
+        /// <summary>
+        /// Freeze / Cold Alarm
+        /// </summary>
         Freeze = 0x7,
+        /// <summary>
+        /// Tamper Alert
+        /// </summary>
         Tamper = 0x8,
+        /// <summary>
+        /// Auxiliary
+        /// </summary>
         Aux = 0x9,
+        /// <summary>
+        /// Door / Window Sensor
+        /// </summary>
         DoorWindow = 0xA,
+        /// <summary>
+        /// Device Tilted
+        /// </summary>
         Tilt = 0xB,
+        /// <summary>
+        /// Device Moving
+        /// </summary>
         Motion = 0xC,
+        /// <summary>
+        /// Glass Break Detector
+        /// </summary>
         GlassBreak = 0xD,
+        /// <summary>
+        /// First Supported Sensor
+        /// </summary>
         FirstSupported = 0xFF
     }
 }

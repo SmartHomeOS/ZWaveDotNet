@@ -23,7 +23,7 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly byte UnsupportedCommand;
         public readonly bool PermanentlyUnsupported;
 
-        public ApplicationCapabilityReport(Span<byte> payload)
+        internal ApplicationCapabilityReport(Span<byte> payload)
         {
             if (payload.Length == 2)
                 UnsupportedCommandClass = (CommandClass)payload[1];
@@ -35,6 +35,7 @@ namespace ZWaveDotNet.CommandClassReports
             UnsupportedCommand = payload[2];
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"CommandClass:{UnsupportedCommandClass}, Command:{UnsupportedCommand}, Permanent:{PermanentlyUnsupported}";

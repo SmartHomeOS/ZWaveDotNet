@@ -16,12 +16,15 @@ namespace ZWaveDotNet.CommandClassReports
 {
     public class BarrierReport : ICommandClassReport
     {
+        /// <summary>
+        /// Percentage open is unsupported
+        /// </summary>
         public const int PERCENT_UNSUPPORTED = -1;
 
         public readonly BarrierState State;
         public readonly int PercentOpen = PERCENT_UNSUPPORTED;
 
-        public BarrierReport(Span<byte> payload)
+        internal BarrierReport(Span<byte> payload)
         {
             byte state = payload[0];
             if (state == 0)
@@ -49,6 +52,7 @@ namespace ZWaveDotNet.CommandClassReports
                 State = BarrierState.Unknown;
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Barrier State {State}: {PercentOpen}%";

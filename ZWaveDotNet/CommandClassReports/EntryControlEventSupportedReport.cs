@@ -57,6 +57,7 @@ namespace ZWaveDotNet.CommandClassReports
             SupportedDataTypes = dataTypes.ToArray();
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Supported:{string.Join(",", SupportedEvents)}";

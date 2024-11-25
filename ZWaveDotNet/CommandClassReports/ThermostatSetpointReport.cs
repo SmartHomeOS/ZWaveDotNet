@@ -41,6 +41,7 @@ namespace ZWaveDotNet.CommandClassReports
                 return Units.degF;
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Type: {Type}";

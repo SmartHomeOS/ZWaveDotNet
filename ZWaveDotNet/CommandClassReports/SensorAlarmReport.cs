@@ -38,6 +38,7 @@ namespace ZWaveDotNet.CommandClassReports
             Duration = BinaryPrimitives.ReadUInt16BigEndian(payload.Slice(3, 2));
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Source:{SourceNodeID}, Type:{Type}, Level:{Level}, Duration:{Duration}";

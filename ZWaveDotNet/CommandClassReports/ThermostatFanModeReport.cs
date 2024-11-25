@@ -30,6 +30,7 @@ namespace ZWaveDotNet.CommandClassReports
             AlwaysOff = (payload[0] & 0x80) == 0x80;
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Mode:{FanMode}";

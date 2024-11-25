@@ -45,6 +45,7 @@ namespace ZWaveDotNet.CommandClassReports
             }
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"TargetValue:{TargetValue}, Duration:{Duration}";

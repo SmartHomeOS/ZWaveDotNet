@@ -75,6 +75,7 @@ namespace ZWaveDotNet.CommandClassReports
             }
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Parameter:{Parameter}, Min:{MinValue}, Max:{MaxValue}, Default:{DefaultValue}, Format: {Format}, Next: {NextParameter}";

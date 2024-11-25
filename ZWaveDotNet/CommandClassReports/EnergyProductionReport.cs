@@ -22,7 +22,7 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly Units Unit;
         public readonly EnergyParameter Parameter;
 
-        public EnergyProductionReport(Span<byte> payload)
+        internal EnergyProductionReport(Span<byte> payload)
         {
             Parameter = (EnergyParameter)payload[0];
             Value = PayloadConverter.ToFloat(payload.Slice(1), out byte scale, out _, out _);
@@ -48,6 +48,7 @@ namespace ZWaveDotNet.CommandClassReports
             }
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"{Parameter}: {Value} {Unit}";

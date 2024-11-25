@@ -38,6 +38,7 @@ namespace ZWaveDotNet.CommandClassReports
             }
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Report {ReportNumber} - {Data.Length} Bytes of Firmware Data";

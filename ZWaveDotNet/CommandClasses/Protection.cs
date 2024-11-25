@@ -74,7 +74,8 @@ namespace ZWaveDotNet.CommandClasses
         /// <summary>
         /// <b>Version 2</b>: Set the protection state in a device.
         /// </summary>
-        /// <param name="protectionState"></param>
+        /// <param name="localProtection"></param>
+        /// <param name="remoteProtection"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
         public async Task Set(LocalProtectionState localProtection, RFProtectionState remoteProtection, CancellationToken cancellationToken = default)

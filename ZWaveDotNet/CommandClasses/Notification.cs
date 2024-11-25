@@ -66,6 +66,7 @@ namespace ZWaveDotNet.CommandClasses
         /// <b>Push Mode</b>: This command is used to request if the unsolicited transmission of a specific Notification Type is enabled.
         /// <b>Pull Mode</b>: This command is used to retrieve the next Notification from the receiving node’s queue.
         /// </summary>
+        /// <param name="type"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
         public async Task<NotificationReport> Get(NotificationType type, CancellationToken cancellationToken = default)
@@ -77,6 +78,7 @@ namespace ZWaveDotNet.CommandClasses
         /// <summary>
         /// <b>Push Mode</b>: This command is used to request if the unsolicited transmission of a specific Notification Type and State is enabled.
         /// </summary>
+        /// <param name="state"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
         public async Task<NotificationReport> Get(NotificationState state, CancellationToken cancellationToken = default)

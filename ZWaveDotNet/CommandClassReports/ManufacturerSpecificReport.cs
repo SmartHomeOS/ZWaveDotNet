@@ -32,6 +32,7 @@ namespace ZWaveDotNet.CommandClassReports
             ProductID = BinaryPrimitives.ReadUInt16BigEndian(payload.Slice(4, 2));
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"ManufacturerID:{ManufacturerID:X4}, ProductType:{ProductType:X4}, ProductID:{ProductID:X4}";

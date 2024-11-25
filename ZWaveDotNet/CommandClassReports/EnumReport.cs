@@ -4,7 +4,7 @@ namespace ZWaveDotNet.CommandClassReports
 {
     public class EnumReport<T> : ICommandClassReport where T : Enum
     {
-        public EnumReport(Span<byte> payload)
+        internal EnumReport(Span<byte> payload)
         {
             Value = (T)(object)payload[0];
         }

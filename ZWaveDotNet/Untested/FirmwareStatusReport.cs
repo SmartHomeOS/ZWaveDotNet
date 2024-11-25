@@ -43,6 +43,7 @@ namespace ZWaveDotNet.CommandClassReports
             return payload;
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Status: {Status}";

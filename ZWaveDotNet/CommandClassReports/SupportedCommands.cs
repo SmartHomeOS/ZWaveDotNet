@@ -26,6 +26,7 @@ namespace ZWaveDotNet.CommandClassReports
             CommandClasses = PayloadConverter.GetCommandClasses(payload.Slice(1));
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"RemainingReports:{RemainingReports}, Classes:{string.Join(',',CommandClasses)}";

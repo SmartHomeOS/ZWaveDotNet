@@ -55,6 +55,7 @@ namespace ZWaveDotNet.CommandClassReports
             Minute = payload[1];
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"{DayOfWeek} {Hour:D2}:{Minute:D2}";

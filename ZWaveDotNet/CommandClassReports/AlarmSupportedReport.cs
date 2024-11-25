@@ -39,6 +39,7 @@ namespace ZWaveDotNet.CommandClassReports
             SupportedAlarms = types.ToArray();
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Supported:{string.Join(",", SupportedAlarms)}";

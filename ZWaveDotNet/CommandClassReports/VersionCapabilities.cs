@@ -27,6 +27,7 @@ namespace ZWaveDotNet.CommandClassReports
             ZWaveSoftwareSupport = (payload[0] & 0x1) == 0x4;
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Supports: Version {VersionSupport}, CommandClass {CommandClassSupport}, Software {ZWaveSoftwareSupport}";

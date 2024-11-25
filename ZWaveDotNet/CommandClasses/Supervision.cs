@@ -37,7 +37,7 @@ namespace ZWaveDotNet.CommandClasses
 
         internal Supervision(Node node) : base(node, 0, CommandClass.Supervision) {  }
 
-        public async Task Report(byte sessionId, SupervisionStatus status, CancellationToken cancellationToken = default)
+        internal async Task Report(byte sessionId, SupervisionStatus status, CancellationToken cancellationToken = default)
         {
             Log.Information($"Confirmed Supervised Command {sessionId} - Status {status}");
             await SendCommand(SupervisionCommand.Report, cancellationToken, sessionId, (byte)status, 0x0);

@@ -23,7 +23,7 @@ namespace ZWaveDotNet.CommandClasses
     {
         private static CRC16_CCITT? crc;
 
-        public enum CRC16Command
+        enum CRC16Command
         {
             Encap = 0x01
         }

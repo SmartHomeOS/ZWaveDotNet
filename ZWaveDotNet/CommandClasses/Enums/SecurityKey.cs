@@ -12,13 +12,31 @@
 
 namespace ZWaveDotNet.CommandClasses.Enums
 {
+    /// <summary>
+    /// Security Level
+    /// </summary>
     [Flags]
     public enum SecurityKey
     {
+        /// <summary>
+        /// No Security
+        /// </summary>
         None = 0x0,
+        /// <summary>
+        /// S2 Unauthenticated Level
+        /// </summary>
         S2Unauthenticated = 0x1,
+        /// <summary>
+        /// S2 Authenticated Level
+        /// </summary>
         S2Authenticated = 0x2,
+        /// <summary>
+        /// S2 Access Level
+        /// </summary>
         S2Access = 0x4,
+        /// <summary>
+        /// S0 Security
+        /// </summary>
         S0 = 0x80
     }
 }

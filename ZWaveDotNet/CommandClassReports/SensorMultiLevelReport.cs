@@ -148,6 +148,7 @@ namespace ZWaveDotNet.CommandClassReports
             return scale == 1 ? one : zero;
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Type:{SensorType}, Value:\"{Value} {Unit}\"";

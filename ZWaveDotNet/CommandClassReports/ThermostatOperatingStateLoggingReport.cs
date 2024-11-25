@@ -39,6 +39,7 @@ namespace ZWaveDotNet.CommandClassReports
             }
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             StringBuilder stringBuilder = new StringBuilder();

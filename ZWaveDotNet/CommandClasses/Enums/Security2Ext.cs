@@ -12,7 +12,7 @@
 
 namespace ZWaveDotNet.CommandClasses.Enums
 {
-    public enum Security2Ext : byte
+    internal enum Security2Ext : byte
     {
         SPAN = 0x1,
         MPAN = 0x2,

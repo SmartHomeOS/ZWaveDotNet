@@ -29,6 +29,7 @@ namespace ZWaveDotNet.CommandClassReports
             TargetNodeID = payload[3];
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Interval:{Interval}, TargetNode:{TargetNodeID:D3}";

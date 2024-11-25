@@ -38,6 +38,7 @@ namespace ZWaveDotNet.CommandClassReports
             DSTEnd = new DateTime(0, payload[6], payload[7], payload[8], 0, 0);
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Offset:{TimeOffset}, DST Start: {DSTStart}, End: {DSTEnd}, Offset: {DSTOffsetMinutes}min";

@@ -62,7 +62,8 @@ namespace ZWaveDotNet.CommandClasses
         /// <summary>
         /// <b>Version 2</b>: This command is used to query the value of one or more configuration parameters.
         /// </summary>
-        /// <param name="parameter"></param>
+        /// <param name="parameterStart"></param>
+        /// <param name="parameterCount"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
         public async Task<BulkConfigurationReport> Get(ushort parameterStart, byte parameterCount, CancellationToken cancellationToken = default)
@@ -142,7 +143,6 @@ namespace ZWaveDotNet.CommandClasses
         /// <summary>
         /// <b>Version 4</b>: This command is used to reset all configuration parameters to their default value.
         /// </summary>
-        /// <param name="parameter"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
         public async Task SetDefault(CancellationToken cancellationToken = default)

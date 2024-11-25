@@ -32,6 +32,7 @@ namespace ZWaveDotNet.CommandClassReports
                 throw new DataException($"The Switch MultiLevel Supported Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Primary:{PrimarySwitch}, Secondary:{SecondarySwitch}";

@@ -22,7 +22,7 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly byte ReportsToFollow;
         public readonly byte[] NodeIDs;
 
-        public AssociationReport(Span<byte> payload)
+        internal AssociationReport(Span<byte> payload)
         {
             if (payload.Length < 3)
                 throw new DataException($"The Association Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
@@ -33,6 +33,7 @@ namespace ZWaveDotNet.CommandClassReports
             NodeIDs = payload.Slice(3).ToArray();
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Group ID:{GroupID}, Node IDs:{string.Join(", ", NodeIDs)}";

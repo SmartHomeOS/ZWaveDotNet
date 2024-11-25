@@ -40,6 +40,7 @@ namespace ZWaveDotNet.CommandClassReports
             UserCode = Encoding.ASCII.GetString(payload.Slice(11, payload[10]));
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"{Timestamp}: Record:{RecordNumber}, User:{UserNumber}, Type:{EventType}, Empty: {Empty}";

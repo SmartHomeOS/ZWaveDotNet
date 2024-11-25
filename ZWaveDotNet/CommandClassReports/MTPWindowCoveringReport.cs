@@ -29,6 +29,7 @@ namespace ZWaveDotNet.CommandClassReports
             Open = CurrentValue != 0;
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Value:{CurrentValue}% Open";

@@ -21,7 +21,7 @@ namespace ZWaveDotNet.CommandClassReports
         public readonly byte TargetValue;
         public readonly TimeSpan Duration;
 
-        public BasicReport(Span<byte> payload)
+        internal BasicReport(Span<byte> payload)
         {
             if (payload.Length < 1)
                 throw new DataException($"The Basic Report was not in the expected format. Payload: {MemoryUtil.Print(payload)}");
@@ -42,6 +42,7 @@ namespace ZWaveDotNet.CommandClassReports
             }
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Value:{CurrentValue}";

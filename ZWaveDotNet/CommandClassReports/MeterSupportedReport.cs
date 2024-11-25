@@ -40,6 +40,7 @@ namespace ZWaveDotNet.CommandClassReports
             Units = units.ToArray();
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"CanReset:{CanReset}, Meter Type:{Type}, Units:[{string.Join(", ", Units)}]";
