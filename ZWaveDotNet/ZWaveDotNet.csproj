@@ -15,20 +15,11 @@
 	<RepositoryUrl>https://github.com/SmartHomeOS/ZWaveDotNet/</RepositoryUrl>
 	<PackageTags>zwave; zwave-controller; smartstart; zwave-LR; dotnet;</PackageTags>
 	<PackageReleaseNotes>Support is included for 70+ command classes. See README for details.</PackageReleaseNotes>
+	<PackageIcon>logo.png</PackageIcon>
 	<GenerateDocumentationFile>True</GenerateDocumentationFile>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0|AnyCPU'">
-    <IsAotCompatible>True</IsAotCompatible>
-    <IsTrimmable>True</IsTrimmable>
-  </PropertyGroup>
-
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0|AnyCPU'">
-    <IsAotCompatible>True</IsAotCompatible>
-    <IsTrimmable>True</IsTrimmable>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0|AnyCPU'">
     <IsAotCompatible>True</IsAotCompatible>
     <IsTrimmable>True</IsTrimmable>
   </PropertyGroup>
@@ -49,6 +40,13 @@
   <ItemGroup>
     <PackageReference Include="Serilog" Version="4.1.0" />
     <PackageReference Include="System.IO.Ports" Version="9.0.0" />
+  </ItemGroup>
+	
+  <ItemGroup>
+    <None Include="logo.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>
