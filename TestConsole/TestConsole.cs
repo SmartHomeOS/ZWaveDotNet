@@ -147,19 +147,19 @@ namespace ExampleConsole
         private static void AttachListeners(Node node)
         {
             if (node.HasCommandClass(CommandClass.SensorMultiLevel))
-                node.GetCommandClass<SensorMultiLevel>()!.Updated += Node_Updated;
+                node.GetCommandClass<SensorMultiLevel>().Updated += Node_Updated;
             if (node.HasCommandClass(CommandClass.Meter))
                 node.GetCommandClass<Meter>()!.Updated += Node_Updated;
             if (node.HasCommandClass(CommandClass.Notification) && node.GetCommandClass<Notification>() is Notification not) //ZWave Weirdness
                 not.Updated += Node_Updated;
             if (node.HasCommandClass(CommandClass.Battery))
-                node.GetCommandClass<Battery>()!.Status += Node_Updated;
+                node.GetCommandClass<Battery>().Status += Node_Updated;
             if (node.HasCommandClass(CommandClass.SensorBinary))
-                node.GetCommandClass<SensorBinary>()!.Updated += Node_Updated;
+                node.GetCommandClass<SensorBinary>().Updated += Node_Updated;
             if (node.HasCommandClass(CommandClass.SensorAlarm))
-                node.GetCommandClass<SensorAlarm>()!.Alarm += Node_Updated;
+                node.GetCommandClass<SensorAlarm>().Alarm += Node_Updated;
             if (node.HasCommandClass(CommandClass.SwitchBinary))
-                node.GetCommandClass<SwitchBinary>()!.SwitchReport += Node_Updated;
+                node.GetCommandClass<SwitchBinary>().SwitchReport += Node_Updated;
         }
 
         private static Task Node_Updated<T>(Node sender, CommandClassEventArgs<T> args) where T : ICommandClassReport

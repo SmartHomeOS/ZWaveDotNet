@@ -48,25 +48,24 @@ _Line 2 Begins smart start inclusion._
 The list of command classes can be enumerated or you can get a specific command class directly and call commands.
 ```c#
 CancellationTokenSource cts = new CancellationTokenSource(5000);
-List<CommandClass> lst = await controller.Nodes[3].GetCommandClass<Security2>()!.GetSupportedCommands(cts.Token);
+List<CommandClass> lst = await controller.Nodes[3].GetCommandClass<Security2>().GetSupportedCommands(cts.Token);
 ```
 
 #### Notifications:
 Command classes have events which can be subscribed to for events/notifications.
 ```c#
-controller.Nodes[3].GetCommandClass<Meter>()!.Update += Meter_Update;
+controller.Nodes[3].GetCommandClass<Meter>().Update += Meter_Update;
 
-async Task Meter_Update(Node sender, CommandClassEventArgs args)
+async Task Meter_Updated(Node sender, CommandClassEventArgs<MeterReport> args)
 {
-    MeterReport mr = (MeterReport)args.Report!;
-    Console.WriteLine($"Meter Update: {mr.Value} {mr.Unit}");
+    Console.WriteLine($"Meter Update: {args.Report!.Value} {args.Report!.Unit}");
 }
 ```
 
 #### Broadcast Commands:
 The controller contains a broadcast node with a set of command classes prepopulated. Broadcast commands do not reflect what command classes the network may or may not support.
 ```c#
-await controller.BroadcastNode.GetCommandClass<SwitchBinary>()!.Set(true);
+await controller.BroadcastNode.GetCommandClass<SwitchBinary>().Set(true);
 ```
 _This example turns on all switches in the network_
 
@@ -74,7 +73,7 @@ _This example turns on all switches in the network_
 The controller can create Multicast Groups of multiple Nodes. Multicast Command Classes will be the minimum set supported by all group members.
 ```c#
 1: NodeGroup group = controller.CreateGroup(node1, node2);
-2: await group.GetCommandClass<SwitchBinary>()!.Set(true, TimeSpan.FromSeconds(1));
+2: await group.GetCommandClass<SwitchBinary>().Set(true, TimeSpan.FromSeconds(1));
 ```
 _Line 1 Creates a group with two members._\
-_Line 2 Turn on all binary switches in the group with a single multicast command._
+_Line 2 Turn on both binary switches in the group with a single multicast command._

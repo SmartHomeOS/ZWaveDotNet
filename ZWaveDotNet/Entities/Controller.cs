@@ -835,7 +835,7 @@ namespace ZWaveDotNet.Entities
             {
                 try
                 {
-                    Security0 sec0 = node.GetCommandClass<Security0>()!;
+                    Security0 sec0 = node.GetCommandClass<Security0>();
                     await sec0.SchemeGet(cts.Token).ConfigureAwait(false);
                     _ = Task.Run(() => sec0.KeySet(cts.Token));
                     await sec0.WaitForKeyVerified(cts.Token).ConfigureAwait(false);
@@ -858,7 +858,7 @@ namespace ZWaveDotNet.Entities
         private async Task<bool> BootstrapS2(Node node)
         {
             await Task.Delay(1000); //Give including node a chance to get ready
-            Security2 sec2 = node.GetCommandClass<Security2>()!;
+            Security2 sec2 = node.GetCommandClass<Security2>();
             Log.Information("Starting Secure S2 Inclusion");
             try
             {

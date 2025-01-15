@@ -306,18 +306,18 @@ namespace ZWaveDotNet.Entities
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public T? GetCommandClass<T>() where T : CommandClassBase
+        public T GetCommandClass<T>() where T : CommandClassBase
         {
             CommandClass commandClass = ((CCVersion)typeof(T).GetCustomAttribute(typeof(CCVersion))!).commandClass;
             if (commandClasses.TryGetValue(commandClass, out CommandClassBase? ccb))
             {
                 if (typeof(T) == typeof(Notification) && ccb.Version <= 2)
-                    return null;
+                    throw new ArgumentException("Notification command class is not present. Fetch alarm instead");
                 if (typeof(T) == typeof(Alarm) && ccb.Version > 2)
-                    return null;
+                    throw new ArgumentException("Alarm command class is not present. Fetch Notification instead");
                 return (T)ccb;
             }
-            return null;
+            throw new ArgumentNullException("Command class does not exist on this node");
         }
 
         internal NodeJSON Serialize()
@@ -537,7 +537,7 @@ namespace ZWaveDotNet.Entities
                     if (HasCommandClass(CommandClass.WakeUp))
                     {
                         Log.Information("Security query complete. Sleeping before continuing");
-                        await GetCommandClass<WakeUp>()!.WaitForAwake(cancellationToken);
+                        await GetCommandClass<WakeUp>().WaitForAwake(cancellationToken);
                     }
                 }
                 else
@@ -552,10 +552,10 @@ namespace ZWaveDotNet.Entities
             if (HasCommandClass(CommandClass.MultiChannel))
             {
                 Log.Information("Requesting MultiChannel EndPoints");
-                EndPointReport epReport = await GetCommandClass<MultiChannel>()!.GetEndPoints(cancellationToken);
+                EndPointReport epReport = await GetCommandClass<MultiChannel>().GetEndPoints(cancellationToken);
                 for (int i = 0; i < epReport.IndividualEndPoints; i++)
                 {
-                    EndPointCapabilities caps = await GetCommandClass<MultiChannel>()!.GetCapabilities((byte)(i + 1), cancellationToken);
+                    EndPointCapabilities caps = await GetCommandClass<MultiChannel>().GetCapabilities((byte)(i + 1), cancellationToken);
                     endPoints.Add(new EndPoint((byte)(i + 1), this, caps.CommandClasses));
                 }
             }

@@ -276,7 +276,7 @@ namespace ZWaveDotNet.CommandClasses
                 else if (controller.SecurityManager.HasKey(msg.SourceNodeID, SecurityManager.RecordType.ECDH_TEMP))
                 {
                     using (CancellationTokenSource cts = new CancellationTokenSource(3000))
-                    await controller.Nodes[msg.SourceNodeID].GetCommandClass<Security2>()!.KexFail(KexFailType.KEX_FAIL_KEY_VERIFY).ConfigureAwait(false);
+                    await controller.Nodes[msg.SourceNodeID].GetCommandClass<Security2>().KexFail(KexFailType.KEX_FAIL_KEY_VERIFY).ConfigureAwait(false);
                     if (networkKey.Key != SecurityManager.RecordType.ECDH_TEMP)
                         controller.SecurityManager.RevokeKey(msg.SourceNodeID, networkKey.Key);
                     return null;
@@ -288,7 +288,7 @@ namespace ZWaveDotNet.CommandClasses
                         Log.Warning("Declaring SPAN failed and sending SOS");
                         controller.SecurityManager.PurgeRecords(msg.SourceNodeID, networkKey.Key);
                         using (CancellationTokenSource cts = new CancellationTokenSource(3000))
-                        await controller.Nodes[msg.SourceNodeID].GetCommandClass<Security2>()!.SendNonceReport(true, false, false, cts.Token).ConfigureAwait(false);
+                        await controller.Nodes[msg.SourceNodeID].GetCommandClass<Security2>().SendNonceReport(true, false, false, cts.Token).ConfigureAwait(false);
                     }
                     catch (Exception e)
                     {

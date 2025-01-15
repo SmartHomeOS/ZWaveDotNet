@@ -357,9 +357,9 @@ namespace ZWaveDotNet.CommandClasses
                     throw new InvalidOperationException("Secure command requires security manager");
                 SecurityManager.NetworkKey key = controller.SecurityManager.GetHighestKey(node.ID) ?? throw new InvalidOperationException($"Command classes are secure but no keys exist for node {node.ID}");
                 if (key.Key == SecurityManager.RecordType.S0)
-                    await node.GetCommandClass<Security0>()!.Encapsulate(data.Payload, token).ConfigureAwait(false);
+                    await node.GetCommandClass<Security0>().Encapsulate(data.Payload, token).ConfigureAwait(false);
                 else if (key.Key > SecurityManager.RecordType.S0)
-                    await node.GetCommandClass<Security2>()!.Encapsulate(data.Payload, key.Key, token).ConfigureAwait(false);
+                    await node.GetCommandClass<Security2>().Encapsulate(data.Payload, key.Key, token).ConfigureAwait(false);
                 else
                     throw new InvalidOperationException("Security required but no keys are available");
             }

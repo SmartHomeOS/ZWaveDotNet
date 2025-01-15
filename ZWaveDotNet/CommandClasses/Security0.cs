@@ -169,7 +169,7 @@ namespace ZWaveDotNet.CommandClasses
             {
                 Log.Verbose("Providing Next Nonce");
                 using CancellationTokenSource cts = new CancellationTokenSource(3000);
-                await controller.Nodes[msg.SourceNodeID].GetCommandClass<Security0>()!.SendCommand(Security0Command.NonceReport, cts.Token, controller.SecurityManager.CreateS0Nonce(msg.SourceNodeID)).ConfigureAwait(false);
+                await controller.Nodes[msg.SourceNodeID].GetCommandClass<Security0>().SendCommand(Security0Command.NonceReport, cts.Token, controller.SecurityManager.CreateS0Nonce(msg.SourceNodeID)).ConfigureAwait(false);
             }
 
             Log.Verbose("Decrypted: " + msg.ToString());

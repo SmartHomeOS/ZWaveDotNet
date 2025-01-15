@@ -106,7 +106,7 @@ namespace ZWaveDotNet.CommandClasses
         public async Task DownloadAsync(string destination, CancellationToken cancellationToken = default)
         {
             FirmwareMetadataReport report = await Get(cancellationToken);
-            VersionReport version = await node.GetCommandClass<Version>()!.Get(cancellationToken);
+            VersionReport version = await node.GetCommandClass<Version>().Get(cancellationToken);
             Log.Information($"Downloading Manufacturer {report.Manufacturer}, Firmware {report.FirmwareIDs[0]}, Version {version.Firmware[0]}");
             using (FileStream fs = new FileStream(destination, FileMode.Create, FileAccess.Write))
             {
@@ -125,7 +125,7 @@ namespace ZWaveDotNet.CommandClasses
             ushort checksum = 0x42; //TODO
 
             FirmwareMetadataReport report = await Get(cancellationToken);
-            VersionReport version = await node.GetCommandClass<Version>()!.Get(cancellationToken);
+            VersionReport version = await node.GetCommandClass<Version>().Get(cancellationToken);
             Log.Information($"@Downloading Manufacturer {report.Manufacturer}, Firmware {report.FirmwareIDs[0]}, Version {version.Firmware[0]}, HW {report.HardwareVersion}");
             FirmwareUpdateStatus start = await StartUpdate(report.Manufacturer, report.FirmwareIDs[0], checksum, 0x0, 28, false, report.HardwareVersion, cancellationToken);
             if (start != FirmwareUpdateStatus.Success)
