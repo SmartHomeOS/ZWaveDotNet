@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFrameworks>net8.0; net9.0</TargetFrameworks>
@@ -39,7 +39,7 @@
 	
   <ItemGroup>
     <PackageReference Include="Serilog" Version="4.2.0" />
-    <PackageReference Include="System.IO.Ports" Version="9.0.1" />
+    <PackageReference Include="System.IO.Ports" Version="9.0.4" />
   </ItemGroup>
 	
   <ItemGroup>
